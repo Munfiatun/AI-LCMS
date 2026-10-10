@@ -134,9 +134,17 @@ Akun demo yang tersedia:
 
 Semua akun menggunakan nilai `DEMO_USER_PASSWORD` yang Anda tentukan sendiri. Jangan aktifkan demo credential di production.
 
+`DatabaseSeeder` hanya menjalankan data demo pada environment `local`/`testing`. Seeder demo eksplisit seperti `CourseSeeder`, `DemoCourseSeeder`, `LmsDemoSeeder`, dan `WebLearningDummySeeder` juga memiliki guard environment sehingga tidak menulis data demo ketika aplikasi berjalan sebagai `production`.
+
 ## Quality Gate
 
-Sebelum merge atau deployment, jalankan:
+Sebelum merge atau deployment, jalankan gate lengkap:
+
+```bash
+composer run release:check
+```
+
+Perintah tersebut membersihkan cache konfigurasi untuk test, menjalankan seluruh PHPUnit suite, lalu menjalankan production frontend build. Alternatif manual:
 
 ```bash
 php artisan test
@@ -145,7 +153,7 @@ npm run build
 
 Test suite menggunakan SQLite in-memory melalui `phpunit.xml`, sehingga tidak menggunakan database development lokal.
 
-Repository juga memiliki GitHub Actions quality gate untuk menjalankan backend test dan frontend production build pada Pull Request ke `main`.
+Repository juga memiliki GitHub Actions quality gate untuk memvalidasi metadata Composer, menjalankan backend test, dan menjalankan frontend production build pada Pull Request ke `main`.
 
 ## Deployment
 
