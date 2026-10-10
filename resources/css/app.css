@@ -8,3 +8,100 @@
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 3px solid #818cf8;
+        outline-offset: 3px;
+    }
+
+    :where(button, input, select, textarea):disabled {
+        cursor: not-allowed;
+    }
+}
+
+.a11y-skip-link {
+    position: fixed;
+    z-index: 9999;
+    top: 0.75rem;
+    left: 0.75rem;
+    transform: translateY(-180%);
+    border: 1px solid rgb(129 140 248 / 0.65);
+    border-radius: 0.75rem;
+    background: #0f172a;
+    color: #fff;
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+    transition: transform 150ms ease;
+}
+
+.a11y-skip-link:focus,
+.a11y-skip-link:focus-visible {
+    transform: translateY(0);
+}
+
+/* Primary learning controls remain comfortable on touch screens. */
+.presentation-button,
+.slide-select,
+#examForm button,
+#examForm input[type='radio'] {
+    touch-action: manipulation;
+}
+
+.presentation-button,
+.slide-select,
+#examForm button {
+    min-height: 44px;
+}
+
+#examForm label:has(input[type='radio']) {
+    min-height: 52px;
+}
+
+.slide-presentation {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+.presentation-navigation {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 640px) {
+    #examForm button {
+        min-width: 44px;
+    }
+
+    .presentation-navigation {
+        gap: 0.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+    }
+}
+
+@media (forced-colors: active) {
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 3px solid Highlight;
+    }
+}
