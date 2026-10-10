@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSlidebookDesignRequest;
 use App\Models\LearningMaterial;
 use App\Models\Slidebook;
 use App\Services\SlidebookService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,8 +19,10 @@ class SlidebookReviewController extends Controller
 
     /**
      * Show the side-by-side Slidebook review page.
+     * A `?quality=1` request returns the same draft's deterministic quality report
+     * so the review UI can refresh the panel without introducing another route.
      */
-    public function show(Request $request, LearningMaterial $material): View|RedirectResponse
+    public function show(Request $request, LearningMaterial $material): View|RedirectResponse|JsonResponse
     {
         Gate::authorize('generate', [Slidebook::class, $material]);
 
@@ -30,22 +33,32 @@ class SlidebookReviewController extends Controller
 
         $slidebook = $material->slidebooks()
             ->whereIn('status', [Slidebook::STATUS_DRAFT, Slidebook::STATUS_REVIEW])
-            ->with(['slides', 'material'])
+            ->with(['slides', 'material.documents.extraction'])
             ->latest('version')
             ->first();
 
         if (! $slidebook) {
             $slidebook = $material->slidebooks()
                 ->where('status', Slidebook::STATUS_PUBLISHED)
-                ->with(['slides', 'material'])
+                ->with(['slides', 'material.documents.extraction'])
                 ->latest('version')
                 ->first();
         }
 
         if (! $slidebook) {
+            if ($request->boolean('quality')) {
+                return response()->json(['message' => 'Slidebook belum tersedia.'], 404);
+            }
+
             return redirect()
                 ->route('instructor.materials.edit', $material)
-                ->with('error', 'Materi ini belum memiliki Slidebook. Silakan generate terlebih dahulu.');
+                ->with('error', 'Materi ini belum memiliki Slidebook. Silakan buat terlebih dahulu.');
+        }
+
+        $qualityReport = $this->service->qualityReport($slidebook);
+
+        if ($request->boolean('quality')) {
+            return response()->json($qualityReport);
         }
 
         return view('instructor.slidebooks.review', [
@@ -54,6 +67,7 @@ class SlidebookReviewController extends Controller
             'course' => $material->section->course,
             'reviewErrors' => $this->service->reviewErrors($slidebook),
             'publicationErrors' => $this->service->publicationErrors($slidebook),
+            'qualityReport' => $qualityReport,
         ]);
     }
 
@@ -111,7 +125,7 @@ class SlidebookReviewController extends Controller
         Gate::authorize('approve', $slidebook);
         $this->service->approve($slidebook, $request->user());
 
-        return back()->with('success', 'Slidebook berhasil disetujui (Approved) dan tersimpan sebagai draft siap rilis.');
+        return back()->with('success', 'Slidebook berhasil disetujui dan siap untuk diterbitkan.');
     }
 
     /**
@@ -122,7 +136,7 @@ class SlidebookReviewController extends Controller
         Gate::authorize('publish', $slidebook);
         $this->service->publish($slidebook);
 
-        return back()->with('success', 'Slidebook resmi dipublikasikan! Siswa yang terdaftar kini dapat membaca materi ini.');
+        return back()->with('success', 'Slidebook resmi dipublikasikan. Siswa yang terdaftar kini dapat membaca materi ini.');
     }
 
     public function revision(Request $request, Slidebook $slidebook): RedirectResponse
@@ -131,7 +145,7 @@ class SlidebookReviewController extends Controller
         $this->service->createRevision($slidebook, $request->user());
 
         return redirect()->route('instructor.materials.slidebook.review', $slidebook->material_id)
-            ->with('success', 'Revision draft siap diedit. Versi published tetap tersedia untuk siswa.');
+            ->with('success', 'Versi baru siap diedit. Versi yang sudah terbit tetap tersedia untuk siswa.');
     }
 
     public function updateDesign(UpdateSlidebookDesignRequest $request, Slidebook $slidebook): RedirectResponse
