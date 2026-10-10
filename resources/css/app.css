@@ -25,6 +25,52 @@
     }
 }
 
+@layer components {
+    .ui-label {
+        @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300;
+    }
+
+    .ui-field {
+        @apply w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white;
+    }
+
+    .ui-field::placeholder {
+        @apply text-slate-600;
+    }
+
+    .ui-field:focus {
+        @apply border-indigo-500 ring-2 ring-indigo-500/30;
+    }
+
+    .ui-field:disabled {
+        @apply border-slate-800 bg-slate-900 text-slate-500;
+    }
+
+    .ui-help {
+        @apply mt-1.5 text-xs leading-relaxed text-slate-500;
+    }
+
+    .ui-error {
+        @apply mt-1.5 text-xs font-medium text-rose-300;
+    }
+
+    .ui-section-title {
+        @apply text-base font-bold text-white;
+    }
+
+    .ui-section-description {
+        @apply mt-1 text-xs leading-relaxed text-slate-400;
+    }
+
+    .ui-text-link {
+        @apply font-semibold text-indigo-300 transition-colors;
+    }
+
+    .ui-text-link:hover {
+        @apply text-indigo-200;
+    }
+}
+
 .a11y-skip-link {
     position: fixed;
     z-index: 9999;
