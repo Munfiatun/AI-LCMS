@@ -1,58 +1,186 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AI-LCMS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+AI-LCMS adalah Learning Content Management System berbasis Laravel untuk pengelolaan kursus, materi, Slidebook berbantuan AI, bank soal, kuis, progres belajar, dan analitik pembelajaran. Sistem memiliki tiga role utama: **Admin**, **Instructor/Guru**, dan **Student/Siswa**.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Manajemen kategori, kursus, section, materi, enrollment, dan progres belajar.
+- Upload serta ekstraksi dokumen pembelajaran.
+- AI Slidebook dengan sistem tema, layout, authoring, dan review guru.
+- Bank soal dan ekstraksi soal berbantuan AI dengan provenance jawaban.
+- AI Quiz dari Slidebook dengan quality gate sebelum publikasi.
+- Source evidence untuk membantu guru memverifikasi soal AI terhadap slide sumber.
+- Randomisasi soal/pilihan, attempt, timer, penilaian, dan retry guidance.
+- Dashboard analitik Instructor serta learning dashboard Student.
+- Provider AI: `mock`, `OpenAI`, `Groq`, dan `Gemini`.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.4.1+ untuk release terkunci saat ini (`composer.lock` menggunakan Symfony 8.1)
+- Laravel 13
+- SQLite untuk setup lokal default; database lain dapat digunakan melalui konfigurasi Laravel
+- Tailwind CSS 4
+- Vite 8
+- Alpine.js pada layer UI
+- PHPUnit 12
 
-## Learning Laravel
+`composer.json` masih mengizinkan PHP `^8.3`, tetapi dependency yang terkunci pada release saat ini membutuhkan PHP minimal 8.4.1. Gunakan PHP 8.4+ agar hasil lokal, CI, dan deployment konsisten.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Untuk frontend build, Node.js 22 direkomendasikan agar konsisten dengan quality gate repository.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Setup Lokal
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Clone repository lalu jalankan:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/Munfiatun/LMS-WEB.git
+cd LMS-WEB
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Setup default menggunakan SQLite. Pastikan file database tersedia lalu jalankan migration:
 
-## Contributing
+```bash
+mkdir -p database
+touch database/database.sqlite
+php artisan migrate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Install dependency frontend dan build asset:
 
-## Code of Conduct
+```bash
+npm ci
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Jalankan aplikasi:
 
-## Security Vulnerabilities
+```bash
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Aplikasi lokal tersedia secara default di `http://127.0.0.1:8000`.
 
-## License
+Alternatif setup satu perintah tersedia melalui:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer run setup
+```
+
+## Konfigurasi AI
+
+Secara default:
+
+```env
+AI_PROVIDER=mock
+```
+
+Provider `mock` digunakan untuk alur lokal/testing yang deterministik dan bebas biaya. **AI Quiz membutuhkan provider nyata**: `openai`, `groq`, atau `gemini`.
+
+Contoh Groq:
+
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-20b
+GROQ_TIMEOUT=60
+```
+
+Contoh OpenAI:
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Contoh Gemini:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-1.5-flash
+```
+
+Setelah mengubah `.env`, bersihkan cache konfigurasi:
+
+```bash
+php artisan optimize:clear
+```
+
+Jangan commit API key atau isi `.env`. File `.env` sudah diabaikan oleh Git.
+
+## Demo Lokal
+
+Demo user hanya dibuat pada environment `local` atau `testing` ketika `DEMO_USER_PASSWORD` diisi.
+
+```env
+DEMO_USER_PASSWORD=your-local-demo-password
+```
+
+Kemudian:
+
+```bash
+php artisan db:seed
+```
+
+Akun demo yang tersedia:
+
+| Role | Email |
+| --- | --- |
+| Admin | `admin@example.com` |
+| Instructor | `instructor@example.com` |
+| Student | `student@example.com` |
+
+Semua akun menggunakan nilai `DEMO_USER_PASSWORD` yang Anda tentukan sendiri. Jangan aktifkan demo credential di production.
+
+`DatabaseSeeder` hanya menjalankan data demo pada environment `local`/`testing`. Seeder demo eksplisit seperti `CourseSeeder`, `DemoCourseSeeder`, `LmsDemoSeeder`, dan `WebLearningDummySeeder` juga memiliki guard environment sehingga tidak menulis data demo ketika aplikasi berjalan sebagai `production`.
+
+## Quality Gate
+
+Sebelum merge atau deployment, jalankan gate lengkap:
+
+```bash
+composer run release:check
+```
+
+Perintah tersebut membersihkan cache konfigurasi untuk test, menjalankan seluruh PHPUnit suite, lalu menjalankan production frontend build. Alternatif manual:
+
+```bash
+php artisan test
+npm run build
+```
+
+Test suite menggunakan SQLite in-memory melalui `phpunit.xml`, sehingga tidak menggunakan database development lokal.
+
+Repository juga memiliki GitHub Actions quality gate untuk memvalidasi metadata Composer, menjalankan backend test, dan menjalankan frontend production build pada Pull Request ke `main`.
+
+## Deployment
+
+Panduan deployment dan checklist production tersedia di [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+Ringkasnya, production wajib menggunakan:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+```
+
+Gunakan secret yang berbeda dari environment lokal, jalankan migration dengan `--force`, build asset production, lalu cache konfigurasi Laravel setelah semua environment variable benar.
+
+## Arsitektur AI Assessment
+
+AI diposisikan sebagai **assistant**, bukan final authority. Untuk quiz yang dibuat dari Slidebook:
+
+1. AI membuat draft berdasarkan materi Slidebook.
+2. Sistem memvalidasi struktur output dan menyimpan bukti slide sumber.
+3. Soal hasil inferensi diberi status review.
+4. Guru memeriksa pertanyaan, opsi, kunci, pembahasan, dan referensi materi.
+5. Quiz baru dapat diterbitkan setelah quality gate terpenuhi.
+6. Siswa tidak melihat solusi lengkap selama masih memiliki kesempatan retry; sistem mengarahkan siswa kembali ke materi sumber.
+
+## Branch Development
+
+Gunakan branch fitur dan Pull Request ke `main`. Branch `main` ditujukan sebagai baseline yang sudah melewati regression test dan production build.

@@ -12,6 +12,11 @@ class CourseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('CourseSeeder demo content only runs in local/testing environments.');
+            return;
+        }
+
         $instructor = User::where('email', 'instructor@example.com')->first();
         if (! $instructor) {
             return;

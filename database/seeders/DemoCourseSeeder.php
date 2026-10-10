@@ -12,6 +12,11 @@ class DemoCourseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('DemoCourseSeeder only runs in local/testing environments.');
+            return;
+        }
+
         $instructor = User::whereHas('role', fn ($q) => $q->where('name', 'instructor'))->first();
         if (! $instructor) {
             return;
@@ -78,7 +83,7 @@ class DemoCourseSeeder extends Seeder
             ],
         ];
 
-        foreach ($demoCourses as $data) {
+        foreach ($demoCourses as $index => $data) {
             $course = Course::updateOrCreate(
                 ['slug' => Str::slug($data['title'])],
                 [
@@ -87,18 +92,14 @@ class DemoCourseSeeder extends Seeder
                     'title' => $data['title'],
                     'description' => $data['description'],
                     'status' => Course::STATUS_PUBLISHED,
-                    'published_at' => now()->subDays(rand(1, 10)),
+                    'published_at' => now()->subDays(($index % 10) + 1),
                 ]
             );
 
-            // Generate enrollment code if null
             if (! $course->enrollment_code) {
-                $course->update([
-                    'enrollment_code' => $course->generateEnrollmentCode(),
-                ]);
+                $course->generateEnrollmentCode();
             }
 
-            // Create some dummy sections and materials if none exist
             if ($course->sections()->count() === 0) {
                 $section = $course->sections()->create([
                     'title' => 'Modul 1: Pendahuluan',

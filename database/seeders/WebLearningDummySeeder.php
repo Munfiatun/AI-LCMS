@@ -16,6 +16,11 @@ class WebLearningDummySeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('WebLearningDummySeeder only runs in local/testing environments.');
+            return;
+        }
+
         $courses = Course::query()->published()
             ->whereHas('instructor.role', fn (Builder $query): Builder => $query->where('name', 'instructor'));
         $course = (clone $courses)->where('slug', 'pemograman-web')->first()

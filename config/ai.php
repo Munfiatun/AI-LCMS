@@ -6,7 +6,7 @@ return [
     | Default AI Provider
     |--------------------------------------------------------------------------
     |
-    | Supported: "mock", "openai", "gemini"
+    | Supported: "mock", "openai", "groq", "gemini"
     | Default is "mock" for cost-free, deterministic offline testing and local demo.
     |
     */
