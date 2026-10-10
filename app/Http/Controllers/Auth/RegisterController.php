@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -21,21 +22,29 @@ class RegisterController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'role' => ['required', Rule::in([Role::ROLE_STUDENT, Role::ROLE_INSTRUCTOR])],
         ]);
 
-        $roleModel = Role::where('name', Role::ROLE_STUDENT)->firstOrFail();
+        $isInstructorRegistration = $validated['role'] === Role::ROLE_INSTRUCTOR;
+        $roleModel = Role::where('name', $validated['role'])->firstOrFail();
 
         $user = User::create([
             'role_id' => $roleModel->id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_active' => true,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'is_active' => ! $isInstructorRegistration,
         ]);
+
+        if ($isInstructorRegistration) {
+            return redirect()
+                ->route('login')
+                ->with('success', 'Pendaftaran akun guru berhasil. Akun Anda menunggu persetujuan Admin sebelum dapat digunakan.');
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
