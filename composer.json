@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "munfiatun/ai-lcms",
+    "name": "laravel/laravel",
     "type": "project",
     "description": "AI-assisted Learning Content Management System built with Laravel.",
     "keywords": ["laravel", "lms", "lcms", "education", "ai"],
