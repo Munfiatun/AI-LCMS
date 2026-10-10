@@ -14,6 +14,7 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoCourseSeeder;
 use Database\Seeders\LmsDemoSeeder;
 use Database\Seeders\WebLearningDummySeeder;
+use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,7 +28,7 @@ class Phase4ReleaseReadinessTest extends TestCase
         $this->app['env'] = 'production';
 
         try {
-            $this->seed(DatabaseSeeder::class);
+            $this->runSeederDirectly(DatabaseSeeder::class);
         } finally {
             $this->app['env'] = 'testing';
         }
@@ -58,10 +59,10 @@ class Phase4ReleaseReadinessTest extends TestCase
         $this->app['env'] = 'production';
 
         try {
-            $this->seed(CourseSeeder::class);
-            $this->seed(DemoCourseSeeder::class);
-            $this->seed(WebLearningDummySeeder::class);
-            $this->seed(LmsDemoSeeder::class);
+            $this->runSeederDirectly(CourseSeeder::class);
+            $this->runSeederDirectly(DemoCourseSeeder::class);
+            $this->runSeederDirectly(WebLearningDummySeeder::class);
+            $this->runSeederDirectly(LmsDemoSeeder::class);
         } finally {
             $this->app['env'] = 'testing';
         }
@@ -72,5 +73,22 @@ class Phase4ReleaseReadinessTest extends TestCase
         $this->assertDatabaseCount('questions', 0);
         $this->assertDatabaseCount('slidebooks', 0);
         $this->assertSame('Pemograman Web', Course::sole()->title);
+    }
+
+    /**
+     * Run a seeder through its class instead of the db:seed console command.
+     *
+     * The console command intentionally asks for confirmation in production.
+     * These tests are verifying the seeders' own production guards, so invoking
+     * the class directly avoids testing Symfony's interactive confirmation.
+     *
+     * @param  class-string<Seeder>  $seederClass
+     */
+    private function runSeederDirectly(string $seederClass): void
+    {
+        /** @var Seeder $seeder */
+        $seeder = $this->app->make($seederClass);
+        $seeder->setContainer($this->app);
+        $seeder->run();
     }
 }
