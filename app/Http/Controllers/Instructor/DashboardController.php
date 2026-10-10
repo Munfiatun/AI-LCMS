@@ -24,7 +24,7 @@ class DashboardController extends Controller
             ])
             ->withCount([
                 'enrollments as active_students_count' => fn ($query) => $query->whereIn('status', ['active', 'completed']),
-                'quizAttempts as submitted_quiz_attempts_count' => fn ($query) => $query->where('status', 'submitted'),
+                'quizAttempts as submitted_quiz_attempts_count' => fn ($query) => $query->where('quiz_attempts.status', 'submitted'),
             ])
             ->latest()
             ->get();
