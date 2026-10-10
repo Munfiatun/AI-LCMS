@@ -26,11 +26,15 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in([Role::ROLE_STUDENT, Role::ROLE_INSTRUCTOR])],
+            'account_type' => ['nullable', Rule::in([Role::ROLE_STUDENT, Role::ROLE_INSTRUCTOR])],
         ]);
 
-        $isInstructorRegistration = $validated['role'] === Role::ROLE_INSTRUCTOR;
-        $roleModel = Role::where('name', $validated['role'])->firstOrFail();
+        // Never trust a public `role` or `role_id` request field. The only public
+        // choice is the constrained account_type selector; omitted values retain
+        // the legacy-safe default of creating an active student account.
+        $accountType = $validated['account_type'] ?? Role::ROLE_STUDENT;
+        $isInstructorRegistration = $accountType === Role::ROLE_INSTRUCTOR;
+        $roleModel = Role::where('name', $accountType)->firstOrFail();
 
         $user = User::create([
             'role_id' => $roleModel->id,
