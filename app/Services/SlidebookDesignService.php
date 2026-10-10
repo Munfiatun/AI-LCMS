@@ -13,13 +13,28 @@ class SlidebookDesignService
     {
         $settings = $slidebook->design_settings ?? ['preset' => 'indigo-dark'];
         $preset = $settings['preset'] ?? 'indigo-dark';
+        $audience = $this->normalizeAudience($settings['audience'] ?? 'sma-smk');
 
         $tokens = $this->getPresetTokens($preset);
 
         return [
             'css_variables' => $this->buildCssVariables($tokens),
             'font_class' => $tokens['font_class'],
+            'audience' => $audience,
+            'audience_class' => 'audience-'.str_replace('-', '_', $audience),
+            'initial_visible_blocks' => match ($audience) {
+                'smp' => 3,
+                'sma-smk' => 4,
+                default => 5,
+            },
         ];
+    }
+
+    private function normalizeAudience(string $audience): string
+    {
+        return in_array($audience, ['general', 'smp', 'sma-smk'], true)
+            ? $audience
+            : 'sma-smk';
     }
 
     /**
