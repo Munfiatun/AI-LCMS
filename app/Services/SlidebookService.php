@@ -13,21 +13,34 @@ use Illuminate\Validation\ValidationException;
 
 class SlidebookService
 {
-    public function __construct(private MaterialService $materialService) {}
+    private SlidebookQualityService $qualityService;
+
+    public function __construct(
+        private MaterialService $materialService,
+        ?SlidebookQualityService $qualityService = null,
+    ) {
+        $this->qualityService = $qualityService ?? new SlidebookQualityService;
+    }
+
+    /** @return array<string, mixed> */
+    public function qualityReport(Slidebook $slidebook): array
+    {
+        return $this->qualityService->evaluate($slidebook);
+    }
 
     /** @return list<string> */
     public function reviewErrors(Slidebook $slidebook): array
     {
         $material = $slidebook->material;
         if (! $material || ! in_array($slidebook->status, ['draft', 'review'], true)) {
-            return ['Hanya revision draft/review yang dapat disetujui.'];
+            return ['Hanya versi draft/review yang dapat disetujui.'];
         }
         if ($slidebook->material->slidebooks()->where('status', 'published')->where('version', '>=', $slidebook->version)->exists()) {
-            return ['Revision ini lebih lama daripada versi published. Buat revision dari versi terbaru.'];
+            return ['Versi ini lebih lama daripada versi yang sudah terbit. Buat versi baru dari Slidebook terbaru.'];
         }
         if (AIProcessingLog::where('source_type', LearningMaterial::class)->where('source_id', $material->id)
             ->where('process_type', AIProcessingLog::PROCESS_SLIDEBOOK_GENERATION)->whereIn('status', ['pending', 'processing'])->exists()) {
-            return ['Generation masih berjalan. Tunggu hingga proses selesai.'];
+            return ['Pembuatan Slidebook masih berjalan. Tunggu hingga proses selesai.'];
         }
         if ($errors = $this->materialService->publicationErrors($material)) {
             return $errors;
@@ -36,6 +49,14 @@ class SlidebookService
         if (trim($slidebook->title) === '' || $slides->isEmpty() || $slides->contains(fn (Slide $slide): bool => $slide->status !== 'active' || trim($slide->title) === '' || trim(strip_tags($slide->content)) === ''
         )) {
             return ['Slidebook harus memiliki judul dan minimal satu slide aktif dengan konten valid.'];
+        }
+
+        $qualityReport = $this->qualityReport($slidebook);
+        if ($qualityReport['blocking_messages'] !== []) {
+            return collect($qualityReport['blocking_messages'])
+                ->map(fn (string $message): string => 'Quality Check: '.$message)
+                ->values()
+                ->all();
         }
 
         return [];
@@ -83,7 +104,7 @@ class SlidebookService
             $material = LearningMaterial::whereKey($published->material_id)->lockForUpdate()->firstOrFail();
             $published->refresh();
             if (! $published->isPublished()) {
-                throw ValidationException::withMessages(['slidebook' => 'Buat revision dari Slidebook published.']);
+                throw ValidationException::withMessages(['slidebook' => 'Buat versi baru dari Slidebook yang sudah terbit.']);
             }
             $existing = $material->slidebooks()->whereIn('status', ['draft', 'review'])->where('version', '>', $published->version)->latest('version')->first();
             if ($existing) {
@@ -132,7 +153,7 @@ class SlidebookService
             $expectedIds = $locked->slides()->pluck('id')->sort()->values()->all();
             $actualIds = collect($slideIds)->map(fn ($id): int => (int) $id)->sort()->values()->all();
             if ($expectedIds !== $actualIds) {
-                throw ValidationException::withMessages(['slide_ids' => 'Urutan harus berisi semua slide pada revision ini, tanpa duplikat.']);
+                throw ValidationException::withMessages(['slide_ids' => 'Urutan harus berisi semua slide pada versi ini, tanpa duplikat.']);
             }
             foreach ($slideIds as $index => $slideId) {
                 $locked->slides()->whereKey($slideId)->update(['order' => $index + 1]);
@@ -146,7 +167,7 @@ class SlidebookService
             LearningMaterial::whereKey($slidebook->material_id)->lockForUpdate()->firstOrFail();
             $slidebook->refresh();
             if (! in_array($slidebook->status, ['draft', 'review'], true)) {
-                throw ValidationException::withMessages(['slidebook' => 'Versi published/archived tidak dapat diubah. Buat revision terlebih dahulu.']);
+                throw ValidationException::withMessages(['slidebook' => 'Versi yang sudah terbit/diarsipkan tidak dapat diubah. Buat versi baru terlebih dahulu.']);
             }
             $callback($slidebook);
             if ($invalidateApproval) {
