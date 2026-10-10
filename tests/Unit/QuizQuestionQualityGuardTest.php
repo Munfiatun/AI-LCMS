@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\AI\QuizQuestionQualityGuard;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class QuizQuestionQualityGuardTest extends TestCase
 {
