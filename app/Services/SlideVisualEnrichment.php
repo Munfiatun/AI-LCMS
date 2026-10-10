@@ -30,7 +30,7 @@ class SlideVisualEnrichment
             }
 
             // Supports: "- Aktif: 72%", "1. Lulus = 85%", "Retensi — 64%".
-            if (! preg_match('/^(?:[-*]\s*|\d+[.)]\s*)?(.{2,48}?)\s*(?:[:=]|—|–|\s-\s)\s*(100|\d{1,2})(?:[.,](\d+))?\s*%\s*$/u', $line, $matches)) {
+            if (! preg_match('/^(?:[-*]\s*|\d+[.)]\s*)?(.{1,48}?)\s*(?:[:=]|—|–|\s-\s)\s*(100|\d{1,2})(?:[.,](\d+))?\s*%\s*$/u', $line, $matches)) {
                 continue;
             }
 
