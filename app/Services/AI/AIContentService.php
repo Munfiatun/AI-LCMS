@@ -5,6 +5,7 @@ namespace App\Services\AI;
 use App\Models\AIProcessingLog;
 use App\Models\AIProcessingResult;
 use App\Services\AI\Contracts\AIProviderInterface;
+use App\Services\AI\Exceptions\AIProviderException;
 use App\Services\AI\Providers\GeminiProvider;
 use App\Services\AI\Providers\GroqProvider;
 use App\Services\AI\Providers\MockAIProvider;
@@ -35,7 +36,8 @@ class AIContentService
     }
 
     /**
-     * Process content with AI, enforcing idempotency tracking, audit logging, and source fidelity.
+     * Process content with AI, enforcing idempotency tracking, audit logging,
+     * bounded transient retry, and source fidelity.
      *
      * @param  array<string, mixed>  $schemaDefinition
      * @return array{
@@ -58,7 +60,6 @@ class AIContentService
         $promptVersion = (string) config('ai.prompt_version', 'v1.0');
         $inputHash = hash('sha256', $promptVersion.':'.$userContent);
 
-        // Check if an existing completed log with same hash exists (idempotency audit)
         $existingLog = AIProcessingLog::where('input_hash', $inputHash)
             ->where('prompt_version', $promptVersion)
             ->where('status', AIProcessingLog::STATUS_COMPLETED)
@@ -76,7 +77,9 @@ class AIContentService
             ];
         }
 
-        // Create processing log
+        $maxAttempts = max(1, min(3, (int) config('ai.reliability.max_attempts', 2)));
+        $backoffMs = max(0, min(2000, (int) config('ai.reliability.retry_backoff_ms', 250)));
+
         $log = AIProcessingLog::create([
             'process_type' => $processType,
             'source_type' => get_class($sourceModel),
@@ -90,41 +93,110 @@ class AIContentService
             'processing_started_at' => now(),
         ]);
 
-        try {
-            $generated = $provider->generateStructuredData($systemPrompt, $userContent, $schemaDefinition, $maxOutputTokens);
-
-            $result = AIProcessingResult::create([
-                'log_id' => $log->id,
-                'raw_response' => $generated['raw_response'],
-                'parsed_data' => $generated['parsed_data'],
-                'tokens_used' => $generated['tokens_used'],
-            ]);
-
-            $log->update([
-                'status' => AIProcessingLog::STATUS_COMPLETED,
-                'processing_completed_at' => now(),
-            ]);
-
-            return [
-                'log' => $log,
-                'result' => $result,
-                'parsed_data' => $generated['parsed_data'],
-            ];
-        } catch (Throwable $e) {
-            $log->update([
-                'status' => AIProcessingLog::STATUS_FAILED,
-                'error_code' => (string) $e->getCode(),
-                'error_message' => 'Proses AI gagal. Silakan coba kembali.',
-                'processing_completed_at' => now(),
-            ]);
-
-            Log::error('AI provider processing failed', ['exception_type' => $e::class, 'processing_log_id' => $log->id]);
-
-            if ($e instanceof ConnectionException) {
-                throw new ConnectionException('Proses AI gagal. Silakan coba kembali.');
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            if ($attempt !== $log->attempt_count) {
+                $log->update(['attempt_count' => $attempt]);
             }
 
-            throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+            try {
+                $generated = $provider->generateStructuredData($systemPrompt, $userContent, $schemaDefinition, $maxOutputTokens);
+
+                $result = AIProcessingResult::create([
+                    'log_id' => $log->id,
+                    'raw_response' => $generated['raw_response'],
+                    'parsed_data' => $generated['parsed_data'],
+                    'tokens_used' => $generated['tokens_used'],
+                ]);
+
+                $log->update([
+                    'status' => AIProcessingLog::STATUS_COMPLETED,
+                    'processing_completed_at' => now(),
+                ]);
+
+                return [
+                    'log' => $log->fresh(),
+                    'result' => $result,
+                    'parsed_data' => $generated['parsed_data'],
+                ];
+            } catch (Throwable $exception) {
+                $retryable = $this->isRetryable($exception);
+
+                if ($retryable && $attempt < $maxAttempts) {
+                    Log::warning('AI provider transient failure; retrying', [
+                        'processing_log_id' => $log->id,
+                        'provider' => $provider->getProviderName(),
+                        'attempt' => $attempt,
+                        'max_attempts' => $maxAttempts,
+                        'exception_type' => $exception::class,
+                    ]);
+
+                    $this->backoff($backoffMs, $attempt);
+
+                    continue;
+                }
+
+                $log->update([
+                    'status' => AIProcessingLog::STATUS_FAILED,
+                    'error_code' => $this->safeErrorCode($exception),
+                    'error_message' => $retryable && $maxAttempts > 1
+                        ? 'Proses AI gagal setelah percobaan ulang. Silakan coba kembali.'
+                        : 'Proses AI gagal. Silakan coba kembali.',
+                    'processing_completed_at' => now(),
+                ]);
+
+                Log::error('AI provider processing failed', [
+                    'exception_type' => $exception::class,
+                    'processing_log_id' => $log->id,
+                    'provider' => $provider->getProviderName(),
+                    'attempt_count' => $attempt,
+                    'retryable' => $retryable,
+                ]);
+
+                if ($exception instanceof ConnectionException) {
+                    throw new ConnectionException('Proses AI gagal. Silakan coba kembali.');
+                }
+
+                throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+            }
         }
+
+        // Defensive fallback; every path in the loop either returns or throws.
+        throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+    }
+
+    private function isRetryable(Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        return $exception instanceof AIProviderException && $exception->isRetryable();
+    }
+
+    private function safeErrorCode(Throwable $exception): string
+    {
+        if ($exception instanceof ConnectionException) {
+            return 'connection_error';
+        }
+
+        if ($exception instanceof AIProviderException) {
+            if ($exception->httpStatus() !== null) {
+                return 'provider_http_'.$exception->httpStatus();
+            }
+
+            return $exception->isRetryable() ? 'provider_response_retry_exhausted' : 'provider_request_error';
+        }
+
+        return 'processing_error';
+    }
+
+    private function backoff(int $baseMilliseconds, int $attempt): void
+    {
+        if ($baseMilliseconds <= 0) {
+            return;
+        }
+
+        $milliseconds = min(2000, $baseMilliseconds * $attempt);
+        usleep($milliseconds * 1000);
     }
 }
