@@ -69,8 +69,8 @@
         </form>
 
         <div class="text-center text-xs text-slate-400">
-            Belum memiliki akun siswa?
-            <a href="{{ route('register') }}" class="font-semibold text-indigo-400 hover:text-indigo-300">Daftar sekarang</a>
+            Belum memiliki akun?
+            <a href="{{ route('register') }}" class="font-semibold text-indigo-400 hover:text-indigo-300">Daftar sebagai siswa atau guru</a>
         </div>
     </div>
 </div>

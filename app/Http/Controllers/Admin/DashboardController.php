@@ -20,10 +20,19 @@ class DashboardController extends Controller
         $instructorRole = Role::where('name', Role::ROLE_INSTRUCTOR)->first();
         $studentRole = Role::where('name', Role::ROLE_STUDENT)->first();
 
+        $pendingInstructors = $instructorRole
+            ? User::with('role')
+                ->where('role_id', $instructorRole->id)
+                ->where('is_active', false)
+                ->oldest()
+                ->get()
+            : collect();
+
         $stats = [
             'total_users' => User::count(),
             'total_students' => $studentRole ? User::where('role_id', $studentRole->id)->count() : 0,
             'total_instructors' => $instructorRole ? User::where('role_id', $instructorRole->id)->count() : 0,
+            'pending_instructors' => $pendingInstructors->count(),
             'total_admins' => $adminRole ? User::where('role_id', $adminRole->id)->count() : 0,
             'total_courses' => Course::count(),
             'total_materials' => LearningMaterial::count(),
@@ -33,6 +42,6 @@ class DashboardController extends Controller
 
         $recentUsers = User::with('role')->latest()->take(5)->get();
 
-        return view('admin.dashboard', compact('stats', 'recentUsers'));
+        return view('admin.dashboard', compact('stats', 'recentUsers', 'pendingInstructors'));
     }
 }
