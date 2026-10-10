@@ -25,6 +25,7 @@ class UpdateSlidebookDesignRequest extends FormRequest
     {
         return [
             'preset' => ['required', 'string', 'in:indigo-dark,modern-tech,academic-blue,creative-education,fresh-learning,minimalist'],
+            'audience' => ['nullable', 'string', 'in:general,smp,sma-smk'],
         ];
     }
 }

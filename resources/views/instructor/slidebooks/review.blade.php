@@ -91,15 +91,21 @@
     {{-- Design Configuration Panel --}}
     @if(in_array($slidebook->status, ['draft', 'review'], true))
         <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
-            <h3 class="text-sm font-bold text-white mb-4">Pengaturan Desain Visual</h3>
-            <form action="{{ route('instructor.slidebooks.design.update', $slidebook) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-white">Pengaturan Desain & Target Siswa</h3>
+                    <p class="text-xs text-slate-400 mt-1">Target siswa mengatur kepadatan isi dan skala visual tanpa menghapus teks sumber.</p>
+                </div>
+            </div>
+            <form action="{{ route('instructor.slidebooks.design.update', $slidebook) }}" method="POST" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                 @csrf
                 @method('PUT')
                 @php
                     $design = $slidebook->design_settings ?? ['preset' => 'indigo-dark'];
                     $preset = $design['preset'] ?? 'indigo-dark';
+                    $audience = $design['audience'] ?? 'sma-smk';
                 @endphp
-                <div class="col-span-1 md:col-span-3">
+                <div class="md:col-span-3">
                     <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Preset Tema Desain</label>
                     <select name="preset" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
                         <option value="indigo-dark" {{ $preset === 'indigo-dark' ? 'selected' : '' }}>Indigo Dark (Default)</option>
@@ -108,6 +114,14 @@
                         <option value="creative-education" {{ $preset === 'creative-education' ? 'selected' : '' }}>Creative Education</option>
                         <option value="fresh-learning" {{ $preset === 'fresh-learning' ? 'selected' : '' }}>Fresh Learning</option>
                         <option value="minimalist" {{ $preset === 'minimalist' ? 'selected' : '' }}>Minimalist</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Target Siswa</label>
+                    <select name="audience" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="smp" {{ $audience === 'smp' ? 'selected' : '' }}>SMP — lebih visual & ringkas</option>
+                        <option value="sma-smk" {{ $audience === 'sma-smk' ? 'selected' : '' }}>SMA/SMK — visual + detail</option>
+                        <option value="general" {{ $audience === 'general' ? 'selected' : '' }}>Umum — kepadatan standar</option>
                     </select>
                 </div>
                 <div>

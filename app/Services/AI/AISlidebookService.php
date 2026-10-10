@@ -86,6 +86,36 @@ class AISlidebookService
         $sourceContent = implode("\n\n", $extractedTexts);
         $layoutKeys = array_keys((new SlideLayoutRegistry)->getAvailableLayouts());
 
+        // Preserve the teacher's latest design/audience preference when regenerating.
+        $latestDesign = $material->slidebooks()->latest('version')->first()?->design_settings ?? [];
+        $audience = in_array($latestDesign['audience'] ?? null, ['general', 'smp', 'sma-smk'], true)
+            ? $latestDesign['audience']
+            : 'sma-smk';
+        $designSettings = array_merge(['preset' => 'indigo-dark', 'audience' => $audience], $latestDesign);
+
+        $audienceInstruction = match ($audience) {
+            'smp' => <<<'AUDIENCE'
+Target audiens: siswa SMP.
+- Prioritaskan visual explanation dan satu gagasan utama per slide.
+- Gunakan kalimat singkat, konkret, dan mudah dipahami tanpa mengubah makna sumber.
+- Untuk daftar, usahakan 3-4 poin inti per slide; pecah topik jika sumber terlalu padat.
+- Gunakan process, diagram, comparison, atau example hanya jika benar-benar didukung materi.
+- Jangan membuat contoh, analogi, angka, atau fakta baru yang tidak bersumber dari materi.
+AUDIENCE,
+            'general' => <<<'AUDIENCE'
+Target audiens: umum.
+- Jaga kepadatan informasi moderat dan struktur slide mudah dipindai.
+- Pilih visual explanation saat struktur sumber memang mendukungnya.
+AUDIENCE,
+            default => <<<'AUDIENCE'
+Target audiens: siswa SMA/SMK.
+- Gunakan gaya visual modern dan informatif tanpa terasa kekanak-kanakan.
+- Untuk daftar, usahakan maksimal 4-5 poin inti per slide dan pertahankan istilah teknis penting.
+- Prioritaskan diagram sistem, process, comparison, timeline, dan data visualization ketika didukung sumber.
+- Jangan membuat contoh, angka, atau fakta baru yang tidak bersumber dari materi.
+AUDIENCE,
+        };
+
         $systemPrompt = <<<'PROMPT'
 Anda adalah asisten kurikulum dan presentation designer profesional. Tugas Anda adalah menganalisis dokumen ajar dan menyusun draft "Slidebook" (rangkaian slide presentasi interaktif) dalam Bahasa Indonesia.
 
@@ -120,6 +150,7 @@ Prinsip Wajib (Source Fidelity):
    - Slide 3..N: Topik inti dengan layout sesuai struktur sumber.
    - Slide Terakhir: Rangkuman & Intisari, layout `summary`.
 PROMPT;
+        $systemPrompt .= "\n\n".$audienceInstruction;
 
         $schemaDefinition = [
             'type' => 'object',
@@ -173,7 +204,7 @@ PROMPT;
             throw ValidationException::withMessages(['slidebook' => 'Output Slidebook AI tidak valid. Silakan coba kembali.']);
         }
 
-        return DB::transaction(function () use ($material, $creator, $parsed): Slidebook {
+        return DB::transaction(function () use ($material, $creator, $parsed, $designSettings): Slidebook {
             LearningMaterial::whereKey($material->id)->lockForUpdate()->firstOrFail();
 
             // Archive any existing draft/review revisions to prevent orphaned duplicates.
@@ -194,6 +225,7 @@ PROMPT;
                 'description' => $parsed['description'] ?? $material->description,
                 'status' => Slidebook::STATUS_REVIEW,
                 'version' => $nextVersion,
+                'design_settings' => $designSettings,
                 'created_by' => $creator->id,
             ]);
 
