@@ -33,7 +33,7 @@ class CourseWorkflowReadinessService
         }
         if (! array_key_exists('submitted_quiz_attempts_count', $course->getAttributes())) {
             $course->loadCount([
-                'quizAttempts as submitted_quiz_attempts_count' => fn ($query) => $query->where('status', 'submitted'),
+                'quizAttempts as submitted_quiz_attempts_count' => fn ($query) => $query->where('quiz_attempts.status', 'submitted'),
             ]);
         }
 
