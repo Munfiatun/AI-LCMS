@@ -1,18 +1,23 @@
 <script>
-function studentSlidePresentation(total) {
+function studentSlidePresentation(total, initialVisibleBlocks = 5) {
+    const safeInitialVisibleBlocks = Number.isInteger(initialVisibleBlocks)
+        ? Math.min(Math.max(initialVisibleBlocks, 2), 6)
+        : 5;
+
     return {
         total,
         currentIndex: 0,
         enteringSlide: 0,
-        visibleBlocks: 5,
+        initialVisibleBlocks: safeInitialVisibleBlocks,
+        visibleBlocks: safeInitialVisibleBlocks,
         announcement: '',
         fullscreenMessage: '',
 
         goToSlide(index) {
             if (!Number.isInteger(index) || index < 0 || index >= this.total || index === this.currentIndex) return;
 
-            // Reset blocks visibility
-            this.visibleBlocks = 5;
+            // Reset content density for the selected audience on each slide.
+            this.visibleBlocks = this.initialVisibleBlocks;
 
             // Set entering state for animation
             this.enteringSlide = index;
