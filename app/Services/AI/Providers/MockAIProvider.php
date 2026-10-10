@@ -141,6 +141,7 @@ class MockAIProvider implements AIProviderInterface
             'subtitle' => 'Ringkasan Eksekutif & Struktur Pembelajaran',
             'content' => $overview,
             'summary' => 'Slide pengantar materi utama kursus.',
+            'layout' => 'cover',
             'source_reference' => ['paragraph' => 1],
             'needs_review' => false,
         ];
@@ -157,6 +158,7 @@ class MockAIProvider implements AIProviderInterface
             'subtitle' => 'Kompetensi yang Diharapkan',
             'content' => implode("\n", array_map(fn ($obj, $i) => ($i + 1).'. '.$obj, $objectives, array_keys($objectives))),
             'summary' => 'Daftar sasaran capaian pembelajaran siswa.',
+            'layout' => 'key-points',
             'source_reference' => ['inferred' => true],
             'needs_review' => false,
         ];
@@ -174,6 +176,7 @@ class MockAIProvider implements AIProviderInterface
         foreach ($contentParagraphs as $idx => $para) {
             $subTitle = 'Konsep Inti Bagian '.($idx + 1);
             $paraSummary = mb_substr($para, 0, 120).(strlen($para) > 120 ? '...' : '');
+            $layout = $idx % 2 === 0 ? 'concept' : 'reading';
 
             $slides[] = [
                 'order' => $order++,
@@ -181,6 +184,7 @@ class MockAIProvider implements AIProviderInterface
                 'subtitle' => 'Pembahasan Detail',
                 'content' => $para,
                 'summary' => $paraSummary,
+                'layout' => $layout,
                 'source_reference' => ['paragraph' => $idx + 3],
                 'needs_review' => false,
             ];
@@ -193,6 +197,7 @@ class MockAIProvider implements AIProviderInterface
             'subtitle' => 'Kesimpulan Akhir Materi',
             'content' => 'Seluruh konsep pokok dalam materi ini telah dibahas secara terstruktur. Siswa diharapkan meninjau kembali poin-poin utama sebelum melanjutkan ke evaluasi asesmen.',
             'summary' => 'Rangkuman intisari dokumen.',
+            'layout' => 'summary',
             'source_reference' => ['type' => 'summary'],
             'needs_review' => false,
         ];
