@@ -3,8 +3,8 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\Contracts\AIProviderInterface;
+use App\Services\AI\Exceptions\AIProviderException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 class OpenAIProvider implements AIProviderInterface
 {
@@ -27,7 +27,7 @@ class OpenAIProvider implements AIProviderInterface
     public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
-            throw new RuntimeException('OpenAI API key is missing. Set OPENAI_API_KEY in .env or switch AI_PROVIDER to mock.');
+            throw AIProviderException::configuration('OpenAI');
         }
 
         $systemPromptWithJson = $systemPrompt."\nIMPORTANT: You must respond with pure, valid JSON strictly adhering to the requested schema. Do not enclose JSON in markdown code fences.";
@@ -46,7 +46,7 @@ class OpenAIProvider implements AIProviderInterface
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("OpenAI API error: HTTP {$response->status()}");
+            throw AIProviderException::fromHttp('OpenAI', $response->status());
         }
 
         $responseData = $response->json();
@@ -55,7 +55,7 @@ class OpenAIProvider implements AIProviderInterface
 
         $parsed = json_decode($content, true);
         if (! is_array($parsed)) {
-            throw new RuntimeException('OpenAI response could not be decoded into a valid JSON array');
+            throw AIProviderException::malformed('OpenAI');
         }
 
         return [
