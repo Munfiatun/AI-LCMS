@@ -31,7 +31,15 @@
     }
 
     .ui-field {
-        @apply w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30;
+        @apply w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white;
+    }
+
+    .ui-field::placeholder {
+        @apply text-slate-600;
+    }
+
+    .ui-field:focus {
+        @apply border-indigo-500 ring-2 ring-indigo-500/30;
     }
 
     .ui-field:disabled {
@@ -55,7 +63,11 @@
     }
 
     .ui-text-link {
-        @apply font-semibold text-indigo-300 transition-colors hover:text-indigo-200;
+        @apply font-semibold text-indigo-300 transition-colors;
+    }
+
+    .ui-text-link:hover {
+        @apply text-indigo-200;
     }
 }
 
