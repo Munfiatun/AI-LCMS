@@ -3,8 +3,8 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\Contracts\AIProviderInterface;
+use App\Services\AI\Exceptions\AIProviderException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 class GeminiProvider implements AIProviderInterface
 {
@@ -27,11 +27,10 @@ class GeminiProvider implements AIProviderInterface
     public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
-            throw new RuntimeException('Gemini API key is missing. Set GEMINI_API_KEY in .env or switch AI_PROVIDER to mock.');
+            throw AIProviderException::configuration('Gemini');
         }
 
         $url = "{$this->baseUrl}/models/{$this->model}:generateContent";
-
         $combinedPrompt = $systemPrompt."\n\n=== SOURCE DOCUMENT CONTENT ===\n".$userContent;
 
         $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($this->timeout)->post($url, [
@@ -49,7 +48,7 @@ class GeminiProvider implements AIProviderInterface
         ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("Gemini API error: HTTP {$response->status()}");
+            throw AIProviderException::fromHttp('Gemini', $response->status());
         }
 
         $responseData = $response->json();
@@ -58,7 +57,7 @@ class GeminiProvider implements AIProviderInterface
 
         $parsed = json_decode($rawText, true);
         if (! is_array($parsed)) {
-            throw new RuntimeException('Gemini response could not be parsed as valid JSON');
+            throw AIProviderException::malformed('Gemini');
         }
 
         return [
