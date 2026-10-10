@@ -8,9 +8,11 @@ use App\Models\Slide;
 use App\Models\Slidebook;
 use App\Models\User;
 use App\Services\Document\DocumentService;
+use App\Services\SlideLayoutRegistry;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -82,26 +84,41 @@ class AISlidebookService
         }
 
         $sourceContent = implode("\n\n", $extractedTexts);
+        $layoutKeys = array_keys((new SlideLayoutRegistry)->getAvailableLayouts());
 
         $systemPrompt = <<<'PROMPT'
-Anda adalah asisten kurikulum pembelajaran profesional. Tugas Anda adalah menganalisis dokumen ajar dan menyusun draft "Slidebook" (rangkaian slide presentasi interaktif) dalam Bahasa Indonesia.
+Anda adalah asisten kurikulum dan presentation designer profesional. Tugas Anda adalah menganalisis dokumen ajar dan menyusun draft "Slidebook" (rangkaian slide presentasi interaktif) dalam Bahasa Indonesia.
 
 Prinsip Wajib (Source Fidelity):
-1. Utamakan kebenaran fakta dari dokumen sumber. Dilarang mengarang informasi yang bertentangan dengan materi.
+1. Utamakan kebenaran fakta dari dokumen sumber. Dilarang mengarang fakta, angka, statistik, kutipan, atau contoh yang tidak didukung materi.
 2. Jika sebuah poin penting disimpulkan secara umum (bukan kutipan langsung), tandai `needs_review: true`.
 3. Setiap slide harus memiliki:
    - title: Judul ringkas, menarik, dan informatif (maks 80 karakter).
    - subtitle: Sub-judul atau fokus bahasan.
    - content: Poin-poin materi dalam format teks bersih atau daftar bernomor.
    - summary: Rangkuman intisari slide (1-2 kalimat).
+   - layout: Komposisi visual yang paling sesuai dengan isi.
    - order: Urutan integer (mulai dari 1).
    - source_reference: Objek yang menerangkan rujukan asal di dokumen (misal: {"paragraph": 1} atau {"topic": "Pengantar"}).
    - needs_review: Boolean (true jika memerlukan verifikasi guru).
-4. Struktur Slidebook:
-   - Slide 1: Cover (Judul materi, ringkasan pengantar)
-   - Slide 2: Tujuan Pembelajaran (Capaian belajar)
-   - Slide 3..N: Topik inti yang terperinci dan runtut
-   - Slide Terakhir: Rangkuman & Intisari
+4. Pilih `layout` hanya dari daftar berikut:
+   cover, section-divider, concept, definition, key-points, process, timeline, comparison, example, case-study, image-focus, quote, code, diagram, checkpoint, summary, closing, reading.
+5. Variasikan layout berdasarkan struktur materi, bukan secara acak:
+   - cover untuk pembuka utama.
+   - key-points untuk beberapa gagasan sejajar atau tujuan pembelajaran.
+   - process/timeline hanya jika sumber benar-benar memuat urutan/tahapan/kronologi.
+   - comparison hanya jika sumber membandingkan dua atau lebih hal.
+   - code untuk potongan kode; diagram untuk hubungan/struktur yang dapat divisualisasikan tanpa menambah fakta.
+   - example/case-study hanya jika sumber menyediakan contoh/kasus.
+   - summary untuk rangkuman akhir.
+   - reading untuk uraian panjang yang tidak cocok dengan komposisi lain.
+6. Hindari monoton: jangan memakai satu layout yang sama untuk semua slide jika struktur isi memungkinkan variasi yang jujur.
+7. Jika dokumen memuat angka persentase, pertahankan label dan nilainya secara eksplisit pada content agar sistem dapat membuat visual data otomatis. Jangan menciptakan angka baru.
+8. Struktur Slidebook:
+   - Slide 1: Cover (Judul materi, ringkasan pengantar), layout `cover`.
+   - Slide 2: Tujuan Pembelajaran, umumnya layout `key-points`.
+   - Slide 3..N: Topik inti dengan layout sesuai struktur sumber.
+   - Slide Terakhir: Rangkuman & Intisari, layout `summary`.
 PROMPT;
 
         $schemaDefinition = [
@@ -120,9 +137,12 @@ PROMPT;
                             'subtitle' => ['type' => 'string'],
                             'content' => ['type' => 'string'],
                             'summary' => ['type' => 'string'],
+                            'layout' => ['type' => 'string', 'enum' => $layoutKeys],
                             'source_reference' => ['type' => 'object'],
                             'needs_review' => ['type' => 'boolean'],
                         ],
+                        // Keep layout optional at schema level for provider/backward compatibility.
+                        // Missing layouts safely fall back to the deterministic presentation heuristics.
                         'required' => ['order', 'title', 'content'],
                     ],
                 ],
@@ -146,6 +166,7 @@ PROMPT;
             'slides' => ['required', 'array', 'min:1'],
             'slides.*.title' => ['required', 'string', 'max:255'],
             'slides.*.content' => ['required', 'string'],
+            'slides.*.layout' => ['sometimes', 'nullable', 'string', Rule::in($layoutKeys)],
         ]);
         if ($validator->fails()) {
             $aiOutput['log']->update(['status' => 'failed', 'error_message' => 'Output Slidebook AI tidak valid.']);
@@ -184,6 +205,7 @@ PROMPT;
                     'subtitle' => $slideItem['subtitle'] ?? null,
                     'content' => $slideItem['content'] ?? '',
                     'summary' => $slideItem['summary'] ?? null,
+                    'layout' => $slideItem['layout'] ?? null,
                     'order' => (int) ($slideItem['order'] ?? ($index + 1)),
                     'source_reference' => $slideItem['source_reference'] ?? null,
                     'needs_review' => (bool) ($slideItem['needs_review'] ?? false),
