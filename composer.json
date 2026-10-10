@@ -51,8 +51,8 @@
         ],
         "release:check": [
             "@php artisan config:clear --ansi",
-            "@php artisan test",
-            "npm run build"
+            "npm run build",
+            "@php artisan test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
