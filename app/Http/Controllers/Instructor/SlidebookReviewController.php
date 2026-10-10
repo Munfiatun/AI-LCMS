@@ -60,8 +60,8 @@ class SlidebookReviewController extends Controller
     /**
      * Preview the slidebook from the student's perspective.
      *
-     * The optional preset query parameter is applied only in memory so the
-     * instructor can compare themes before saving the design settings.
+     * Optional design query parameters are applied only in memory so the
+     * instructor can compare themes/audiences before saving.
      */
     public function preview(Request $request, Slidebook $slidebook): View
     {
@@ -69,13 +69,22 @@ class SlidebookReviewController extends Controller
 
         $validated = $request->validate([
             'preset' => ['nullable', 'string', 'in:indigo-dark,modern-tech,academic-blue,creative-education,fresh-learning,minimalist'],
+            'audience' => ['nullable', 'string', 'in:general,smp,sma-smk'],
             'embedded' => ['nullable', 'boolean'],
         ]);
 
+        $designOverrides = [];
         if (! empty($validated['preset'])) {
+            $designOverrides['preset'] = $validated['preset'];
+        }
+        if (! empty($validated['audience'])) {
+            $designOverrides['audience'] = $validated['audience'];
+        }
+
+        if ($designOverrides !== []) {
             $slidebook->setAttribute('design_settings', array_merge(
                 $slidebook->design_settings ?? [],
-                ['preset' => $validated['preset']]
+                $designOverrides
             ));
         }
 
