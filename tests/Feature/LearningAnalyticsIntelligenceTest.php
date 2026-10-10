@@ -228,6 +228,7 @@ class LearningAnalyticsIntelligenceTest extends TestCase
             'quiz_id' => $quiz->id,
             'student_id' => $student->id,
             'started_at' => $submittedAt->copy()->subMinutes(5),
+            'expires_at' => $submittedAt->copy()->addMinutes(55),
             'submitted_at' => $submittedAt,
             'status' => 'submitted',
             'score' => $percentage >= 70 ? 10 : 0,
