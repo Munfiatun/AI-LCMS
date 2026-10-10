@@ -16,13 +16,15 @@ AI-LCMS adalah Learning Content Management System berbasis Laravel untuk pengelo
 
 ## Stack
 
-- PHP 8.3+
+- PHP 8.4.1+ untuk release terkunci saat ini (`composer.lock` menggunakan Symfony 8.1)
 - Laravel 13
 - SQLite untuk setup lokal default; database lain dapat digunakan melalui konfigurasi Laravel
 - Tailwind CSS 4
 - Vite 8
 - Alpine.js pada layer UI
 - PHPUnit 12
+
+`composer.json` masih mengizinkan PHP `^8.3`, tetapi dependency yang terkunci pada release saat ini membutuhkan PHP minimal 8.4.1. Gunakan PHP 8.4+ agar hasil lokal, CI, dan deployment konsisten.
 
 Untuk frontend build, Node.js 22 direkomendasikan agar konsisten dengan quality gate repository.
 
