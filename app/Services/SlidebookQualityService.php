@@ -281,7 +281,7 @@ class SlidebookQualityService
 
     private function looksLikeCode(string $content): bool
     {
-        return (bool) preg_match('/(<\?php|\bfunction\s+\w+|\bSELECT\s+.+\bFROM\b|<\/?[a-z][^>]*>|\{\s*[^}]+;)/isu', $content);
+        return (bool) preg_match('/(<\?php|\bfunction\s+\w+|\bSELECT\s+.+\bFROM\b|<\/?(?:html|body|div|form|input|script|style|button|table)\b[^>]*>|\{\s*[^}]+;)/isu', $content);
     }
 
     private function sourceText(Slidebook $slidebook): string
