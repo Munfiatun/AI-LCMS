@@ -36,7 +36,6 @@ class SlidebookQualityService
         foreach ($slides as $slide) {
             $issues = [...$issues, ...$this->slideIssues($slide, $audience, $sourceTokens)];
         }
-
         $issues = [...$issues, ...$this->globalIssues($slides, $sourceText)];
 
         $criticalCount = collect($issues)->where('severity', 'critical')->count();
@@ -48,18 +47,9 @@ class SlidebookQualityService
         $sourceCovered = $slides->filter(fn (Slide $slide): bool => $this->hasSourceReference($slide))->count();
         $uniqueLayouts = $slides->map(fn (Slide $slide): string => $this->layout($slide))->unique()->count();
         $needsReview = $slides->where('needs_review', true)->count();
-
         $status = $criticalCount > 0
             ? 'blocked'
             : (($warningCount > 0 || $score < 90) ? 'needs_attention' : 'good');
-
-        $blockingMessages = collect($issues)
-            ->where('severity', 'critical')
-            ->pluck('message')
-            ->unique()
-            ->take(6)
-            ->values()
-            ->all();
 
         return [
             'score' => $score,
@@ -74,7 +64,13 @@ class SlidebookQualityService
                 'unique_layouts' => $uniqueLayouts,
             ],
             'issues' => array_values($issues),
-            'blocking_messages' => $blockingMessages,
+            'blocking_messages' => collect($issues)
+                ->where('severity', 'critical')
+                ->pluck('message')
+                ->unique()
+                ->take(6)
+                ->values()
+                ->all(),
         ];
     }
 
@@ -85,12 +81,11 @@ class SlidebookQualityService
     private function slideIssues(Slide $slide, string $audience, Collection $sourceTokens): array
     {
         $issues = [];
-        $plain = $this->plainText($slide->content ?? '');
+        $plain = $this->plainText((string) $slide->content);
         $title = trim((string) $slide->title);
         $wordCount = str_word_count($plain);
         $pointCount = $this->pointCount((string) $slide->content);
-        $order = (int) $slide->order;
-        $label = 'Slide '.$order;
+        $label = 'Slide '.(int) $slide->order;
 
         if ($title === '') {
             $issues[] = $this->issue('critical', 'empty_title', $label.' belum memiliki judul.', $slide);
@@ -129,12 +124,11 @@ class SlidebookQualityService
         }
 
         if (! $this->hasSourceReference($slide)) {
-            $issues[] = $this->issue('warning', 'missing_source_reference', $label.' belum memiliki rujukan sumber yang dapat diperiksa guru.', $slide);
-        } elseif (! ($slide->source_reference['manual'] ?? false) && $sourceTokens->isNotEmpty()) {
+            $issues[] = $this->issue('warning', 'missing_source_reference', $label.' belum memiliki Sumber Materi yang dapat diperiksa guru.', $slide);
+        } elseif (! $this->isManualReference($slide) && $sourceTokens->isNotEmpty()) {
             $slideTokens = $this->meaningfulTokens($title.' '.$plain);
             if ($slideTokens->count() >= 8) {
-                $matched = $slideTokens->intersect($sourceTokens)->count();
-                $overlap = $matched / max(1, $slideTokens->count());
+                $overlap = $slideTokens->intersect($sourceTokens)->count() / max(1, $slideTokens->count());
                 if ($overlap < 0.08) {
                     $issues[] = $this->issue('warning', 'low_source_overlap', $label.' memiliki keterkaitan istilah yang rendah dengan materi sumber. Periksa kembali fidelitas isinya.', $slide);
                 }
@@ -145,9 +139,7 @@ class SlidebookQualityService
             $issues[] = $this->issue('warning', 'needs_teacher_review', $label.' masih ditandai Perlu Dicek Guru.', $slide);
         }
 
-        $issues = [...$issues, ...$this->visualOpportunityIssues($slide, $plain)];
-
-        return $issues;
+        return [...$issues, ...$this->visualOpportunityIssues($slide, $plain)];
     }
 
     /**
@@ -156,13 +148,12 @@ class SlidebookQualityService
      */
     private function globalIssues(Collection $slides, string $sourceText): array
     {
-        $issues = [];
         $count = $slides->count();
-
         if ($count === 0) {
             return [$this->issue('critical', 'no_slides', 'Slidebook belum memiliki slide aktif.')];
         }
 
+        $issues = [];
         $layouts = $slides->map(fn (Slide $slide): string => $this->layout($slide));
         $uniqueLayouts = $layouts->unique()->count();
 
@@ -174,12 +165,12 @@ class SlidebookQualityService
 
         $sourceCoverage = $slides->filter(fn (Slide $slide): bool => $this->hasSourceReference($slide))->count() / max(1, $count);
         if ($sourceCoverage < 0.50) {
-            $issues[] = $this->issue('critical', 'source_coverage_critical', 'Kurang dari separuh slide memiliki Sumber Materi yang dapat ditelusuri.');
+            $issues[] = $this->issue('warning', 'source_coverage_missing', 'Kurang dari separuh slide memiliki Sumber Materi yang dapat ditelusuri. Lengkapi rujukan saat meninjau versi lama.');
         } elseif ($sourceCoverage < 0.80) {
             $issues[] = $this->issue('warning', 'source_coverage_low', 'Sebagian slide belum memiliki Sumber Materi yang dapat ditelusuri.');
         }
 
-        if (trim($sourceText) === '' && $slides->contains(fn (Slide $slide): bool => ! ($slide->source_reference['manual'] ?? false))) {
+        if (trim($sourceText) === '' && $slides->contains(fn (Slide $slide): bool => ! $this->isManualReference($slide))) {
             $issues[] = $this->issue('warning', 'source_text_unavailable', 'Teks sumber tidak tersedia untuk pemeriksaan fidelitas otomatis.');
         }
 
@@ -196,13 +187,11 @@ class SlidebookQualityService
             && ! in_array($layout, ['process', 'timeline', 'diagram'], true)) {
             $issues[] = $this->issue('warning', 'process_visual_opportunity', 'Slide '.$slide->order.' memuat struktur proses tetapi Tampilan Slide belum menonjolkan alurnya.', $slide);
         }
-
         if (preg_match('/\b(perbedaan|dibandingkan|perbandingan|versus|kelebihan|kekurangan)\b/ui', $plain)
             && $layout !== 'comparison') {
             $issues[] = $this->issue('warning', 'comparison_visual_opportunity', 'Slide '.$slide->order.' memuat perbandingan yang berpotensi lebih jelas dengan Tampilan Slide Comparison.', $slide);
         }
-
-        if ($this->looksLikeCode($slide->content ?? '') && $layout !== 'code') {
+        if ($this->looksLikeCode((string) $slide->content) && $layout !== 'code') {
             $issues[] = $this->issue('warning', 'code_visual_opportunity', 'Slide '.$slide->order.' memuat potongan kode tetapi belum memakai Tampilan Slide Code.', $slide);
         }
 
@@ -253,6 +242,11 @@ class SlidebookQualityService
     private function hasSourceReference(Slide $slide): bool
     {
         return is_array($slide->source_reference) && $slide->source_reference !== [];
+    }
+
+    private function isManualReference(Slide $slide): bool
+    {
+        return $this->hasSourceReference($slide) && (bool) ($slide->source_reference['manual'] ?? false);
     }
 
     private function plainText(string $content): string
@@ -317,7 +311,7 @@ class SlidebookQualityService
         $normalized = Str::lower($this->plainText($text));
         $tokens = preg_split('/[^\pL\pN]+/u', $normalized, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         $stopwords = [
-            'yang', 'dan', 'atau', 'dari', 'untuk', 'pada', 'dengan', 'dalam', 'adalah', 'sebagai', 'oleh', 'ke', 'di', 'ini', 'itu',
+            'yang', 'dan', 'atau', 'dari', 'untuk', 'pada', 'dengan', 'dalam', 'adalah', 'sebagai', 'oleh', 'ini', 'itu',
             'the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'are', 'is', 'of', 'to',
         ];
 
