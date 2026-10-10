@@ -2,6 +2,7 @@
 @inject('presenter', 'App\Services\SlidePresentation')
 @inject('designService', 'App\Services\SlidebookDesignService')
 @inject('visualEnrichment', 'App\Services\SlideVisualEnrichment')
+@inject('visualScene', 'App\Services\SlideVisualScene')
 
 @php
     $title = $slidebook->title . ' — Presentasi Slidebook';
@@ -9,12 +10,14 @@
     $returnUrl = $preview ? route('instructor.materials.slidebook.review', $material) : route('student.courses.continue', $course);
     $totalSlides = $slides->count();
     $designTokens = $designService->getDesignTokens($slidebook);
+    $initialVisibleBlocks = $designTokens['initial_visible_blocks'] ?? 5;
 @endphp
 
 @section('content')
 @include('student.slidebooks.presentation-styles')
 @include('student.slidebooks.presentation-visual-rich')
-<div class="slide-presentation min-h-screen flex flex-col {{ $designTokens['font_class'] ?? 'font-sans' }}" style="{{ $designTokens['css_variables'] ?? '' }}" x-data="studentSlidePresentation({{ $totalSlides }})" @keydown.window="handleKey($event)">
+@include('student.slidebooks.presentation-visual-learning')
+<div class="slide-presentation min-h-screen flex flex-col {{ $designTokens['font_class'] ?? 'font-sans' }} {{ $designTokens['audience_class'] ?? 'audience-sma_smk' }}" style="{{ $designTokens['css_variables'] ?? '' }}" x-data="studentSlidePresentation({{ $totalSlides }}, {{ $initialVisibleBlocks }})" @keydown.window="handleKey($event)">
     {{-- Header --}}
     <header class="presentation-header border-b border-slate-800 flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <div class="min-w-0 flex items-center gap-4">
@@ -49,8 +52,9 @@
                 $presentation = $presenter->present($slide->title, $slide->content, $slide->layout);
                 $visualStats = $visualEnrichment->percentageStats($slide->content);
                 $heroLayouts = ['cover', 'section-divider', 'closing'];
+                $scene = $visualScene->sceneFor($slide->title, $slide->content, $presentation['layout']);
             @endphp
-            <article class="presentation-slide visual-rich-slide layout-{{ $presentation['layout'] }}"
+            <article class="presentation-slide visual-rich-slide layout-{{ $presentation['layout'] }} {{ $scene ? 'visual-learning-with-scene' : '' }}"
                      data-layout="{{ $presentation['layout'] }}"
                      data-slide-index="{{ $loop->index }}"
                      x-show="currentIndex === {{ $loop->index }}"
@@ -77,115 +81,110 @@
                     @endif
                 </header>
 
-                {{-- Decorative hero illustration uses semantic slide icon and design tokens only. --}}
-                @if(in_array($presentation['layout'], $heroLayouts, true))
-                    <div class="visual-hero-art" aria-hidden="true">
-                        <span class="visual-float-dot dot-a"></span>
-                        <span class="visual-float-dot dot-b"></span>
-                        <div class="visual-hero-orb">
-                            @if($presentation['icon'])
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="{{ $presentation['icon'] }}"/></svg>
-                            @else
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Slide Body: layout-specific composition --}}
-                <div class="slide-composition">
-                    @if($presentation['layout'] === 'concept')
-                        {{-- CONCEPT: Icon mark + content --}}
-                        <div class="concept-mark" aria-hidden="true">
-                            @if($presentation['icon'])
-                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="{{ $presentation['icon'] }}"/></svg>
-                            @else
-                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>
-                            @endif
-                        </div>
-                        <div class="slide-blocks">
-                            @foreach($presentation['blocks'] as $block)
-                                <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 120 }}ms">
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
-                                </div>
-                            @endforeach
-                        </div>
-
-                    @elseif(in_array($presentation['layout'], ['process', 'timeline']))
-                        {{-- PROCESS / TIMELINE: Sequential layout --}}
-                        <div class="slide-blocks">
-                            @foreach($presentation['blocks'] as $block)
-                                <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 150 }}ms"
-                                     @if($loop->index >= 5) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
-                                </div>
-                            @endforeach
-                        </div>
-
-                    @elseif(in_array($presentation['layout'], ['comparison', 'key-points']))
-                        {{-- COMPARISON / KEY-POINTS: Grid of cards --}}
-                        <div class="slide-blocks">
-                            @foreach($presentation['blocks'] as $block)
-                                <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 5) * 100 }}ms"
-                                     @if($loop->index >= 6) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
-                                </div>
-                            @endforeach
-                        </div>
-
-                    @elseif(in_array($presentation['layout'], ['summary', 'cover', 'section-divider', 'closing']))
-                        {{-- SUMMARY / COVER / SECTION-DIVIDER / CLOSING: Clean checklist or centered --}}
-                        <div class="slide-blocks">
-                            @foreach($presentation['blocks'] as $block)
-                                <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 80 }}ms">
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
-                                </div>
-                            @endforeach
-                        </div>
-
-                    @else
-                        {{-- DEFAULT: case-study, definition, image-focus, quote, code, diagram, checkpoint, example, reading --}}
-                        <div class="slide-blocks">
-                            @foreach($presentation['blocks'] as $block)
-                                <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 100 }}ms"
-                                     @if($loop->index >= 5) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
-                                </div>
-                            @endforeach
-                        </div>
+                <div class="visual-learning-main">
+                    @if($scene)
+                        @include('student.slidebooks.visual-scene', ['scene' => $scene, 'slide' => $slide])
                     @endif
-                </div>
 
-                {{-- Source-faithful visual data: generated only from explicit labelled percentages in the slide content. --}}
-                @if(count($visualStats) >= 2 && !in_array($presentation['layout'], ['cover', 'section-divider', 'closing', 'code', 'quote', 'image-focus'], true))
-                    <aside class="visual-stat-chart" aria-label="Visualisasi data persentase dari materi">
-                        <div class="visual-stat-chart-header">
-                            <div>
-                                <span class="slide-kicker">Visual Data</span>
-                                <h3 class="visual-stat-chart-title">Perbandingan persentase dari materi</h3>
-                            </div>
-                            <p class="visual-stat-chart-note">Nilai diambil langsung dari teks slide.</p>
-                        </div>
-                        <div class="visual-stat-list">
-                            @foreach($visualStats as $stat)
-                                <div class="visual-stat-row" aria-label="{{ $stat['label'] }} {{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }} persen">
-                                    <span class="visual-stat-label">{{ $stat['label'] }}</span>
-                                    <span class="visual-stat-track" aria-hidden="true">
-                                        <span class="visual-stat-fill" style="--visual-stat-value: {{ $stat['value'] }}%;"></span>
-                                    </span>
-                                    <span class="visual-stat-value">{{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }}%</span>
+                    <div class="visual-learning-content min-w-0">
+                        {{-- Slide Body: layout-specific composition --}}
+                        <div class="slide-composition">
+                            @if($presentation['layout'] === 'concept')
+                                {{-- CONCEPT: semantic scene already acts as the main visual anchor when available. --}}
+                                @if(!$scene)
+                                    <div class="concept-mark" aria-hidden="true">
+                                        @if($presentation['icon'])
+                                            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="{{ $presentation['icon'] }}"/></svg>
+                                        @else
+                                            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>
+                                        @endif
+                                    </div>
+                                @endif
+                                <div class="slide-blocks">
+                                    @foreach($presentation['blocks'] as $block)
+                                        <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 120 }}ms">
+                                            @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
+                                        </div>
+                                    @endforeach
                                 </div>
-                            @endforeach
-                        </div>
-                    </aside>
-                @endif
 
-                {{-- "Show more" button for long slides --}}
-                @if(count($presentation['blocks']) > 5 && !in_array($presentation['layout'], ['concept', 'summary', 'cover', 'section-divider', 'closing']))
-                    <button class="presentation-button mt-5" type="button" @click="visibleBlocks += 5" x-show="visibleBlocks < {{ count($presentation['blocks']) }}">
-                        Baca bagian berikutnya <span class="text-indigo-300" x-text="'(' + Math.min(visibleBlocks, {{ count($presentation['blocks']) }}) + '/{{ count($presentation['blocks']) }})'"></span>
-                    </button>
-                @endif
+                            @elseif(in_array($presentation['layout'], ['process', 'timeline']))
+                                {{-- PROCESS / TIMELINE: Sequential layout --}}
+                                <div class="slide-blocks">
+                                    @foreach($presentation['blocks'] as $block)
+                                        <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 150 }}ms"
+                                             x-show="visibleBlocks > {{ $loop->index }}" x-cloak>
+                                            @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                            @elseif(in_array($presentation['layout'], ['comparison', 'key-points']))
+                                {{-- COMPARISON / KEY-POINTS: Grid of cards --}}
+                                <div class="slide-blocks">
+                                    @foreach($presentation['blocks'] as $block)
+                                        <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 5) * 100 }}ms"
+                                             x-show="visibleBlocks > {{ $loop->index }}" x-cloak>
+                                            @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                            @elseif(in_array($presentation['layout'], ['summary', 'cover', 'section-divider', 'closing']))
+                                {{-- SUMMARY / COVER / SECTION-DIVIDER / CLOSING: Clean checklist or centered --}}
+                                <div class="slide-blocks">
+                                    @foreach($presentation['blocks'] as $block)
+                                        <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 80 }}ms">
+                                            @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                            @else
+                                {{-- DEFAULT: case-study, definition, image-focus, quote, code, diagram, checkpoint, example, reading --}}
+                                <div class="slide-blocks">
+                                    @foreach($presentation['blocks'] as $block)
+                                        <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 100 }}ms"
+                                             x-show="visibleBlocks > {{ $loop->index }}" x-cloak>
+                                            @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Source-faithful visual data: generated only from explicit labelled percentages in the slide content. --}}
+                        @if(count($visualStats) >= 2 && !in_array($presentation['layout'], ['cover', 'section-divider', 'closing', 'code', 'quote', 'image-focus'], true))
+                            <aside class="visual-stat-chart" aria-label="Visualisasi data persentase dari materi">
+                                <div class="visual-stat-chart-header">
+                                    <div>
+                                        <span class="slide-kicker">Visual Data</span>
+                                        <h3 class="visual-stat-chart-title">Perbandingan persentase dari materi</h3>
+                                    </div>
+                                    <p class="visual-stat-chart-note">Nilai diambil langsung dari teks slide.</p>
+                                </div>
+                                <div class="visual-stat-list">
+                                    @foreach($visualStats as $stat)
+                                        <div class="visual-stat-row" aria-label="{{ $stat['label'] }} {{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }} persen">
+                                            <span class="visual-stat-label">{{ $stat['label'] }}</span>
+                                            <span class="visual-stat-track" aria-hidden="true">
+                                                <span class="visual-stat-fill" style="--visual-stat-value: {{ $stat['value'] }}%;"></span>
+                                            </span>
+                                            <span class="visual-stat-value">{{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }}%</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </aside>
+                        @endif
+
+                        {{-- "Show more" button uses the selected audience density. --}}
+                        @if(count($presentation['blocks']) > $initialVisibleBlocks && !in_array($presentation['layout'], ['concept', 'summary', 'cover', 'section-divider', 'closing']))
+                            <button class="presentation-button mt-5" type="button" @click="visibleBlocks += {{ $initialVisibleBlocks }}" x-show="visibleBlocks < {{ count($presentation['blocks']) }}">
+                                Lihat bagian berikutnya <span class="text-indigo-300" x-text="'(' + Math.min(visibleBlocks, {{ count($presentation['blocks']) }}) + '/{{ count($presentation['blocks']) }})'"></span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
 
                 {{-- Takeaway / Summary --}}
                 @if($slide->summary)
