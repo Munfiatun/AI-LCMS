@@ -94,7 +94,7 @@ npm run build
 
 Folder `vendor/`, `node_modules/`, dan `public/build/` tidak perlu di-commit.
 
-## 5. Migration
+## 5. Migration & Seeder Safety
 
 Backup database sebelum migration production.
 
@@ -110,7 +110,17 @@ Demo user tidak boleh diaktifkan di production. Pastikan:
 DEMO_USER_PASSWORD=
 ```
 
-`UserSeeder` juga membatasi demo account hanya untuk environment `local` dan `testing`, tetapi nilai ini tetap sebaiknya kosong di production.
+`DatabaseSeeder` pada environment production hanya memuat data struktural dasar seperti role dan kategori. Data demo hanya dijalankan pada environment `local`/`testing`. Seeder demo berikut juga memiliki guard environment dan akan berhenti tanpa menulis data ketika `APP_ENV=production`:
+
+```text
+UserSeeder
+CourseSeeder
+DemoCourseSeeder
+LmsDemoSeeder
+WebLearningDummySeeder
+```
+
+Meskipun sudah memiliki guard, jangan gunakan seeder demo sebagai bagian dari proses release production. Gunakan seeding production hanya bila memang diperlukan dan sudah direview.
 
 ## 6. Laravel Optimization
 
@@ -162,14 +172,19 @@ Jika tidak ada worker yang digunakan, pastikan flow yang membutuhkan queue telah
 
 ## 9. Release Quality Gate
 
-Sebelum release:
+Sebelum release, jalankan gate lengkap:
 
 ```bash
-php artisan test
-npm run build
+composer run release:check
 ```
 
-Pull Request ke `main` juga harus melewati GitHub Actions quality gate.
+Gate ini menjalankan seluruh backend test dan frontend production build. Untuk validasi metadata/dependency secara eksplisit, jalankan juga:
+
+```bash
+composer validate --strict --no-check-publish
+```
+
+Pull Request ke `main` harus melewati GitHub Actions quality gate yang menjalankan validasi Composer, PHPUnit, dan build Vite.
 
 Checklist manual minimum:
 
@@ -181,6 +196,7 @@ Checklist manual minimum:
 - Retry assessment tidak membocorkan kunci sebelum solusi boleh ditampilkan.
 - Upload/download dokumen menghormati authorization.
 - Dashboard dan halaman utama responsive pada desktop serta mobile.
+- Tidak ada akun, kursus, atau konten demo yang terbentuk di environment production.
 
 ## 10. Release Command Example
 
