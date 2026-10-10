@@ -50,6 +50,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Reliability & Recovery
+    |--------------------------------------------------------------------------
+    |
+    | Only transient provider failures are retried. The service clamps attempts
+    | to a small bounded range so a single teacher action cannot fan out into an
+    | uncontrolled number of paid provider calls.
+    |
+    */
+    'reliability' => [
+        'max_attempts' => (int) env('AI_MAX_ATTEMPTS', 2),
+        'retry_backoff_ms' => (int) env('AI_RETRY_BACKOFF_MS', 250),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Prompt Versioning & Source Fidelity Defaults
     |--------------------------------------------------------------------------
     */
