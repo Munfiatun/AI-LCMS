@@ -88,7 +88,7 @@ class UIDesignSystemTest extends TestCase
         $response->assertOk()
             ->assertSee('ui-label', false)
             ->assertSee('ui-field', false)
-            ->assertSee('Simpan &amp; Lanjutkan ke Silabus', false);
+            ->assertSee('Simpan & Lanjutkan ke Silabus', false);
     }
 
     private function teacher(): User
