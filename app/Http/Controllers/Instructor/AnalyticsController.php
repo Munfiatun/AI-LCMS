@@ -25,10 +25,9 @@ class AnalyticsController extends Controller
         Gate::authorize('update', $course);
 
         $analytics = $this->analytics->summarize($course);
-        $insights = $this->insights->summarize($course, $analytics);
 
         if ($request->boolean('insights')) {
-            return response()->json($insights);
+            return response()->json($this->insights->summarize($course, $analytics));
         }
 
         $enrollments = $course->enrollments()
@@ -40,7 +39,6 @@ class AnalyticsController extends Controller
             'course' => $course,
             'enrollments' => $enrollments,
             ...$analytics,
-            ...$insights,
         ]);
     }
 
