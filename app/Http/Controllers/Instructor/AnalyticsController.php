@@ -6,19 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\User;
 use App\Services\CourseAnalyticsService;
+use App\Services\LearningAnalyticsInsightService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
-    public function __construct(private CourseAnalyticsService $analytics) {}
+    public function __construct(
+        private CourseAnalyticsService $analytics,
+        private LearningAnalyticsInsightService $insights,
+    ) {}
 
-    public function show(Course $course): View
+    public function show(Request $request, Course $course): View|JsonResponse
     {
         // Analytics is instructor-private data; published visibility must not grant access.
         Gate::authorize('update', $course);
 
         $analytics = $this->analytics->summarize($course);
+
+        if ($request->boolean('insights')) {
+            return response()->json($this->insights->summarize($course, $analytics));
+        }
+
         $enrollments = $course->enrollments()
             ->with('student')
             ->orderByDesc('created_at')
