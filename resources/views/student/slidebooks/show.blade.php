@@ -1,6 +1,7 @@
 @extends('layouts.guest', ['focusMode' => true])
 @inject('presenter', 'App\Services\SlidePresentation')
 @inject('designService', 'App\Services\SlidebookDesignService')
+@inject('visualEnrichment', 'App\Services\SlideVisualEnrichment')
 
 @php
     $title = $slidebook->title . ' — Presentasi Slidebook';
@@ -12,6 +13,7 @@
 
 @section('content')
 @include('student.slidebooks.presentation-styles')
+@include('student.slidebooks.presentation-visual-rich')
 <div class="slide-presentation min-h-screen flex flex-col {{ $designTokens['font_class'] ?? 'font-sans' }}" style="{{ $designTokens['css_variables'] ?? '' }}" x-data="studentSlidePresentation({{ $totalSlides }})" @keydown.window="handleKey($event)">
     {{-- Header --}}
     <header class="presentation-header border-b border-slate-800 flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
@@ -43,8 +45,12 @@
     {{-- Slide Stage --}}
     <div class="presentation-stage flex-1" id="presentationContainer">
         @forelse($slides as $slide)
-            @php($presentation = $presenter->present($slide->title, $slide->content, $slide->layout))
-            <article class="presentation-slide layout-{{ $presentation['layout'] }}"
+            @php
+                $presentation = $presenter->present($slide->title, $slide->content, $slide->layout);
+                $visualStats = $visualEnrichment->percentageStats($slide->content);
+                $heroLayouts = ['cover', 'section-divider', 'closing'];
+            @endphp
+            <article class="presentation-slide visual-rich-slide layout-{{ $presentation['layout'] }}"
                      data-layout="{{ $presentation['layout'] }}"
                      data-slide-index="{{ $loop->index }}"
                      x-show="currentIndex === {{ $loop->index }}"
@@ -54,7 +60,7 @@
 
                 {{-- Slide Header --}}
                 <header class="slide-heading">
-                    <div class="flex flex-wrap items-center gap-3 mb-5" @if(in_array($presentation['layout'], ['cover', 'section-divider', 'closing'])) style="display:none;" @endif>
+                    <div class="flex flex-wrap items-center gap-3 mb-5" @if(in_array($presentation['layout'], $heroLayouts, true)) style="display:none;" @endif>
                         <span class="slide-kicker">{{ $presentation['label'] }}</span>
                         <span class="text-xs text-slate-400">Slide {{ $loop->iteration }} dari {{ $totalSlides }}</span>
                     </div>
@@ -70,6 +76,21 @@
                         </div>
                     @endif
                 </header>
+
+                {{-- Decorative hero illustration uses semantic slide icon and design tokens only. --}}
+                @if(in_array($presentation['layout'], $heroLayouts, true))
+                    <div class="visual-hero-art" aria-hidden="true">
+                        <span class="visual-float-dot dot-a"></span>
+                        <span class="visual-float-dot dot-b"></span>
+                        <div class="visual-hero-orb">
+                            @if($presentation['icon'])
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="{{ $presentation['icon'] }}"/></svg>
+                            @else
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                            @endif
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Slide Body: layout-specific composition --}}
                 <div class="slide-composition">
@@ -134,6 +155,30 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Source-faithful visual data: generated only from explicit labelled percentages in the slide content. --}}
+                @if(count($visualStats) >= 2 && !in_array($presentation['layout'], ['cover', 'section-divider', 'closing', 'code', 'quote', 'image-focus'], true))
+                    <aside class="visual-stat-chart" aria-label="Visualisasi data persentase dari materi">
+                        <div class="visual-stat-chart-header">
+                            <div>
+                                <span class="slide-kicker">Visual Data</span>
+                                <h3 class="visual-stat-chart-title">Perbandingan persentase dari materi</h3>
+                            </div>
+                            <p class="visual-stat-chart-note">Nilai diambil langsung dari teks slide.</p>
+                        </div>
+                        <div class="visual-stat-list">
+                            @foreach($visualStats as $stat)
+                                <div class="visual-stat-row" aria-label="{{ $stat['label'] }} {{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }} persen">
+                                    <span class="visual-stat-label">{{ $stat['label'] }}</span>
+                                    <span class="visual-stat-track" aria-hidden="true">
+                                        <span class="visual-stat-fill" style="--visual-stat-value: {{ $stat['value'] }}%;"></span>
+                                    </span>
+                                    <span class="visual-stat-value">{{ rtrim(rtrim(number_format($stat['value'], 2, '.', ''), '0'), '.') }}%</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </aside>
+                @endif
 
                 {{-- "Show more" button for long slides --}}
                 @if(count($presentation['blocks']) > 5 && !in_array($presentation['layout'], ['concept', 'summary', 'cover', 'section-divider', 'closing']))
