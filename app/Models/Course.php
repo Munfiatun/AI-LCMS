@@ -21,9 +21,7 @@ class Course extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    /**
-     * @var list<string>
-     */
+    /** @var list<string> */
     protected $fillable = [
         'instructor_id',
         'category_id',
@@ -36,9 +34,7 @@ class Course extends Model
         'enrollment_code',
     ];
 
-    /**
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
@@ -63,41 +59,31 @@ class Course extends Model
         });
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
+    /** @return BelongsTo<User, $this> */
     public function instructor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
-    /**
-     * @return BelongsTo<Category, $this>
-     */
+    /** @return BelongsTo<Category, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * @return HasMany<CourseSection, $this>
-     */
+    /** @return HasMany<CourseSection, $this> */
     public function sections(): HasMany
     {
         return $this->hasMany(CourseSection::class)->orderBy('order');
     }
 
-    /**
-     * @return HasManyThrough<LearningMaterial, CourseSection, $this>
-     */
+    /** @return HasManyThrough<LearningMaterial, CourseSection, $this> */
     public function materials(): HasManyThrough
     {
         return $this->hasManyThrough(LearningMaterial::class, CourseSection::class, 'course_id', 'section_id');
     }
 
-    /**
-     * @param  Builder<$this>  $query
-     */
+    /** @param Builder<$this> $query */
     public function scopePublished(Builder $query): void
     {
         $query->where('status', self::STATUS_PUBLISHED);
@@ -108,14 +94,26 @@ class Course extends Model
         return $this->status === self::STATUS_PUBLISHED;
     }
 
-    /**
-     * @return HasMany<Quiz, $this>
-     */
+    /** @return HasMany<Quiz, $this> */
     public function quizzes(): HasMany
     {
         return $this->hasMany(Quiz::class);
     }
 
+    /** @return HasManyThrough<QuizAttempt, Quiz, $this> */
+    public function quizAttempts(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            QuizAttempt::class,
+            Quiz::class,
+            'course_id',
+            'quiz_id',
+            'id',
+            'id'
+        );
+    }
+
+    /** @return HasMany<CourseEnrollment, $this> */
     public function enrollments(): HasMany
     {
         return $this->hasMany(CourseEnrollment::class);
