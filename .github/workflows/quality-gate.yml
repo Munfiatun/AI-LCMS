@@ -48,8 +48,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Run backend test suite
-        run: php artisan test
-
       - name: Build production frontend
         run: npm run build
+
+      - name: Run backend test suite
+        run: php artisan test
