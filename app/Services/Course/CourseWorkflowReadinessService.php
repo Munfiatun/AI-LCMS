@@ -14,15 +14,28 @@ class CourseWorkflowReadinessService
      * Build a teacher-facing snapshot of how far a course has progressed
      * through the learning creation journey.
      *
+     * Large enrollment and attempt histories are represented by aggregate
+     * counts rather than loading every row into memory.
+     *
      * @return array<string, mixed>
      */
     public function summarize(Course $course): array
     {
         $course->loadMissing([
             'sections.materials.publishedSlidebook',
-            'quizzes.attempts',
-            'enrollments',
+            'quizzes:id,course_id,title,status',
         ]);
+
+        if (! array_key_exists('active_students_count', $course->getAttributes())) {
+            $course->loadCount([
+                'enrollments as active_students_count' => fn ($query) => $query->whereIn('status', ['active', 'completed']),
+            ]);
+        }
+        if (! array_key_exists('submitted_quiz_attempts_count', $course->getAttributes())) {
+            $course->loadCount([
+                'quizAttempts as submitted_quiz_attempts_count' => fn ($query) => $query->where('status', 'submitted'),
+            ]);
+        }
 
         /** @var Collection<int, LearningMaterial> $materials */
         $materials = $course->sections
@@ -35,14 +48,8 @@ class CourseWorkflowReadinessService
         $publishedMaterials = $materials->where('status', LearningMaterial::STATUS_PUBLISHED)->count();
         $publishedSlidebooks = $materials->filter(fn (LearningMaterial $material): bool => $material->publishedSlidebook !== null)->count();
         $publishedQuizzes = $quizzes->where('status', 'published')->count();
-        $submittedAttempts = $quizzes->flatMap(fn (Quiz $quiz) => $quiz->attempts)
-            ->where('status', 'submitted')
-            ->count();
-        $studentCount = $course->enrollments
-            ->whereIn('status', ['active', 'completed'])
-            ->pluck('student_id')
-            ->unique()
-            ->count();
+        $submittedAttempts = (int) $course->submitted_quiz_attempts_count;
+        $studentCount = (int) $course->active_students_count;
 
         $counts = [
             'sections' => $course->sections->count(),
