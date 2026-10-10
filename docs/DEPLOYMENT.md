@@ -4,13 +4,15 @@ Dokumen ini menjadi checklist minimum sebelum AI-LCMS dipasang pada server produ
 
 ## 1. Runtime
 
-Minimum yang direkomendasikan:
+Minimum yang direkomendasikan untuk release terkunci saat ini:
 
-- PHP 8.3+
+- PHP 8.4.1+ (`composer.lock` menggunakan Symfony 8.1)
 - Composer 2
 - Node.js 22 untuk proses build frontend
 - Database yang didukung Laravel; SQLite cocok untuk demo kecil, sedangkan deployment multi-user sebaiknya memakai database server yang dikelola dengan backup rutin
 - Web server seperti Nginx atau Apache yang mengarah ke folder `public/`
+
+`composer.json` masih mengizinkan PHP `^8.3`, tetapi dependency yang terkunci pada release ini memerlukan PHP minimal 8.4.1. Gunakan PHP 8.4+ untuk deployment yang reproducible.
 
 Document root **harus** mengarah ke `public/`, bukan root repository.
 
@@ -184,7 +186,7 @@ Gate ini menjalankan seluruh backend test dan frontend production build. Untuk v
 composer validate --strict --no-check-publish
 ```
 
-Pull Request ke `main` harus melewati GitHub Actions quality gate yang menjalankan validasi Composer, PHPUnit, dan build Vite.
+Pull Request ke `main` harus melewati GitHub Actions quality gate yang menjalankan validasi Composer, PHPUnit, dan build Vite pada PHP 8.4 dan Node.js 22.
 
 Checklist manual minimum:
 
