@@ -34,6 +34,55 @@ function markCurrentNavigation() {
     });
 }
 
+function enhanceMobileSidebar() {
+    const sidebar = document.querySelector('body > aside');
+    if (!sidebar) return;
+
+    if (!sidebar.id) sidebar.id = 'primary-sidebar';
+    sidebar.setAttribute('aria-label', 'Navigasi utama');
+
+    const buttons = Array.from(document.querySelectorAll('button'));
+    const openButton = buttons.find((button) => button.getAttribute('@click')?.includes('sidebarOpen = true'));
+    const closeButton = buttons.find((button) => button.getAttribute('@click')?.includes('sidebarOpen = false') && sidebar.contains(button));
+
+    if (openButton) {
+        openButton.setAttribute('aria-label', 'Buka menu navigasi');
+        openButton.setAttribute('aria-controls', sidebar.id);
+        openButton.setAttribute('aria-expanded', 'false');
+    }
+    if (closeButton) {
+        closeButton.setAttribute('aria-label', 'Tutup menu navigasi');
+        closeButton.setAttribute('aria-controls', sidebar.id);
+    }
+
+    const syncExpanded = () => {
+        if (!openButton) return;
+        const state = window.Alpine?.$data?.(document.body)?.sidebarOpen;
+        if (typeof state === 'boolean') {
+            openButton.setAttribute('aria-expanded', state ? 'true' : 'false');
+        }
+    };
+
+    openButton?.addEventListener('click', () => window.requestAnimationFrame(syncExpanded));
+    closeButton?.addEventListener('click', () => {
+        window.requestAnimationFrame(() => {
+            syncExpanded();
+            openButton?.focus({ preventScroll: true });
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || window.innerWidth >= 1024) return;
+        const state = window.Alpine?.$data?.(document.body)?.sidebarOpen;
+        if (state === true && closeButton) {
+            event.preventDefault();
+            closeButton.click();
+        }
+    });
+
+    syncExpanded();
+}
+
 function enhanceQuizAccessibility() {
     const form = document.getElementById('examForm');
     if (!form) return;
@@ -116,6 +165,7 @@ function enhanceDialoglessStatus() {
 export function enhanceAccessibility() {
     ensureMainLandmark();
     markCurrentNavigation();
+    enhanceMobileSidebar();
     enhanceQuizAccessibility();
     enhanceSlidebookAccessibility();
     enhanceDialoglessStatus();
