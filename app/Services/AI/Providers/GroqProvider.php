@@ -3,9 +3,9 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\Contracts\AIProviderInterface;
+use App\Services\AI\Exceptions\AIProviderException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
 class GroqProvider implements AIProviderInterface
 {
@@ -34,7 +34,7 @@ class GroqProvider implements AIProviderInterface
     public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
-            throw new RuntimeException('Groq API key is missing. Set GROQ_API_KEY in .env or switch AI_PROVIDER to mock.');
+            throw AIProviderException::configuration('Groq');
         }
 
         $schemaJson = json_encode($schemaDefinition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -61,7 +61,7 @@ class GroqProvider implements AIProviderInterface
                 'status' => $response->status(),
             ]);
 
-            throw new RuntimeException("Groq API error: HTTP {$response->status()}");
+            throw AIProviderException::fromHttp('Groq', $response->status());
         }
 
         $responseData = $response->json();
@@ -69,12 +69,12 @@ class GroqProvider implements AIProviderInterface
         $tokensUsed = $responseData['usage']['total_tokens'] ?? null;
 
         if (($responseData['choices'][0]['finish_reason'] ?? null) === 'length') {
-            throw new RuntimeException("Groq response was truncated at max_completion_tokens={$payload['max_completion_tokens']}.");
+            throw AIProviderException::truncated('Groq');
         }
 
         $parsed = json_decode($content, true);
         if (! is_array($parsed)) {
-            throw new RuntimeException('Groq response could not be decoded into a valid JSON array');
+            throw AIProviderException::malformed('Groq');
         }
 
         return [
