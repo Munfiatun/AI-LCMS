@@ -48,7 +48,9 @@ class AIQuizQuestionQualityTest extends TestCase
             'custom_instructions' => 'Uji pemahaman konsep aplikasi web.',
         ]);
 
-        $texts = $quiz->questions()->orderBy('order')->pluck('question_text')->all();
+        // The relation already orders by quiz_questions.order; adding an unqualified
+        // `order` column here is ambiguous because both joined tables own that name.
+        $texts = $quiz->questions()->pluck('question_text')->all();
         $this->assertSame('Komponen aplikasi web manakah yang menyimpan data secara terstruktur?', $texts[0]);
         $this->assertStringNotContainsStringIgnoringCase('slide', implode(' ', $texts));
         Http::assertSentCount(2);
