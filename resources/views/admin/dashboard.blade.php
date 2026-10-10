@@ -25,13 +25,11 @@
                 </span>
             </div>
         </div>
-        <!-- Decorative blur -->
         <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
     </div>
 
     <!-- Metrics Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Total Users -->
         <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow hover:border-slate-700 transition-colors">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Pengguna</span>
@@ -45,7 +43,6 @@
             </div>
         </div>
 
-        <!-- Total Students -->
         <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow hover:border-slate-700 transition-colors">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Siswa</span>
@@ -59,7 +56,6 @@
             </div>
         </div>
 
-        <!-- Total Instructors -->
         <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow hover:border-slate-700 transition-colors">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Instruktur / Guru</span>
@@ -69,11 +65,14 @@
             </div>
             <div class="mt-4">
                 <span class="text-3xl font-extrabold text-white tracking-tight">{{ $stats['total_instructors'] }}</span>
-                <span class="text-xs text-slate-400 ml-2">Pembuat konten</span>
+                @if($stats['pending_instructors'] > 0)
+                    <span class="text-xs text-amber-400 ml-2">{{ $stats['pending_instructors'] }} menunggu</span>
+                @else
+                    <span class="text-xs text-slate-400 ml-2">Pembuat konten</span>
+                @endif
             </div>
         </div>
 
-        <!-- System Admins -->
         <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow hover:border-slate-700 transition-colors">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Administrator</span>
@@ -86,6 +85,57 @@
                 <span class="text-xs text-rose-400 ml-2">Hak akses penuh</span>
             </div>
         </div>
+    </div>
+
+    <!-- Instructor Approval Queue -->
+    <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-white">Pengajuan Akun Guru</h3>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">{{ $stats['pending_instructors'] }} MENUNGGU</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Akun guru baru harus disetujui Admin sebelum dapat masuk ke dashboard Instructor.</p>
+            </div>
+        </div>
+
+        @if($pendingInstructors->isEmpty())
+            <div class="rounded-xl border border-dashed border-slate-800 bg-slate-950/40 px-4 py-6 text-center">
+                <p class="text-sm font-medium text-slate-300">Tidak ada pengajuan guru yang menunggu.</p>
+                <p class="text-xs text-slate-500 mt-1">Pengajuan baru akan muncul otomatis di panel ini.</p>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950/80 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Email</th>
+                            <th class="px-4 py-3">Diajukan</th>
+                            <th class="px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                        @foreach($pendingInstructors as $user)
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="px-4 py-3 font-medium text-white">{{ $user->name }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $user->email }}</td>
+                                <td class="px-4 py-3 text-xs text-slate-400">{{ $user->created_at->diffForHumans() }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <form action="{{ route('admin.users.activate-instructor', $user) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors text-xs font-semibold">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                            Aktifkan Guru
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
     </div>
 
     <!-- Recent Users Table -->
@@ -133,8 +183,8 @@
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktif
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center gap-1.5 text-xs text-rose-400">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Nonaktif
+                                    <span class="inline-flex items-center gap-1.5 text-xs text-amber-400">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Menunggu Persetujuan
                                     </span>
                                 @endif
                             </td>
