@@ -144,12 +144,12 @@ class AIContentService
                     'processing_completed_at' => now(),
                 ]);
 
+                // Keep final failure logs intentionally minimal. Recovery metadata is
+                // recorded in the processing log, while private provider context and
+                // exception messages must never be copied into security-facing logs.
                 Log::error('AI provider processing failed', [
                     'exception_type' => $exception::class,
                     'processing_log_id' => $log->id,
-                    'provider' => $provider->getProviderName(),
-                    'attempt_count' => $attempt,
-                    'retryable' => $retryable,
                 ]);
 
                 if ($exception instanceof ConnectionException) {
