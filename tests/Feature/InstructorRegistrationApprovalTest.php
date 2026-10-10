@@ -35,7 +35,7 @@ class InstructorRegistrationApprovalTest extends TestCase
             'email' => 'guru.baru@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'role' => Role::ROLE_INSTRUCTOR,
+            'account_type' => Role::ROLE_INSTRUCTOR,
         ]);
 
         $response
@@ -49,19 +49,39 @@ class InstructorRegistrationApprovalTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_public_registration_cannot_request_admin_role(): void
+    public function test_public_registration_cannot_request_admin_account_type(): void
     {
         $response = $this->post(route('register'), [
             'name' => 'Unauthorized Admin',
             'email' => 'admin.request@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'role' => Role::ROLE_ADMIN,
+            'account_type' => Role::ROLE_ADMIN,
         ]);
 
-        $response->assertSessionHasErrors('role');
+        $response->assertSessionHasErrors('account_type');
         $this->assertDatabaseMissing('users', ['email' => 'admin.request@example.com']);
         $this->assertGuest();
+    }
+
+    public function test_legacy_role_injection_is_ignored_and_still_creates_student(): void
+    {
+        $response = $this->post(route('register'), [
+            'name' => 'Safe Student',
+            'email' => 'safe.student@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => Role::ROLE_ADMIN,
+            'role_id' => Role::where('name', Role::ROLE_ADMIN)->firstOrFail()->id,
+            'is_active' => false,
+        ]);
+
+        $response->assertRedirect(route('student.dashboard'));
+
+        $student = User::where('email', 'safe.student@example.com')->firstOrFail();
+        $this->assertTrue($student->isStudent());
+        $this->assertTrue($student->is_active);
+        $this->assertAuthenticatedAs($student);
     }
 
     public function test_pending_teacher_cannot_login_before_admin_approval(): void
