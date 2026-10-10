@@ -27,10 +27,14 @@ class AIQuizService
     /** Reserve for the model's reasoning step and JSON overhead. */
     private const TOKEN_RESERVE = 3072;
 
+    private QuizQuestionQualityGuard $qualityGuard;
+
     public function __construct(
         private AIContentService $aiContentService,
-        private QuizQuestionQualityGuard $qualityGuard,
-    ) {}
+        ?QuizQuestionQualityGuard $qualityGuard = null,
+    ) {
+        $this->qualityGuard = $qualityGuard ?? new QuizQuestionQualityGuard;
+    }
 
     /** @param array{total_questions: int, difficulty: string, type: string, custom_instructions?: string} $settings */
     public function generate(Slidebook $slidebook, User $teacher, array $settings): Quiz
