@@ -73,7 +73,7 @@ class DemoReadinessService
             ->orderByDesc('version')
             ->first();
         $workingRevision = $slidebookMaterial?->slidebooks()
-            ->whereIn('status', [Slidebook::STATUS_DRAFT, Slidebook::STATUS_REVIEW, Slidebook::STATUS_APPROVED])
+            ->whereIn('status', [Slidebook::STATUS_DRAFT, Slidebook::STATUS_REVIEW])
             ->orderByDesc('version')
             ->first();
         $publishedSlides = $publishedSlidebook?->slides()->count() ?? 0;
