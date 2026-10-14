@@ -2,7 +2,6 @@
 
 namespace App\Services\Usability;
 
-use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 class UsabilityReportService
