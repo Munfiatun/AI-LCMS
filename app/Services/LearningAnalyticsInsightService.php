@@ -13,24 +13,15 @@ class LearningAnalyticsInsightService
 
     /**
      * Build teacher-facing learning signals from real submitted assessment data.
-     * Repeated attempts are de-biased by using only the latest submitted attempt
-     * for each student/quiz pair when calculating item-level evidence.
+     * Only the latest submitted attempt for each student/Quiz pair is selected
+     * by the database, so historical retries do not inflate PHP memory usage.
      *
      * @param  array<string, mixed>  $baseAnalytics
      * @return array<string, mixed>
      */
     public function summarize(Course $course, array $baseAnalytics): array
     {
-        $attempts = QuizAttempt::query()
-            ->whereHas('quiz', fn ($query) => $query->where('course_id', $course->id))
-            ->where('status', 'submitted')
-            ->with([
-                'quiz:id,course_id,title,passing_score',
-                'answers.question:id,question_text,difficulty,topic',
-            ])
-            ->get();
-
-        $latestAttempts = $this->latestAttemptPerStudentQuiz($attempts);
+        $latestAttempts = $this->latestSubmittedAttempts($course);
         $answers = $latestAttempts
             ->flatMap(fn (QuizAttempt $attempt) => $attempt->answers)
             ->filter(fn ($answer): bool => $answer->question !== null)
@@ -96,22 +87,27 @@ class LearningAnalyticsInsightService
         ];
     }
 
-    /**
-     * @param  Collection<int, QuizAttempt>  $attempts
-     * @return Collection<int, QuizAttempt>
-     */
-    private function latestAttemptPerStudentQuiz(Collection $attempts): Collection
+    /** @return Collection<int, QuizAttempt> */
+    private function latestSubmittedAttempts(Course $course): Collection
     {
-        return $attempts
-            ->groupBy(fn (QuizAttempt $attempt): string => $attempt->quiz_id.':'.$attempt->student_id)
-            ->map(fn (Collection $group): QuizAttempt => $group
-                ->sortByDesc(fn (QuizAttempt $attempt): string => sprintf(
-                    '%020d-%020d',
-                    (int) ($attempt->submitted_at?->getTimestamp() ?? 0),
-                    (int) $attempt->id
-                ))
-                ->first())
-            ->values();
+        return QuizAttempt::query()
+            ->whereHas('quiz', fn ($query) => $query->where('course_id', $course->id))
+            ->where('quiz_attempts.status', 'submitted')
+            ->where('quiz_attempts.id', '=', function ($query): void {
+                $query->select('latest_attempt.id')
+                    ->from('quiz_attempts as latest_attempt')
+                    ->whereColumn('latest_attempt.quiz_id', 'quiz_attempts.quiz_id')
+                    ->whereColumn('latest_attempt.student_id', 'quiz_attempts.student_id')
+                    ->where('latest_attempt.status', 'submitted')
+                    ->orderByDesc('latest_attempt.submitted_at')
+                    ->orderByDesc('latest_attempt.id')
+                    ->limit(1);
+            })
+            ->with([
+                'quiz:id,course_id,title,passing_score',
+                'answers.question:id,question_text,difficulty,topic',
+            ])
+            ->get();
     }
 
     /** @return array<string, int|float|string> */
