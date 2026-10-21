@@ -33,8 +33,8 @@ Untuk frontend build, Node.js 22 direkomendasikan agar konsisten dengan quality 
 Clone repository lalu jalankan:
 
 ```bash
-git clone https://github.com/Munfiatun/LMS-WEB.git
-cd LMS-WEB
+git clone https://github.com/Munfiatun/AI-LCMS.git
+cd AI-LCMS
 composer install
 cp .env.example .env
 php artisan key:generate
