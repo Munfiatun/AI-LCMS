@@ -46,6 +46,15 @@ class LearningObjectiveAlignmentTest extends TestCase
         ]);
     }
 
+    public function test_instructor_dashboard_surfaces_learning_objective_workspace(): void
+    {
+        $this->actingAs($this->instructor)
+            ->get(route('instructor.dashboard'))
+            ->assertOk()
+            ->assertSee('Learning Objectives')
+            ->assertSee(route('instructor.learning-objectives.index'), false);
+    }
+
     public function test_instructor_can_open_learning_objective_workspace_for_own_course(): void
     {
         $course = $this->courseFor($this->instructor, 'Pemrograman Dasar');
