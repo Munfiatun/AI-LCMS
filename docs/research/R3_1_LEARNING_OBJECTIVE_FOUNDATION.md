@@ -64,14 +64,14 @@ Workspace route:
 
 `/instructor/learning-objectives`
 
-The workspace is surfaced directly from the Instructor Dashboard through the **Learning Objectives** action and the **Learning Objectives & Alignment** link, so instructors do not need to know or type the route manually.
-
 The instructor can:
 
 1. select one of their courses;
 2. create/update/deactivate/delete Learning Objectives;
 3. align each course material to one or more objectives;
 4. align each question from course-linked question banks to one or more objectives.
+
+The workspace UI presents these actions as a four-step guided flow (select course → define objectives → map materials → map questions), uses larger primary text and controls, and keeps objective editing collapsed until requested to reduce visual overload.
 
 Global question banks are intentionally excluded from the course alignment workspace because they do not provide a course context.
 
@@ -103,7 +103,6 @@ The presence of an alignment does not mean that a student has mastered the objec
 
 `LearningObjectiveAlignmentTest` covers:
 
-- instructor dashboard entry point to the alignment workspace;
 - instructor workspace access;
 - objective create/update;
 - course-scoped code uniqueness;
