@@ -31,7 +31,7 @@ class LearningObjectiveController extends Controller
 
             $selectedCourse->load([
                 'learningObjectives' => fn ($query) => $query
-                    ->withCount(['materials', 'questions'])
+                    ->with(['materials', 'questions'])
                     ->orderBy('order')
                     ->orderBy('code'),
                 'sections.materials.learningObjectives',
