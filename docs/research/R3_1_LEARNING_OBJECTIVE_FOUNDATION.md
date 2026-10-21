@@ -64,6 +64,8 @@ Workspace route:
 
 `/instructor/learning-objectives`
 
+The workspace is surfaced directly from the Instructor Dashboard through the **Learning Objectives** action and the **Learning Objectives & Alignment** link, so instructors do not need to know or type the route manually.
+
 The instructor can:
 
 1. select one of their courses;
@@ -101,6 +103,7 @@ The presence of an alignment does not mean that a student has mastered the objec
 
 `LearningObjectiveAlignmentTest` covers:
 
+- instructor dashboard entry point to the alignment workspace;
 - instructor workspace access;
 - objective create/update;
 - course-scoped code uniqueness;
