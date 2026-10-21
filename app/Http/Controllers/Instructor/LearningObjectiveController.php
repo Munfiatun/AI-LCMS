@@ -30,7 +30,10 @@ class LearningObjectiveController extends Controller
             Gate::authorize('update', $selectedCourse);
 
             $selectedCourse->load([
-                'learningObjectives' => fn ($query) => $query->orderBy('order')->orderBy('code'),
+                'learningObjectives' => fn ($query) => $query
+                    ->withCount(['materials', 'questions'])
+                    ->orderBy('order')
+                    ->orderBy('code'),
                 'sections.materials.learningObjectives',
                 'questionBanks.questions.learningObjectives',
             ]);
