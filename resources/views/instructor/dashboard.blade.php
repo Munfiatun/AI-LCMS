@@ -16,6 +16,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <x-ui.button :href="route('instructor.courses.create')">+ Buat Kursus</x-ui.button>
+                <x-ui.button :href="route('instructor.learning-objectives.index')" variant="secondary">Learning Objectives</x-ui.button>
                 <x-ui.button :href="route('instructor.quizzes.index')" variant="secondary">Kelola Quiz</x-ui.button>
             </div>
         </div>
@@ -150,7 +151,10 @@
             <h3 class="text-sm font-bold text-white">Prinsip Kendali Guru</h3>
             <p class="mt-1 text-xs text-slate-500">AI membantu menyusun Slidebook dan Quiz, tetapi konten tetap harus diperiksa dan disetujui guru sebelum diterbitkan kepada siswa.</p>
         </div>
-        <a href="{{ route('instructor.question-banks.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Kelola Bank Soal →</a>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('instructor.learning-objectives.index') }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Learning Objectives & Alignment →</a>
+            <a href="{{ route('instructor.question-banks.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Kelola Bank Soal →</a>
+        </div>
     </x-ui.panel>
 </div>
 @endsection
