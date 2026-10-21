@@ -18,24 +18,32 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->unique(['course_id', 'code']);
-            $table->index(['course_id', 'is_active', 'order']);
+            $table->unique(['course_id', 'code'], 'lo_course_code_unique');
+            $table->index(['course_id', 'is_active', 'order'], 'lo_course_active_order_idx');
         });
 
         Schema::create('learning_material_learning_objective', function (Blueprint $table): void {
-            $table->foreignId('learning_material_id')->constrained('learning_materials')->cascadeOnDelete();
-            $table->foreignId('learning_objective_id')->constrained('learning_objectives')->cascadeOnDelete();
+            $table->unsignedBigInteger('learning_material_id');
+            $table->unsignedBigInteger('learning_objective_id');
             $table->timestamps();
 
-            $table->primary(['learning_material_id', 'learning_objective_id']);
+            $table->foreign('learning_material_id', 'lm_lo_material_fk')
+                ->references('id')->on('learning_materials')->cascadeOnDelete();
+            $table->foreign('learning_objective_id', 'lm_lo_objective_fk')
+                ->references('id')->on('learning_objectives')->cascadeOnDelete();
+            $table->primary(['learning_material_id', 'learning_objective_id'], 'lm_lo_primary');
         });
 
         Schema::create('learning_objective_question', function (Blueprint $table): void {
-            $table->foreignId('learning_objective_id')->constrained('learning_objectives')->cascadeOnDelete();
-            $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
+            $table->unsignedBigInteger('learning_objective_id');
+            $table->unsignedBigInteger('question_id');
             $table->timestamps();
 
-            $table->primary(['learning_objective_id', 'question_id']);
+            $table->foreign('learning_objective_id', 'lo_q_objective_fk')
+                ->references('id')->on('learning_objectives')->cascadeOnDelete();
+            $table->foreign('question_id', 'lo_q_question_fk')
+                ->references('id')->on('questions')->cascadeOnDelete();
+            $table->primary(['learning_objective_id', 'question_id'], 'lo_q_primary');
         });
     }
 
