@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -73,6 +74,15 @@ class Question extends Model
     public function questionBank(): BelongsTo
     {
         return $this->belongsTo(QuestionBank::class, 'question_bank_id');
+    }
+
+    /** @return BelongsToMany<LearningObjective, $this> */
+    public function learningObjectives(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            LearningObjective::class,
+            'learning_objective_question'
+        )->withTimestamps()->orderBy('learning_objectives.order')->orderBy('learning_objectives.code');
     }
 
     /**

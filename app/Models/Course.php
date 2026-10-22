@@ -83,6 +83,18 @@ class Course extends Model
         return $this->hasManyThrough(LearningMaterial::class, CourseSection::class, 'course_id', 'section_id');
     }
 
+    /** @return HasMany<LearningObjective, $this> */
+    public function learningObjectives(): HasMany
+    {
+        return $this->hasMany(LearningObjective::class)->orderBy('order')->orderBy('code');
+    }
+
+    /** @return HasMany<QuestionBank, $this> */
+    public function questionBanks(): HasMany
+    {
+        return $this->hasMany(QuestionBank::class);
+    }
+
     /** @param Builder<$this> $query */
     public function scopePublished(Builder $query): void
     {

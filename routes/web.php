@@ -12,6 +12,8 @@ use App\Http\Controllers\Instructor\AIQuizController;
 use App\Http\Controllers\Instructor\AnalyticsController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
+use App\Http\Controllers\Instructor\LearningObjectiveAlignmentController;
+use App\Http\Controllers\Instructor\LearningObjectiveController;
 use App\Http\Controllers\Instructor\MaterialController as InstructorMaterialController;
 use App\Http\Controllers\Instructor\MaterialDocumentController as InstructorMaterialDocumentController;
 use App\Http\Controllers\Instructor\QuestionBankController;
@@ -77,6 +79,14 @@ Route::middleware(['auth', 'role:instructor'])
     ->name('instructor.')
     ->group(function (): void {
         Route::get('/dashboard', [InstructorDashboardController::class, 'index'])->name('dashboard');
+
+        // Research foundation: Learning Objectives & alignment
+        Route::get('/learning-objectives', [LearningObjectiveController::class, 'index'])->name('learning-objectives.index');
+        Route::post('/courses/{course}/learning-objectives', [LearningObjectiveController::class, 'store'])->name('learning-objectives.store');
+        Route::put('/learning-objectives/{learningObjective}', [LearningObjectiveController::class, 'update'])->name('learning-objectives.update');
+        Route::delete('/learning-objectives/{learningObjective}', [LearningObjectiveController::class, 'destroy'])->name('learning-objectives.destroy');
+        Route::put('/materials/{material}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncMaterial'])->name('materials.learning-objectives.sync');
+        Route::put('/questions/{question}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncQuestion'])->name('questions.learning-objectives.sync');
 
         // Course CRUD
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
