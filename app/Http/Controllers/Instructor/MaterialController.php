@@ -60,17 +60,24 @@ class MaterialController extends Controller
         return back()->with('success', 'Materi berhasil dipublikasikan.');
     }
 
-    public function preview(LearningMaterial $material): View
+    public function preview(LearningMaterial $material): View|RedirectResponse
     {
         Gate::authorize('update', $material);
 
-        $material->loadMissing(['section.course']);
+        $material->load(['section.course', 'slidebook', 'documents']);
+
+        // If a Slidebook exists, preview the exact student renderer directly.
+        // This avoids nesting the student material page and prevents instructor
+        // navigation/chrome from appearing inside the preview frame.
+        if ($material->slidebook) {
+            return redirect()->route('instructor.slidebooks.preview', $material->slidebook);
+        }
+
         $course = $material->section->course;
-
-        $course->load(['sections.materials' => fn ($query) => $query->published(), 'quizzes' => fn ($query) => $query->available()]);
-
-        // For preview, load draft/review slidebook as well
-        $material->load(['slidebook', 'documents']);
+        $course->load([
+            'sections.materials' => fn ($query) => $query->published(),
+            'quizzes' => fn ($query) => $query->available(),
+        ]);
 
         $isCompleted = false;
         $completedMaterialIds = [];
