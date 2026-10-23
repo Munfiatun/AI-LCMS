@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Models\ResearchEvent;
 use App\Services\EnrollmentService;
 use App\Services\Quiz\QuizAttemptService;
+use App\Services\ResearchEventRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +17,8 @@ class QuizAttemptController extends Controller
 {
     public function __construct(
         private QuizAttemptService $quizAttemptService,
-        private EnrollmentService $enrollmentService
+        private EnrollmentService $enrollmentService,
+        private ResearchEventRecorder $researchEventRecorder
     ) {}
 
     public function show(Quiz $quiz)
@@ -43,6 +46,20 @@ class QuizAttemptController extends Controller
 
         try {
             $attempt = $this->quizAttemptService->startAttempt($quiz, auth()->user());
+            $objectiveIds = $this->objectiveIdsForQuiz($quiz);
+
+            $this->researchEventRecorder->recordOnce(
+                auth()->user(),
+                $quiz->course,
+                ResearchEvent::ASSESSMENT_STARTED,
+                $attempt,
+                [
+                    'quiz_id' => $quiz->id,
+                    'attempt_id' => $attempt->id,
+                    'learning_objective_ids' => $objectiveIds,
+                ],
+                count($objectiveIds) === 1 ? $objectiveIds[0] : null
+            );
 
             return redirect()->route('student.quizzes.take', ['quiz' => $quiz->id, 'attempt' => $attempt->id]);
         } catch (ValidationException $e) {
@@ -60,6 +77,7 @@ class QuizAttemptController extends Controller
 
         if ($attempt->status === 'in_progress' && $attempt->expires_at && now()->greaterThanOrEqualTo($attempt->expires_at)) {
             $attempt = $this->quizAttemptService->submitAttempt($attempt, []);
+            $this->recordSubmissionEvent($quiz, $attempt, 'expired');
         }
 
         if ($attempt->status !== 'in_progress') {
@@ -84,7 +102,8 @@ class QuizAttemptController extends Controller
         ]);
 
         try {
-            $this->quizAttemptService->submitAttempt($attempt, $validated['answers'] ?? []);
+            $attempt = $this->quizAttemptService->submitAttempt($attempt, $validated['answers'] ?? []);
+            $this->recordSubmissionEvent($quiz, $attempt, 'student_submit');
 
             // Perbarui progress pendaftaran kursus
             $this->enrollmentService->updateProgress($quiz->course, auth()->user());
@@ -126,5 +145,42 @@ class QuizAttemptController extends Controller
             'canRetry',
             'revealSolutions'
         ));
+    }
+
+    /** @return list<int> */
+    private function objectiveIdsForQuiz(Quiz $quiz): array
+    {
+        $quiz->loadMissing('questions.learningObjectives:id');
+
+        return $quiz->questions
+            ->flatMap(fn ($question) => $question->learningObjectives->pluck('id'))
+            ->unique()
+            ->values()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function recordSubmissionEvent(Quiz $quiz, QuizAttempt $attempt, string $submissionReason): void
+    {
+        $objectiveIds = $this->objectiveIdsForQuiz($quiz);
+
+        $this->researchEventRecorder->recordOnce(
+            auth()->user(),
+            $quiz->course,
+            ResearchEvent::ASSESSMENT_SUBMITTED,
+            $attempt,
+            [
+                'quiz_id' => $quiz->id,
+                'attempt_id' => $attempt->id,
+                'learning_objective_ids' => $objectiveIds,
+                'submission_reason' => $submissionReason,
+                'score' => $attempt->score,
+                'percentage' => $attempt->percentage,
+                'correct_count' => $attempt->correct_count,
+                'wrong_count' => $attempt->wrong_count,
+                'duration_seconds' => $attempt->duration_seconds,
+            ],
+            count($objectiveIds) === 1 ? $objectiveIds[0] : null
+        );
     }
 }

@@ -89,17 +89,23 @@ class RecoveryStabilizationTest extends TestCase
         });
     }
 
-    public function test_material_instructor_preview_is_read_only(): void
+    public function test_material_instructor_preview_uses_student_renderer_without_instructor_chrome(): void
     {
         $this->seedDemo();
         $instructor = User::where('email', 'instructor@example.com')->firstOrFail();
         $material = LearningMaterial::where('slug', 'slidebook-layout-gallery')->firstOrFail();
+        $slidebook = $material->slidebook()->firstOrFail();
 
         $this->actingAs($instructor)
             ->get(route('instructor.materials.preview', $material))
+            ->assertRedirect(route('instructor.slidebooks.preview', $slidebook));
+
+        $this->actingAs($instructor)
+            ->get(route('instructor.slidebooks.preview', $slidebook))
             ->assertOk()
-            ->assertSee('Instructor Preview')
-            ->assertSee('Read-only')
+            ->assertSee('Preview Siswa')
+            ->assertDontSee('Dashboard Guru')
+            ->assertDontSee('Kembali ke Beranda')
             ->assertDontSee('Tandai Selesai');
     }
 

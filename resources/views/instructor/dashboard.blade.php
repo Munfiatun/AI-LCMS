@@ -121,6 +121,7 @@
                         <h4 class="mt-1 text-sm font-bold text-white">{{ $item['next_action']['label'] }}</h4>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">{{ $item['next_action']['description'] }}</p>
                         <x-ui.button :href="$item['next_action']['url']" block size="sm" class="mt-3">Lanjutkan →</x-ui.button>
+                        <a href="{{ route('instructor.courses.research.show', $course) }}" class="mt-3 block text-center text-xs font-semibold text-indigo-300 hover:text-indigo-200">Research Setup →</a>
                     </x-ui.panel>
                 </div>
 

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\LearningMaterial;
+use App\Models\ResearchEvent;
+use App\Services\ResearchEventRecorder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class MaterialController extends Controller
 {
-    public function show(Course $course, LearningMaterial $material): View
+    public function show(Course $course, LearningMaterial $material, ResearchEventRecorder $events): View
     {
         $material->load('section.course');
         abort_unless($material->section->course_id === $course->id, 404);
@@ -22,7 +24,7 @@ class MaterialController extends Controller
 
         // Eager load relasi yang dibutuhkan view untuk mencegah LazyLoadingViolationException
         $course->load(['sections.materials' => fn ($query) => $query->published(), 'quizzes' => fn ($query) => $query->available()]);
-        $material->load(['publishedSlidebook', 'documents']);
+        $material->load(['publishedSlidebook', 'documents', 'learningObjectives:id']);
 
         // Update last accessed
         $enrollment->last_accessed_material_id = $material->id;
@@ -38,6 +40,19 @@ class MaterialController extends Controller
             ->toArray();
 
         $isCompleted = in_array($material->id, $completedMaterialIds);
+        $objectiveIds = $material->learningObjectives->pluck('id')->values()->all();
+
+        $events->record(
+            auth()->user(),
+            $course,
+            ResearchEvent::MATERIAL_OPENED,
+            $material,
+            [
+                'learning_objective_ids' => $objectiveIds,
+                'already_completed' => $isCompleted,
+            ],
+            count($objectiveIds) === 1 ? $objectiveIds[0] : null
+        );
 
         return view('student.materials.show', compact('course', 'material', 'isCompleted', 'completedMaterialIds'));
     }
