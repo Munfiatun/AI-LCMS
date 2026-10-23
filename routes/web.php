@@ -20,6 +20,7 @@ use App\Http\Controllers\Instructor\QuestionBankController;
 use App\Http\Controllers\Instructor\QuestionController;
 use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\QuizResultController;
+use App\Http\Controllers\Instructor\ResearchExperimentController;
 use App\Http\Controllers\Instructor\SectionController as InstructorSectionController;
 use App\Http\Controllers\Instructor\SlidebookReviewController;
 use App\Http\Controllers\Instructor\SlideController;
@@ -47,7 +48,7 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
 
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::get('/register', [RegisterController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
 });
 
@@ -87,6 +88,10 @@ Route::middleware(['auth', 'role:instructor'])
         Route::delete('/learning-objectives/{learningObjective}', [LearningObjectiveController::class, 'destroy'])->name('learning-objectives.destroy');
         Route::put('/materials/{material}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncMaterial'])->name('materials.learning-objectives.sync');
         Route::put('/questions/{question}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncQuestion'])->name('questions.learning-objectives.sync');
+
+        // Research instrumentation: experiment assignment only (no adaptive behavior yet)
+        Route::get('/courses/{course}/research-experiment', [ResearchExperimentController::class, 'show'])->name('courses.research.show');
+        Route::put('/courses/{course}/research-experiment/assignment', [ResearchExperimentController::class, 'updateAssignment'])->name('courses.research.assignment');
 
         // Course CRUD
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
