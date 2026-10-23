@@ -29,7 +29,7 @@ class ProgressController extends Controller
 
         $objectiveIds = $material->learningObjectives->pluck('id')->values()->all();
 
-        $this->researchEventRecorder->record(
+        $this->researchEventRecorder->recordOnce(
             $request->user(),
             $course,
             ResearchEvent::MATERIAL_COMPLETED,
