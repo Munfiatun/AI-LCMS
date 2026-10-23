@@ -48,7 +48,7 @@ class QuizAttemptController extends Controller
             $attempt = $this->quizAttemptService->startAttempt($quiz, auth()->user());
             $objectiveIds = $this->objectiveIdsForQuiz($quiz);
 
-            $this->researchEventRecorder->record(
+            $this->researchEventRecorder->recordOnce(
                 auth()->user(),
                 $quiz->course,
                 ResearchEvent::ASSESSMENT_STARTED,
@@ -164,7 +164,7 @@ class QuizAttemptController extends Controller
     {
         $objectiveIds = $this->objectiveIdsForQuiz($quiz);
 
-        $this->researchEventRecorder->record(
+        $this->researchEventRecorder->recordOnce(
             auth()->user(),
             $quiz->course,
             ResearchEvent::ASSESSMENT_SUBMITTED,
