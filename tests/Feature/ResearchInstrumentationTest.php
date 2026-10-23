@@ -162,7 +162,7 @@ class ResearchInstrumentationTest extends TestCase
         $this->assertSame([$objective->id], $event->metadata['learning_objective_ids']);
     }
 
-    public function test_material_completion_records_separate_research_event(): void
+    public function test_material_completion_records_one_milestone_even_if_request_is_repeated(): void
     {
         $course = $this->courseFor($this->instructor, Course::STATUS_PUBLISHED);
         $section = CourseSection::factory()->create([
@@ -180,6 +180,10 @@ class ResearchInstrumentationTest extends TestCase
             ->post(route('student.materials.complete', $material))
             ->assertRedirect();
 
+        $this->actingAs($this->student)
+            ->post(route('student.materials.complete', $material))
+            ->assertRedirect();
+
         $this->assertDatabaseHas('research_events', [
             'student_id' => $this->student->id,
             'course_id' => $course->id,
@@ -187,6 +191,14 @@ class ResearchInstrumentationTest extends TestCase
             'source_type' => 'LearningMaterial',
             'source_id' => $material->id,
         ]);
+
+        $this->assertSame(1, ResearchEvent::query()
+            ->where('student_id', $this->student->id)
+            ->where('course_id', $course->id)
+            ->where('event_type', ResearchEvent::MATERIAL_COMPLETED)
+            ->where('source_type', 'LearningMaterial')
+            ->where('source_id', $material->id)
+            ->count());
     }
 
     private function courseFor(User $instructor, string $status = Course::STATUS_DRAFT): Course
