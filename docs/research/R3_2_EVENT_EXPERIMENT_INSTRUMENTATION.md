@@ -170,7 +170,35 @@ R3.2 is complete when:
 9. no mastery/adaptive recommendation behavior is introduced;
 10. automated tests and the existing project quality gate pass.
 
-## 11. Next phase
+## 11. Verification procedure
+
+After switching to the R3.2 branch locally:
+
+```bash
+php artisan optimize:clear
+php artisan migrate
+php artisan test --filter=ResearchInstrumentationTest
+```
+
+For the full repository gate:
+
+```bash
+composer run release:check
+```
+
+Manual verification should use at least two enrolled student accounts:
+
+1. assign one student to `Adaptive` and another to `Non-Adaptive` from `Research Setup`;
+2. verify the student-facing experience is still identical in R3.2;
+3. open an aligned material as a student;
+4. open its Slidebook;
+5. mark the material completed;
+6. start and submit a quiz whose questions are mapped to Learning Objectives;
+7. verify research events are written with the expected event type, source and treatment snapshot.
+
+Repeated page opens are expected to create repeated exposure events. Repeating a completion/submit milestone must not create duplicate milestone events for the same source.
+
+## 12. Next phase
 
 The next research implementation phase is **R3.3 — Mastery Evidence & Estimation**.
 
