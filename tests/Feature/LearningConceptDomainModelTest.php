@@ -90,7 +90,7 @@ class LearningConceptDomainModelTest extends TestCase
         $this->assertCount(2, $branching->prerequisites);
         $this->assertSame('C01', $branching->prerequisites[0]->code);
         $this->assertSame('C02', $branching->prerequisites[1]->code);
-        $this->assertSame('0.80', (string) $branching->prerequisites[1]->pivot->weight);
+        $this->assertSame(0.80, (float) $branching->prerequisites[1]->pivot->weight);
         $this->assertTrue($variables->requiredByConcepts()->whereKey($branching->id)->exists());
     }
 
@@ -109,7 +109,7 @@ class LearningConceptDomainModelTest extends TestCase
         $material->load('learningConcepts');
 
         $this->assertTrue($material->learningConcepts->first()->is($concept));
-        $this->assertSame('0.90', (string) $material->learningConcepts->first()->pivot->relevance_weight);
+        $this->assertSame(0.90, (float) $material->learningConcepts->first()->pivot->relevance_weight);
         $this->assertTrue($concept->materials()->whereKey($material->id)->exists());
     }
 
@@ -135,7 +135,7 @@ class LearningConceptDomainModelTest extends TestCase
 
         $mappedConcept = $question->learningConcepts->first();
         $this->assertTrue($mappedConcept->is($concept));
-        $this->assertSame('1.25', (string) $mappedConcept->pivot->weight);
+        $this->assertSame(1.25, (float) $mappedConcept->pivot->weight);
         $this->assertSame(Question::DIFFICULTY_MEDIUM, $mappedConcept->pivot->difficulty_level);
         $this->assertTrue($concept->questions()->whereKey($question->id)->exists());
     }
