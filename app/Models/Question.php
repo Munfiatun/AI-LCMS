@@ -85,6 +85,17 @@ class Question extends Model
         )->withTimestamps()->orderBy('learning_objectives.order')->orderBy('learning_objectives.code');
     }
 
+    /** @return BelongsToMany<LearningConcept, $this> */
+    public function learningConcepts(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            LearningConcept::class,
+            'question_concepts',
+            'question_id',
+            'learning_concept_id'
+        )->withPivot(['weight', 'difficulty_level'])->withTimestamps()->orderBy('learning_concepts.order')->orderBy('learning_concepts.code');
+    }
+
     /**
      * @return HasMany<QuestionOption, $this>
      */
