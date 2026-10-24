@@ -98,6 +98,17 @@ class LearningMaterial extends Model
         )->withTimestamps()->orderBy('learning_objectives.order')->orderBy('learning_objectives.code');
     }
 
+    /** @return BelongsToMany<LearningConcept, $this> */
+    public function learningConcepts(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            LearningConcept::class,
+            'material_concepts',
+            'learning_material_id',
+            'learning_concept_id'
+        )->withPivot('relevance_weight')->withTimestamps()->orderBy('learning_concepts.order')->orderBy('learning_concepts.code');
+    }
+
     /**
      * @return HasMany<Slidebook, $this>
      */
