@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LearningObjective extends Model
 {
@@ -32,6 +33,12 @@ class LearningObjective extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /** @return HasMany<LearningConcept, $this> */
+    public function learningConcepts(): HasMany
+    {
+        return $this->hasMany(LearningConcept::class)->orderBy('order')->orderBy('code');
     }
 
     /** @return BelongsToMany<LearningMaterial, $this> */
