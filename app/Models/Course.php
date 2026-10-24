@@ -89,6 +89,12 @@ class Course extends Model
         return $this->hasMany(LearningObjective::class)->orderBy('order')->orderBy('code');
     }
 
+    /** @return HasMany<LearningConcept, $this> */
+    public function learningConcepts(): HasMany
+    {
+        return $this->hasMany(LearningConcept::class)->orderBy('order')->orderBy('code');
+    }
+
     /** @return HasMany<QuestionBank, $this> */
     public function questionBanks(): HasMany
     {
