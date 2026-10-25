@@ -16,6 +16,10 @@ class LearningConceptController extends Controller
 {
     public function index(Request $request): View
     {
+        if ($request->boolean('readiness')) {
+            return $this->readiness($request);
+        }
+
         $courses = Course::query()
             ->where('instructor_id', $request->user()->id)
             ->orderBy('title')
