@@ -202,11 +202,11 @@ class LearningConceptWorkspaceTest extends TestCase
             ->assertSessionHasErrors('learning_concept_ids.0');
     }
 
-    public function test_student_cannot_open_domain_model_workspace(): void
+    public function test_student_is_redirected_to_own_dashboard_when_opening_domain_model_workspace(): void
     {
         $this->actingAs($this->student)
             ->get(route('instructor.learning-concepts.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('student.dashboard'));
     }
 
     private function courseFor(User $instructor, string $title = 'Pemrograman Dasar'): Course
