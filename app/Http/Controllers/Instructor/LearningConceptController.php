@@ -43,6 +43,37 @@ class LearningConceptController extends Controller
         return view('instructor.learning_concepts.index', compact('courses', 'selectedCourse'));
     }
 
+    public function readiness(Request $request): View
+    {
+        $courses = Course::query()
+            ->where('instructor_id', $request->user()->id)
+            ->orderBy('title')
+            ->get();
+
+        $selectedCourse = null;
+        $readiness = null;
+
+        if ($courses->isNotEmpty()) {
+            $requestedCourseId = (int) $request->query('course_id', $courses->first()->id);
+            $selectedCourse = $courses->firstWhere('id', $requestedCourseId) ?? $courses->first();
+
+            Gate::authorize('update', $selectedCourse);
+
+            $selectedCourse->load([
+                'learningObjectives',
+                'learningConcepts' => fn ($query) => $query
+                    ->with(['learningObjective', 'prerequisites', 'materials', 'questions'])
+                    ->orderBy('order')
+                    ->orderBy('code'),
+                'questionBanks.questions.learningConcepts',
+            ]);
+
+            $readiness = $this->buildReadiness($selectedCourse);
+        }
+
+        return view('instructor.learning_concepts.readiness', compact('courses', 'selectedCourse', 'readiness'));
+    }
+
     public function store(Request $request, Course $course): RedirectResponse
     {
         Gate::authorize('update', $course);
@@ -106,6 +137,80 @@ class LearningConceptController extends Controller
             'description' => ['nullable', 'string'],
             'order' => [$learningConcept ? 'required' : 'nullable', 'integer', 'min:0'],
             'is_active' => ['required', 'boolean'],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildReadiness(Course $course): array
+    {
+        $activeConcepts = $course->learningConcepts
+            ->where('is_active', true)
+            ->values();
+        $courseQuestions = $course->questionBanks
+            ->flatMap(fn ($bank) => $bank->questions)
+            ->values();
+
+        $conceptsWithoutObjective = $activeConcepts
+            ->filter(fn (LearningConcept $concept): bool => $concept->learning_objective_id === null)
+            ->values();
+        $conceptsWithoutMaterials = $activeConcepts
+            ->filter(fn (LearningConcept $concept): bool => $concept->materials->isEmpty())
+            ->values();
+        $conceptsWithoutQuestions = $activeConcepts
+            ->filter(fn (LearningConcept $concept): bool => $concept->questions->isEmpty())
+            ->values();
+        $unmappedQuestions = $courseQuestions
+            ->filter(fn ($question): bool => $question->learningConcepts->isEmpty())
+            ->values();
+
+        $checks = [
+            [
+                'key' => 'concept_count',
+                'label' => 'Unit penelitian memiliki 4–6 concept aktif',
+                'passed' => $activeConcepts->count() >= 4 && $activeConcepts->count() <= 6,
+                'detail' => $activeConcepts->count().' concept aktif saat ini.',
+            ],
+            [
+                'key' => 'objective_alignment',
+                'label' => 'Setiap concept aktif memiliki parent Learning Objective',
+                'passed' => $activeConcepts->isNotEmpty() && $conceptsWithoutObjective->isEmpty(),
+                'detail' => $conceptsWithoutObjective->isEmpty()
+                    ? 'Tidak ada concept aktif tanpa Learning Objective.'
+                    : $conceptsWithoutObjective->pluck('code')->implode(', ').' belum memiliki parent LO.',
+            ],
+            [
+                'key' => 'material_coverage',
+                'label' => 'Setiap concept aktif memiliki minimal satu materi tindak lanjut',
+                'passed' => $activeConcepts->isNotEmpty() && $conceptsWithoutMaterials->isEmpty(),
+                'detail' => $conceptsWithoutMaterials->isEmpty()
+                    ? 'Semua concept aktif sudah memiliki materi yang dapat direkomendasikan.'
+                    : $conceptsWithoutMaterials->pluck('code')->implode(', ').' belum memiliki material mapping.',
+            ],
+            [
+                'key' => 'question_traceability',
+                'label' => 'Semua soal pada bank soal course dapat ditelusuri ke concept',
+                'passed' => $courseQuestions->isNotEmpty() && $unmappedQuestions->isEmpty(),
+                'detail' => $courseQuestions->isEmpty()
+                    ? 'Belum ada soal pada bank soal yang terhubung ke course.'
+                    : ($unmappedQuestions->isEmpty()
+                        ? 'Semua '.$courseQuestions->count().' soal course sudah memiliki concept mapping.'
+                        : $unmappedQuestions->count().' dari '.$courseQuestions->count().' soal belum memiliki concept mapping.'),
+            ],
+        ];
+
+        return [
+            'passed' => collect($checks)->every(fn (array $check): bool => $check['passed']),
+            'checks' => $checks,
+            'metrics' => [
+                'active_concepts' => $activeConcepts->count(),
+                'total_questions' => $courseQuestions->count(),
+                'mapped_questions' => $courseQuestions->count() - $unmappedQuestions->count(),
+                'concepts_with_materials' => $activeConcepts->count() - $conceptsWithoutMaterials->count(),
+                'concepts_with_questions' => $activeConcepts->count() - $conceptsWithoutQuestions->count(),
+            ],
+            'warnings' => [
+                'concepts_without_questions' => $conceptsWithoutQuestions,
+            ],
         ];
     }
 }
