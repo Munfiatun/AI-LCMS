@@ -12,6 +12,8 @@ use App\Http\Controllers\Instructor\AIQuizController;
 use App\Http\Controllers\Instructor\AnalyticsController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
+use App\Http\Controllers\Instructor\LearningConceptAlignmentController;
+use App\Http\Controllers\Instructor\LearningConceptController;
 use App\Http\Controllers\Instructor\LearningObjectiveAlignmentController;
 use App\Http\Controllers\Instructor\LearningObjectiveController;
 use App\Http\Controllers\Instructor\MaterialController as InstructorMaterialController;
@@ -88,6 +90,15 @@ Route::middleware(['auth', 'role:instructor'])
         Route::delete('/learning-objectives/{learningObjective}', [LearningObjectiveController::class, 'destroy'])->name('learning-objectives.destroy');
         Route::put('/materials/{material}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncMaterial'])->name('materials.learning-objectives.sync');
         Route::put('/questions/{question}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncQuestion'])->name('questions.learning-objectives.sync');
+
+        // R1 Domain Model: Concepts, prerequisites, and concept-level alignment
+        Route::get('/learning-concepts', [LearningConceptController::class, 'index'])->name('learning-concepts.index');
+        Route::post('/courses/{course}/learning-concepts', [LearningConceptController::class, 'store'])->name('learning-concepts.store');
+        Route::put('/learning-concepts/{learningConcept}', [LearningConceptController::class, 'update'])->name('learning-concepts.update');
+        Route::delete('/learning-concepts/{learningConcept}', [LearningConceptController::class, 'destroy'])->name('learning-concepts.destroy');
+        Route::put('/learning-concepts/{learningConcept}/prerequisites', [LearningConceptAlignmentController::class, 'syncPrerequisites'])->name('learning-concepts.prerequisites.sync');
+        Route::put('/materials/{material}/learning-concepts', [LearningConceptAlignmentController::class, 'syncMaterial'])->name('materials.learning-concepts.sync');
+        Route::put('/questions/{question}/learning-concepts', [LearningConceptAlignmentController::class, 'syncQuestion'])->name('questions.learning-concepts.sync');
 
         // Research instrumentation: experiment assignment only (no adaptive behavior yet)
         Route::get('/courses/{course}/research-experiment', [ResearchExperimentController::class, 'show'])->name('courses.research.show');
