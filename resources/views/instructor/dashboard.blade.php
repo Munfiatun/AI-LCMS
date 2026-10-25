@@ -17,6 +17,7 @@
             <div class="flex flex-wrap gap-2">
                 <x-ui.button :href="route('instructor.courses.create')">+ Buat Kursus</x-ui.button>
                 <x-ui.button :href="route('instructor.learning-objectives.index')" variant="secondary">Learning Objectives</x-ui.button>
+                <x-ui.button :href="route('instructor.learning-concepts.index')" variant="secondary">Domain Model</x-ui.button>
                 <x-ui.button :href="route('instructor.quizzes.index')" variant="secondary">Kelola Quiz</x-ui.button>
             </div>
         </div>
@@ -121,7 +122,10 @@
                         <h4 class="mt-1 text-sm font-bold text-white">{{ $item['next_action']['label'] }}</h4>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">{{ $item['next_action']['description'] }}</p>
                         <x-ui.button :href="$item['next_action']['url']" block size="sm" class="mt-3">Lanjutkan →</x-ui.button>
-                        <a href="{{ route('instructor.courses.research.show', $course) }}" class="mt-3 block text-center text-xs font-semibold text-indigo-300 hover:text-indigo-200">Research Setup →</a>
+                        <div class="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-2">
+                            <a href="{{ route('instructor.learning-concepts.index', ['course_id' => $course->id]) }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Domain Model →</a>
+                            <a href="{{ route('instructor.courses.research.show', $course) }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Research Setup →</a>
+                        </div>
                     </x-ui.panel>
                 </div>
 
@@ -154,6 +158,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('instructor.learning-objectives.index') }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Learning Objectives & Alignment →</a>
+            <a href="{{ route('instructor.learning-concepts.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Domain Model →</a>
             <a href="{{ route('instructor.question-banks.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Kelola Bank Soal →</a>
         </div>
     </x-ui.panel>
