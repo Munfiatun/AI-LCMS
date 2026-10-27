@@ -22,6 +22,8 @@ class ResearchRouteServiceProvider extends ServiceProvider
 
                 Route::get('/mastery-profiles', [MasteryProfileController::class, 'index'])
                     ->name('mastery.index');
+                Route::get('/mastery-profiles/audit', [MasteryProfileController::class, 'audit'])
+                    ->name('mastery.audit');
                 Route::get('/mastery-profiles/courses/{course}/students/{student}', [MasteryProfileController::class, 'show'])
                     ->name('mastery.show');
             });
