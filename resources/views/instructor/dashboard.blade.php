@@ -19,6 +19,7 @@
                 <x-ui.button :href="route('instructor.learning-objectives.index')" variant="secondary">Learning Objectives</x-ui.button>
                 <x-ui.button :href="route('instructor.learning-concepts.index')" variant="secondary">Domain Model</x-ui.button>
                 <x-ui.button :href="route('instructor.diagnostics.index')" variant="secondary">Diagnostic Assessment</x-ui.button>
+                <x-ui.button :href="route('instructor.mastery.index')" variant="secondary">Mastery Profile</x-ui.button>
                 <x-ui.button :href="route('instructor.quizzes.index')" variant="secondary">Kelola Quiz</x-ui.button>
             </div>
         </div>
@@ -126,6 +127,7 @@
                         <div class="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-2">
                             <a href="{{ route('instructor.learning-concepts.index', ['course_id' => $course->id]) }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Domain Model →</a>
                             <a href="{{ route('instructor.diagnostics.index', ['course_id' => $course->id]) }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Diagnostic →</a>
+                            <a href="{{ route('instructor.mastery.index', ['course_id' => $course->id]) }}" class="text-xs font-semibold text-violet-300 hover:text-violet-200">Mastery →</a>
                             <a href="{{ route('instructor.courses.research.show', $course) }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Research Setup →</a>
                         </div>
                     </x-ui.panel>
@@ -162,6 +164,7 @@
             <a href="{{ route('instructor.learning-objectives.index') }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Learning Objectives & Alignment →</a>
             <a href="{{ route('instructor.learning-concepts.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Domain Model →</a>
             <a href="{{ route('instructor.diagnostics.index') }}" class="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Diagnostic Assessment →</a>
+            <a href="{{ route('instructor.mastery.index') }}" class="text-xs font-semibold text-violet-300 hover:text-violet-200">Mastery Profile →</a>
             <a href="{{ route('instructor.question-banks.index') }}" class="text-xs font-semibold text-cyan-300 hover:text-cyan-200">Kelola Bank Soal →</a>
         </div>
     </x-ui.panel>
