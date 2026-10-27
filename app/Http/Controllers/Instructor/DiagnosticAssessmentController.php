@@ -35,8 +35,9 @@ class DiagnosticAssessmentController extends Controller
             $quizzes = Quiz::query()
                 ->where('course_id', $selectedCourse->id)
                 ->with([
-                    'questions.learningConcepts:id,course_id,code,name',
-                    'questions:id,question_bank_id,question_text',
+                    'questions' => fn ($query) => $query
+                        ->select('questions.id', 'question_bank_id', 'question_text')
+                        ->with('learningConcepts:id,course_id,code,name'),
                 ])
                 ->withCount('attempts')
                 ->latest()
