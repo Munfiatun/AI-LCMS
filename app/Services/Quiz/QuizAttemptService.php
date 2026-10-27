@@ -8,12 +8,17 @@ use App\Models\QuizAttempt;
 use App\Models\QuizAttemptOption;
 use App\Models\QuizAttemptQuestion;
 use App\Models\User;
+use App\Services\Learning\ConceptMasteryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class QuizAttemptService
 {
+    public function __construct(
+        private ConceptMasteryService $conceptMasteryService
+    ) {}
+
     public function startAttempt(Quiz $quiz, User $student): QuizAttempt
     {
         $result = DB::transaction(function () use ($quiz, $student): QuizAttempt|ValidationException {
@@ -109,7 +114,7 @@ class QuizAttemptService
      */
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
-        return DB::transaction(function () use ($attempt, $answers) {
+        $attempt = DB::transaction(function () use ($attempt, $answers) {
             $attempt = QuizAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
             if ($attempt->status !== 'in_progress') {
                 throw ValidationException::withMessages(['attempt' => 'Attempt is already finished.']);
@@ -191,7 +196,13 @@ class QuizAttemptService
 
             $attempt->save();
 
-            return $attempt;
+            return $attempt->fresh(['quiz.course', 'answers.question.learningConcepts']);
         });
+
+        if ($attempt->quiz?->isDiagnostic()) {
+            $this->conceptMasteryService->updateFromAttempt($attempt);
+        }
+
+        return $attempt->fresh();
     }
 }
