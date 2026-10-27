@@ -15,6 +15,7 @@
                 <p class="mt-2 text-sm leading-6 text-slate-400">Lihat hasil diagnostic assessment per concept beserta jumlah evidence. Pada tahap R2 ini skor ditampilkan apa adanya tanpa label rendah/sedang/tinggi karena threshold belum divalidasi.</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('instructor.mastery.audit', ['course_id' => $selectedCourse?->id]) }}" class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-200">R2 Acceptance Audit</a>
                 <a href="{{ route('instructor.diagnostics.index', ['course_id' => $selectedCourse?->id]) }}" class="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-semibold text-indigo-200">Diagnostic Assessment</a>
                 <a href="{{ route('instructor.learning-concepts.index', ['course_id' => $selectedCourse?->id]) }}" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-200">Domain Model</a>
             </div>
