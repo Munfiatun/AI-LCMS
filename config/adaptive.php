@@ -44,6 +44,10 @@ return [
                 'and_operator' => 'minimum',
                 'aggregation_operator' => 'maximum',
                 'defuzzification' => 'centroid',
+                'targeting' => [
+                    'minimum_evidence_count' => 2,
+                    'prerequisite_ready_minimum' => 70.00,
+                ],
                 'output_universe' => ['min' => 0, 'max' => 100, 'step' => 1],
                 'inputs' => [
                     'mastery_score' => [
