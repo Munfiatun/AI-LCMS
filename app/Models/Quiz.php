@@ -14,6 +14,12 @@ class Quiz extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const ASSESSMENT_DIAGNOSTIC = 'diagnostic';
+
+    public const ASSESSMENT_FORMATIVE = 'formative';
+
+    public const ASSESSMENT_SUMMATIVE = 'summative';
+
     protected $table = 'quizzes';
 
     protected $fillable = [
@@ -22,6 +28,7 @@ class Quiz extends Model
         'title',
         'description',
         'instructions',
+        'assessment_type',
         'passing_score',
         'duration_minutes',
         'total_questions',
@@ -45,6 +52,11 @@ class Quiz extends Model
             $query->whereNull('section_id')->orWhereHas('section', fn (Builder $section) => $section
                 ->where('status', 'active')->whereColumn('course_sections.course_id', 'quizzes.course_id'));
         });
+    }
+
+    public function isDiagnostic(): bool
+    {
+        return $this->assessment_type === self::ASSESSMENT_DIAGNOSTIC;
     }
 
     public function course(): BelongsTo
