@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Controllers\Instructor\DiagnosticAssessmentController;
+use App\Http\Controllers\Instructor\MasteryProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,6 +19,11 @@ class ResearchRouteServiceProvider extends ServiceProvider
                     ->name('diagnostics.index');
                 Route::put('/diagnostics/{quiz}/assessment-type', [DiagnosticAssessmentController::class, 'updateType'])
                     ->name('diagnostics.type.update');
+
+                Route::get('/mastery-profiles', [MasteryProfileController::class, 'index'])
+                    ->name('mastery.index');
+                Route::get('/mastery-profiles/courses/{course}/students/{student}', [MasteryProfileController::class, 'show'])
+                    ->name('mastery.show');
             });
     }
 }
