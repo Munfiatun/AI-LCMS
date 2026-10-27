@@ -14,19 +14,29 @@ class AdaptiveAlgorithmRegistry
         $algorithms = config('adaptive.algorithms', []);
 
         return collect($algorithms)->map(function (array $definition, string $code): AdaptiveAlgorithmVersion {
-            return AdaptiveAlgorithmVersion::query()->updateOrCreate(
-                ['code' => $code],
-                [
-                    'name' => $definition['name'],
-                    'engine_type' => $definition['engine_type'],
-                    'version' => $definition['version'],
-                    'status' => $definition['status'],
-                    'is_baseline' => (bool) $definition['is_baseline'],
-                    'description' => $definition['description'] ?? null,
-                    'configuration' => $definition['configuration'] ?? [],
-                    'activated_at' => $definition['status'] === AdaptiveAlgorithmVersion::STATUS_ACTIVE ? now() : null,
-                ]
-            );
+            $algorithm = AdaptiveAlgorithmVersion::query()->firstOrNew(['code' => $code]);
+            $activatedAt = $algorithm->activated_at;
+
+            if ($definition['status'] === AdaptiveAlgorithmVersion::STATUS_ACTIVE && $activatedAt === null) {
+                $activatedAt = now();
+            }
+
+            if ($definition['status'] !== AdaptiveAlgorithmVersion::STATUS_ACTIVE) {
+                $activatedAt = null;
+            }
+
+            $algorithm->fill([
+                'name' => $definition['name'],
+                'engine_type' => $definition['engine_type'],
+                'version' => $definition['version'],
+                'status' => $definition['status'],
+                'is_baseline' => (bool) $definition['is_baseline'],
+                'description' => $definition['description'] ?? null,
+                'configuration' => $definition['configuration'] ?? [],
+                'activated_at' => $activatedAt,
+            ])->save();
+
+            return $algorithm->refresh();
         })->values();
     }
 
