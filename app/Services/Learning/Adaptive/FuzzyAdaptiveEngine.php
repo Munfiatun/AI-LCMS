@@ -337,7 +337,7 @@ class FuzzyAdaptiveEngine implements AdaptiveEngine
         return match ($type) {
             'triangle' => $this->triangle($value, $points),
             'trapezoid' => $this->trapezoid($value, $points),
-            default => throw new RuntimeException('Unsupported fuzzy membership function ['.(string) $type.'].'),
+            default => throw new RuntimeException('Unsupported fuzzy membership function ['.(string) $type.'].'.),
         };
     }
 
