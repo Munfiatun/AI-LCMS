@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LearningConcept extends Model
 {
@@ -86,6 +87,18 @@ class LearningConcept extends Model
             'prerequisite_concept_id',
             'concept_id'
         )->withPivot(['weight', 'order'])->withTimestamps()->orderByPivot('order');
+    }
+
+    /** @return HasMany<LearnerMastery, $this> */
+    public function learnerMasteries(): HasMany
+    {
+        return $this->hasMany(LearnerMastery::class, 'concept_id');
+    }
+
+    /** @return HasMany<MasteryHistory, $this> */
+    public function masteryHistory(): HasMany
+    {
+        return $this->hasMany(MasteryHistory::class, 'concept_id')->orderBy('created_at');
     }
 
     /** @param Builder<$this> $query */
