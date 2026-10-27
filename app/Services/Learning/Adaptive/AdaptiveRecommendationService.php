@@ -76,7 +76,7 @@ class AdaptiveRecommendationService
                         ->where('source_concept_id', $sourceConcept->id)
                         ->where('algorithm_version_id', $algorithm->id)
                         ->where('status', AdaptiveRecommendation::STATUS_ACTIVE)
-                        ->whereKeyNot($existing->id)
+                        ->where('id', '!=', $existing->id)
                         ->update([
                             'status' => AdaptiveRecommendation::STATUS_SUPERSEDED,
                             'superseded_at' => now(),
