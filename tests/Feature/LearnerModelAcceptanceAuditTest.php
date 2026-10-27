@@ -56,8 +56,9 @@ class LearnerModelAcceptanceAuditTest extends TestCase
             ->assertOk()
             ->assertSee('BELUM PASS — Lengkapi Evidence')
             ->assertSee('1 siswa memiliki evidence pada seluruh concept aktif.')
-            ->assertSee('1/2')
-            ->assertSee('Siswa A');
+            ->assertSee('Siswa A')
+            ->assertSee('Profil lengkap')
+            ->assertSee('Explainable');
     }
 
     public function test_audit_passes_when_two_complete_explainable_profiles_are_different(): void
