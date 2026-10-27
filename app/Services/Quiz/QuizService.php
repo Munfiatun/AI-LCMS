@@ -22,6 +22,7 @@ class QuizService
         $data['course_id'] = $course->id;
         $data['status'] = 'draft';
         $data['published_at'] = null;
+        $data['assessment_type'] = $data['assessment_type'] ?? Quiz::ASSESSMENT_FORMATIVE;
         $this->validateSection($data);
 
         return $course->quizzes()->create($data);
@@ -38,6 +39,23 @@ class QuizService
         $quiz->update($data);
 
         return $quiz;
+    }
+
+    public function updateAssessmentType(Quiz $quiz, string $assessmentType): Quiz
+    {
+        $this->assertEditable($quiz);
+
+        Validator::make(['assessment_type' => $assessmentType], [
+            'assessment_type' => ['required', Rule::in([
+                Quiz::ASSESSMENT_DIAGNOSTIC,
+                Quiz::ASSESSMENT_FORMATIVE,
+                Quiz::ASSESSMENT_SUMMATIVE,
+            ])],
+        ])->validate();
+
+        $quiz->update(['assessment_type' => $assessmentType]);
+
+        return $quiz->fresh();
     }
 
     /** @param array<string, mixed> $data */
@@ -114,6 +132,11 @@ class QuizService
                 'title' => ['required', 'string'], 'passing_score' => ['required', 'integer', 'between:0,100'],
                 'total_questions' => ['required', 'integer', 'min:1'], 'max_attempts' => ['required', 'integer', 'min:1'],
                 'duration_minutes' => ['nullable', 'integer', 'min:1'],
+                'assessment_type' => ['required', Rule::in([
+                    Quiz::ASSESSMENT_DIAGNOSTIC,
+                    Quiz::ASSESSMENT_FORMATIVE,
+                    Quiz::ASSESSMENT_SUMMATIVE,
+                ])],
             ])->validate();
         } catch (ValidationException $exception) {
             return ['Konfigurasi quiz atau relasi course/chapter tidak valid.'];
@@ -121,7 +144,7 @@ class QuizService
         if ($quiz->section_id && $quiz->section?->status !== 'active') {
             return ['Chapter quiz harus aktif.'];
         }
-        $questions = $quiz->questions()->with(['options', 'questionBank'])->get();
+        $questions = $quiz->questions()->with(['options', 'questionBank', 'learningConcepts'])->get();
         if ($questions->isEmpty() || $questions->count() < $quiz->total_questions) {
             return ['Quiz harus memiliki soal sesuai jumlah yang ditentukan.'];
         }
@@ -137,6 +160,21 @@ class QuizService
                 || $question->options->where('is_correct', true)->count() !== 1
                 || $question->options->map(fn ($option): string => mb_strtolower(trim($option->option_text)))->unique()->count() !== $question->options->count()) {
                 return ['Periksa dan verifikasi semua soal serta kunci jawaban sebelum menerbitkan Quiz.'];
+            }
+        }
+
+        if ($quiz->isDiagnostic()) {
+            $unmappedCount = $questions
+                ->filter(fn (Question $question): bool => $question->learningConcepts->isEmpty())
+                ->count();
+
+            $foreignConceptCount = $questions
+                ->flatMap(fn (Question $question) => $question->learningConcepts)
+                ->filter(fn ($concept): bool => (int) $concept->course_id !== (int) $quiz->course_id)
+                ->count();
+
+            if ($unmappedCount > 0 || $foreignConceptCount > 0) {
+                return ['Diagnostic Quiz hanya dapat diterbitkan jika setiap soal memiliki Concept Mapping pada course yang sama.'];
             }
         }
 
