@@ -128,6 +128,18 @@ html[data-theme='light'] :where([class~='bg-slate-700'], [class~='bg-slate-700/8
     background-color: #e2e8f0 !important;
 }
 
+/* In light mode, inactive sidebar hover states use a soft lavender instead of dark slate. */
+html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-800']:hover,
+html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-700']:hover {
+    background-color: #ede9fe !important;
+    color: #5b21b6 !important;
+}
+
+html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-800']:hover svg,
+html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-700']:hover svg {
+    color: #6d28d9 !important;
+}
+
 html[data-theme='light'] :where(
     [class~='border-slate-800'],
     [class~='border-slate-800/60'],
