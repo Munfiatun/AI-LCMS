@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\AIProcessController;
+use App\Http\Controllers\Instructor\AIQuestionAuthoringController;
 use App\Http\Controllers\Instructor\AIQuestionExtractController;
 use App\Http\Controllers\Instructor\AIQuizController;
 use App\Http\Controllers\Instructor\AnalyticsController;
@@ -122,6 +123,12 @@ Route::middleware(['auth', 'role:instructor'])
 
         Route::resource('question-banks', QuestionBankController::class);
         Route::post('/question-banks/{question_bank}/create-formative', [QuestionBankController::class, 'createFormative'])->name('question-banks.create-formative');
+
+        Route::get('/question-banks/{question_bank}/ai-authoring', [AIQuestionAuthoringController::class, 'create'])->name('question-banks.ai-authoring.create');
+        Route::post('/question-banks/{question_bank}/ai-authoring/generate', [AIQuestionAuthoringController::class, 'generate'])->name('question-banks.ai-authoring.generate')->middleware('throttle:5,1');
+        Route::get('/question-banks/{question_bank}/ai-authoring/review', [AIQuestionAuthoringController::class, 'review'])->name('question-banks.ai-authoring.review');
+        Route::post('/question-banks/{question_bank}/ai-authoring/store', [AIQuestionAuthoringController::class, 'store'])->name('question-banks.ai-authoring.store');
+        Route::delete('/question-banks/{question_bank}/ai-authoring', [AIQuestionAuthoringController::class, 'destroy'])->name('question-banks.ai-authoring.destroy');
 
         Route::post('/question-banks/{question_bank}/questions', [QuestionController::class, 'store'])->name('question-banks.questions.store');
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
