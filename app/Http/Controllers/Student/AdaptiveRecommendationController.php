@@ -27,6 +27,11 @@ class AdaptiveRecommendationController extends Controller
             ->whereIn('status', ['active', 'completed'])
             ->pluck('course_id');
 
+        $completedMaterialIds = $student->materialProgress()
+            ->where('status', 'completed')
+            ->pluck('learning_material_id')
+            ->map(fn ($id) => (int) $id);
+
         $recommendations = AdaptiveRecommendation::query()
             ->where('student_id', $student->id)
             ->where('status', AdaptiveRecommendation::STATUS_ACTIVE)
@@ -50,8 +55,12 @@ class AdaptiveRecommendationController extends Controller
             ))
             ->values();
 
-        $rows = $recommendations->map(function (AdaptiveRecommendation $recommendation): array {
+        $rows = $recommendations->map(function (AdaptiveRecommendation $recommendation) use ($completedMaterialIds): array {
             $recommendedMaterial = $this->resources->materialFor($recommendation);
+            $formativeQuiz = $this->resources->formativeQuizFor($recommendation);
+            $materialCompleted = $recommendedMaterial
+                ? $completedMaterialIds->contains((int) $recommendedMaterial->id)
+                : false;
 
             return [
                 'recommendation' => $recommendation,
@@ -62,6 +71,9 @@ class AdaptiveRecommendationController extends Controller
                 'material_relevance' => $recommendedMaterial?->pivot?->relevance_weight === null
                     ? null
                     : (float) $recommendedMaterial->pivot->relevance_weight,
+                'material_completed' => $materialCompleted,
+                'formative_quiz' => $formativeQuiz,
+                'reassessment_ready' => $formativeQuiz !== null && ($recommendedMaterial === null || $materialCompleted),
                 'activity_type' => $recommendation->action === 'additional_diagnostic'
                     ? 'diagnostic'
                     : ($recommendedMaterial ? 'material' : 'course'),
