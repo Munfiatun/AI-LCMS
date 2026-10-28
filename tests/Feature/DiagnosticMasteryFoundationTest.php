@@ -74,14 +74,14 @@ class DiagnosticMasteryFoundationTest extends TestCase
 
         $this->assertSame('diagnostic_quiz_attempt', $history->evidence_type);
         $this->assertSame($attempt->id, $history->evidence_id);
-        $this->assertSame('diagnostic-weighted-v1', $history->model_version);
+        $this->assertSame('diagnostic-formative-weighted-v2', $history->model_version);
         $this->assertSame('weighted_correctness', $history->evidence_payload['calculation']);
         $this->assertSame($quiz->id, $history->evidence_payload['quiz_id']);
 
         $this->assertNotSame($correctB->id, $wrongB->id);
     }
 
-    public function test_formative_submission_does_not_update_learner_mastery(): void
+    public function test_formative_submission_without_diagnostic_baseline_does_not_create_learner_mastery(): void
     {
         [$student, $course, $bank] = $this->researchContext();
         $concept = LearningConcept::factory()->create(['course_id' => $course->id, 'code' => 'C01']);
