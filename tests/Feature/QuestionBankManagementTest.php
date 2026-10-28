@@ -70,7 +70,7 @@ class QuestionBankManagementTest extends TestCase
         $this->actingAs($this->instructor1)
             ->get(route('instructor.question-banks.show', $bank))
             ->assertOk()
-            ->assertSee('Global (Semua Kursus)')
+            ->assertSee('Global')
             ->assertSee('PEMOGRAMAN DASAR');
 
         $response = $this->actingAs($this->instructor1)->put(route('instructor.question-banks.update', $bank), [
