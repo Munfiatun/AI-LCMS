@@ -195,7 +195,7 @@ class FormativeReassessmentLoopTest extends TestCase
             ->get(route('student.adaptive-recommendations.index'))
             ->assertOk()
             ->assertSee('Uji Pemahaman C01')
-            ->assertSee('Belum aktif')
+            ->assertSee('Tersedia setelah materi di atas selesai.')
             ->assertDontSee('>Uji Pemahaman<', false);
 
         MaterialProgress::create([
