@@ -199,7 +199,7 @@ class QuizAttemptService
             return $attempt->fresh(['quiz.course', 'answers.question.learningConcepts']);
         });
 
-        if ($attempt->quiz?->isDiagnostic()) {
+        if ($attempt->quiz?->contributesToLearnerMastery()) {
             $this->conceptMasteryService->updateFromAttempt($attempt);
         }
 
