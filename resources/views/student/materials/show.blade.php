@@ -22,7 +22,7 @@
         @if($previewMode)
             <a href="{{ route('instructor.materials.edit', $material) }}" class="hover:text-white transition-colors">&larr; Kembali ke Kelola Materi</a>
         @else
-            <a href="{{ route('courses.show', $course->slug) }}" class="hover:text-white transition-colors">&larr; Kembali ke Kursus</a>
+            <a href="{{ route('student.courses.progress', $course) }}" class="hover:text-white transition-colors">&larr; Kembali ke Kursus</a>
         @endif
         <span class="text-slate-600">&bull;</span>
         <span class="text-slate-300">{{ $course->title }}</span>
