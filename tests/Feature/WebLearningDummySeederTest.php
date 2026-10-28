@@ -50,7 +50,12 @@ class WebLearningDummySeederTest extends TestCase
             $this->actingAs($teacher)->get(route('instructor.materials.edit', $material))->assertOk()->assertSee($material->title);
             $this->get(route('instructor.quizzes.show', $quiz))->assertOk()->assertSee($quiz->title);
         }
-        $this->get(route('instructor.quizzes.index'))->assertOk()->assertSee('Jumlah soal yang dapat dibuat AI: 2–20 soal.');
+        $this->get(route('instructor.quizzes.index'))
+            ->assertOk()
+            ->assertSee('Buat Kuis dengan Bantuan AI')
+            ->assertSee('name="total_questions"', false)
+            ->assertSee('min="2"', false)
+            ->assertSee('max="20"', false);
     }
 
     public function test_rerunning_seeder_does_not_duplicate_records_or_overwrite_existing_work(): void
