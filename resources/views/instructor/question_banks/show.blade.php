@@ -210,18 +210,31 @@
                 <div class="p-6 space-y-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1">Judul Bank Soal <span class="text-rose-500">*</span></label>
-                        <input type="text" name="title" value="{{ $questionBank->title }}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                        <input type="text" name="title" value="{{ old('title', $questionBank->title) }}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Course</label>
+                        <select name="course_id" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                            <option value="">Global (Semua Kursus)</option>
+                            @foreach($courses as $course)
+                                <option value="{{ $course->id }}" @selected((string) old('course_id', $questionBank->course_id) === (string) $course->id)>{{ $course->title }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1.5 text-xs leading-relaxed text-slate-500">Bank soal global dapat dipindahkan ke course tertentu. Jika soal sudah memiliki Concept Mapping dari course lain, perpindahan akan ditolak agar relasi tetap konsisten.</p>
+                        @error('course_id')
+                            <p class="mt-1.5 text-xs font-medium text-rose-300">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
                         <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            <option value="active" @selected($questionBank->status === 'active')>Active</option>
-                            <option value="archived" @selected($questionBank->status === 'archived')>Archived</option>
+                            <option value="active" @selected(old('status', $questionBank->status) === 'active')>Active</option>
+                            <option value="archived" @selected(old('status', $questionBank->status) === 'archived')>Archived</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1">Deskripsi Singkat</label>
-                        <textarea name="description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ $questionBank->description }}</textarea>
+                        <textarea name="description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ old('description', $questionBank->description) }}</textarea>
                     </div>
                 </div>
                 <div class="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
