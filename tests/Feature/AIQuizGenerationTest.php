@@ -61,8 +61,8 @@ class AIQuizGenerationTest extends TestCase
                 && $request['response_format']['type'] === 'json_schema'
                 && $request['response_format']['json_schema']['strict'] === true;
         });
-        $this->get(route('instructor.quizzes.show', $quiz))->assertSee('AI Generated Draft')->assertSee('Simpan & Verifikasi Soal', false);
-        $this->get(route('instructor.quizzes.index'))->assertSee('Generate Quiz dengan AI');
+        $this->get(route('instructor.quizzes.show', $quiz))->assertSee('AI Generated Draft')->assertSee('Review & Verifikasi Soal');
+        $this->get(route('instructor.quizzes.index'))->assertSee('Buat Kuis dengan Bantuan AI');
     }
 
     public function test_repeated_request_creates_only_one_quiz(): void
