@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\LearningConcept;
 use App\Models\Question;
 use App\Models\QuestionBank;
+use App\Models\QuestionOption;
+use App\Models\Quiz;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -114,7 +117,6 @@ class QuestionBankManagementTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Instructor 2 tries to access Instructor 1's bank
         $response = $this->actingAs($this->instructor2)->get(route('instructor.question-banks.show', $bank));
 
         $response->assertStatus(403);
@@ -130,7 +132,7 @@ class QuestionBankManagementTest extends TestCase
 
         $response = $this->actingAs($this->instructor1)->post(route('instructor.question-banks.questions.store', $bank), [
             'question_text' => 'Apa ibukota Indonesia?',
-            'correct_option' => 1, // which index is correct
+            'correct_option' => 1,
             'options' => [
                 0 => 'Surabaya',
                 1 => 'Jakarta',
@@ -165,6 +167,72 @@ class QuestionBankManagementTest extends TestCase
         ]);
     }
 
+    public function test_instructor_can_prepare_formative_quiz_automatically_from_verified_bank(): void
+    {
+        $course = Course::factory()->create([
+            'instructor_id' => $this->instructor1->id,
+            'title' => 'PEMOGRAMAN DASAR',
+        ]);
+        $concept = LearningConcept::factory()->create([
+            'course_id' => $course->id,
+            'code' => 'C01',
+            'name' => 'Variabel dan Tipe Data',
+            'order' => 1,
+            'is_active' => true,
+        ]);
+        $bank = QuestionBank::factory()->create([
+            'instructor_id' => $this->instructor1->id,
+            'course_id' => $course->id,
+            'title' => 'Uji Coba R4.6',
+            'status' => QuestionBank::STATUS_ACTIVE,
+        ]);
+
+        $questions = Question::factory()->count(2)->create([
+            'question_bank_id' => $bank->id,
+            'status' => Question::STATUS_APPROVED,
+            'needs_review' => false,
+            'difficulty' => Question::DIFFICULTY_MEDIUM,
+            'points' => 10,
+        ]);
+
+        foreach ($questions as $question) {
+            QuestionOption::factory()->create([
+                'question_id' => $question->id,
+                'option_text' => 'Benar',
+                'is_correct' => true,
+            ]);
+            QuestionOption::factory()->create([
+                'question_id' => $question->id,
+                'option_text' => 'Salah',
+                'is_correct' => false,
+            ]);
+        }
+
+        $response = $this->actingAs($this->instructor1)->post(
+            route('instructor.question-banks.create-formative', $bank),
+            ['learning_concept_id' => $concept->id]
+        );
+
+        $quiz = Quiz::query()->latest('id')->firstOrFail();
+
+        $response->assertRedirect(route('instructor.quizzes.show', $quiz));
+        $this->assertSame(Quiz::ASSESSMENT_FORMATIVE, $quiz->assessment_type);
+        $this->assertSame('draft', $quiz->status);
+        $this->assertSame(2, $quiz->total_questions);
+        $this->assertSame(2, $quiz->quizQuestions()->count());
+
+        foreach ($questions as $question) {
+            $this->assertDatabaseHas('question_concepts', [
+                'question_id' => $question->id,
+                'learning_concept_id' => $concept->id,
+            ]);
+            $this->assertDatabaseHas('quiz_questions', [
+                'quiz_id' => $quiz->id,
+                'question_id' => $question->id,
+            ]);
+        }
+    }
+
     public function test_instructor_can_upload_document_and_dispatch_job(): void
     {
         Storage::fake('private');
@@ -176,7 +244,6 @@ class QuestionBankManagementTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Upload doc
         $file = UploadedFile::fake()->create('naskah_soal.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
         $uploadResponse = $this->actingAs($this->instructor1)->post(route('instructor.question-banks.upload-document', $bank), [
@@ -189,11 +256,6 @@ class QuestionBankManagementTest extends TestCase
             'question_bank_id' => $bank->id,
             'original_name' => 'naskah-soal.docx',
         ]);
-
-        $document = $bank->documents()->first();
-
-        // Normally we would test extract(), but testing the parser requires a real docx.
-        // We'll mock the document service in a unit test instead, or just assert the route exists and is protected.
     }
 
     public function test_instructor_can_approve_needs_review_question(): void
