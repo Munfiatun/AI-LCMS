@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\AdaptiveRecommendation;
 use App\Models\User;
+use App\Services\Learning\Adaptive\AdaptiveLearningResourceResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class AdaptiveRecommendationController extends Controller
 {
+    public function __construct(private AdaptiveLearningResourceResolver $resources) {}
+
     public function index(Request $request): View
     {
         /** @var User $student */
@@ -43,12 +46,23 @@ class AdaptiveRecommendationController extends Controller
             ))
             ->values();
 
-        $rows = $recommendations->map(fn (AdaptiveRecommendation $recommendation): array => [
-            'recommendation' => $recommendation,
-            'action_label' => $this->actionLabel($recommendation->action),
-            'reason_text' => $this->reasonText($recommendation->reason_code),
-            'is_prerequisite_redirect' => $recommendation->source_concept_id !== $recommendation->target_concept_id,
-        ]);
+        $rows = $recommendations->map(function (AdaptiveRecommendation $recommendation): array {
+            $recommendedMaterial = $this->resources->materialFor($recommendation);
+
+            return [
+                'recommendation' => $recommendation,
+                'action_label' => $this->actionLabel($recommendation->action),
+                'reason_text' => $this->reasonText($recommendation->reason_code),
+                'is_prerequisite_redirect' => $recommendation->source_concept_id !== $recommendation->target_concept_id,
+                'recommended_material' => $recommendedMaterial,
+                'material_relevance' => $recommendedMaterial?->pivot?->relevance_weight === null
+                    ? null
+                    : (float) $recommendedMaterial->pivot->relevance_weight,
+                'activity_type' => $recommendation->action === 'additional_diagnostic'
+                    ? 'diagnostic'
+                    : ($recommendedMaterial ? 'material' : 'course'),
+            ];
+        });
 
         $courseGroups = $rows->groupBy(
             fn (array $row): int => (int) $row['recommendation']->course_id
