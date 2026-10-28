@@ -27,6 +27,18 @@
         </div>
     @endif
 
+    @if($quiz->status === 'published')
+        <div class="rounded-2xl border {{ $attemptStats['completed'] > 0 ? 'border-rose-500/20 bg-rose-500/10' : 'border-amber-500/20 bg-amber-500/10' }} px-4 py-3 text-sm">
+            @if($attemptStats['completed'] > 0)
+                <p class="font-semibold text-rose-100">Quiz terkunci karena sudah memiliki attempt selesai.</p>
+                <p class="mt-1 text-xs leading-5 text-rose-200/80">Builder dan perubahan soal dinonaktifkan untuk menjaga histori hasil belajar. Buat quiz baru jika komposisi soal perlu diubah.</p>
+            @else
+                <p class="font-semibold text-amber-100">Quiz sedang Published.</p>
+                <p class="mt-1 text-xs leading-5 text-amber-200/80">Kembalikan ke Draft sebelum membuka Builder. {{ $attemptStats['in_progress'] > 0 ? $attemptStats['in_progress'].' attempt yang belum selesai akan dibatalkan.' : 'Belum ada attempt yang selesai, jadi quiz masih aman untuk diedit.' }}</p>
+            @endif
+        </div>
+    @endif
+
     <section class="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-black/10">
         <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/70 to-transparent"></div>
         <div class="p-6 lg:p-8">
@@ -52,9 +64,17 @@
                     <a href="{{ route('instructor.quizzes.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
                         ← Daftar Kuis
                     </a>
-                    <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20">
-                        Buka Builder
-                    </a>
+
+                    @if($quiz->status === 'draft')
+                        <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20">
+                            Buka Builder
+                        </a>
+                    @else
+                        <span class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-semibold text-slate-500" title="Kembalikan quiz ke Draft sebelum membuka Builder">
+                            Builder Terkunci
+                        </span>
+                    @endif
+
                     @if($publicationErrors === [] && $quiz->status === 'draft')
                         <form action="{{ route('instructor.quizzes.publish', $quiz) }}" method="POST">
                             @csrf
@@ -63,8 +83,9 @@
                             </button>
                         </form>
                     @endif
-                    @if($quiz->status === 'published' && ! $quiz->attempts()->exists())
-                        <form action="{{ route('instructor.quizzes.unpublish', $quiz) }}" method="POST">
+
+                    @if($quiz->status === 'published' && $attemptStats['completed'] === 0)
+                        <form action="{{ route('instructor.quizzes.unpublish', $quiz) }}" method="POST" onsubmit="return confirm('{{ $attemptStats['in_progress'] > 0 ? 'Quiz memiliki attempt yang belum selesai. Attempt tersebut akan dibatalkan. Kembalikan quiz ke Draft?' : 'Kembalikan quiz ke Draft agar dapat diedit?' }}')">
                             @csrf
                             <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20">
                                 Kembalikan ke Draft
@@ -187,7 +208,11 @@
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 text-slate-500">?</div>
                 <h3 class="mt-4 text-sm font-bold text-white">Belum Ada Soal</h3>
                 <p class="mx-auto mt-2 max-w-md text-xs leading-5 text-slate-400">Buka Builder Kuis untuk memilih dan menyinkronkan soal dari Bank Soal Anda.</p>
-                <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">Buka Builder Kuis</a>
+                @if($quiz->status === 'draft')
+                    <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">Buka Builder Kuis</a>
+                @else
+                    <p class="mx-auto mt-4 max-w-md text-xs text-amber-300">Kembalikan quiz ke Draft sebelum membuka Builder.</p>
+                @endif
             </div>
         @endif
     </section>
