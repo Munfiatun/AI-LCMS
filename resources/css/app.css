@@ -31,11 +31,11 @@
 
 @layer components {
     .ui-label {
-        @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300;
+        @apply mb-2 block text-sm font-semibold text-slate-300;
     }
 
     .ui-field {
-        @apply w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white;
+        @apply min-h-11 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white;
     }
 
     .ui-field::placeholder {
@@ -51,11 +51,11 @@
     }
 
     .ui-help {
-        @apply mt-1.5 text-xs leading-relaxed text-slate-500;
+        @apply mt-1.5 text-sm leading-relaxed text-slate-500;
     }
 
     .ui-error {
-        @apply mt-1.5 text-xs font-medium text-rose-300;
+        @apply mt-1.5 text-sm font-medium text-rose-300;
     }
 
     .ui-section-title {
@@ -63,7 +63,7 @@
     }
 
     .ui-section-description {
-        @apply mt-1 text-xs leading-relaxed text-slate-400;
+        @apply mt-1 text-sm leading-relaxed text-slate-400;
     }
 
     .ui-text-link {
