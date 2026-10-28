@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\Role;
@@ -48,6 +49,61 @@ class QuestionBankManagementTest extends TestCase
             'title' => 'Ujian Akhir Semester',
             'instructor_id' => $this->instructor1->id,
         ]);
+    }
+
+    public function test_instructor_can_move_global_question_bank_to_owned_course(): void
+    {
+        $course = Course::factory()->create([
+            'instructor_id' => $this->instructor1->id,
+            'title' => 'PEMOGRAMAN DASAR',
+        ]);
+        $bank = QuestionBank::create([
+            'title' => 'Uji Coba R6',
+            'instructor_id' => $this->instructor1->id,
+            'course_id' => null,
+            'status' => QuestionBank::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->instructor1)
+            ->get(route('instructor.question-banks.show', $bank))
+            ->assertOk()
+            ->assertSee('Global (Semua Kursus)')
+            ->assertSee('PEMOGRAMAN DASAR');
+
+        $response = $this->actingAs($this->instructor1)->put(route('instructor.question-banks.update', $bank), [
+            'title' => 'Uji Coba R6',
+            'course_id' => $course->id,
+            'description' => 'Formative C01',
+            'status' => QuestionBank::STATUS_ACTIVE,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('question_banks', [
+            'id' => $bank->id,
+            'course_id' => $course->id,
+        ]);
+    }
+
+    public function test_instructor_cannot_assign_question_bank_to_another_instructors_course(): void
+    {
+        $foreignCourse = Course::factory()->create([
+            'instructor_id' => $this->instructor2->id,
+        ]);
+        $bank = QuestionBank::create([
+            'title' => 'Bank Soal A',
+            'instructor_id' => $this->instructor1->id,
+            'course_id' => null,
+            'status' => QuestionBank::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->instructor1)->put(route('instructor.question-banks.update', $bank), [
+            'title' => 'Bank Soal A',
+            'course_id' => $foreignCourse->id,
+            'description' => null,
+            'status' => QuestionBank::STATUS_ACTIVE,
+        ])->assertForbidden();
+
+        $this->assertNull($bank->fresh()->course_id);
     }
 
     public function test_instructor_cannot_access_other_instructor_question_bank(): void
