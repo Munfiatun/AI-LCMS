@@ -75,6 +75,135 @@
     }
 }
 
+/* Theme layer: keep the existing dark UI as the default and remap only neutral surfaces in light mode. */
+html[data-theme='light'] {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+html[data-theme='light'] body {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+html[data-theme='light'] :where(
+    [class~='bg-slate-950'],
+    [class~='bg-slate-950/30'],
+    [class~='bg-slate-950/35'],
+    [class~='bg-slate-950/40'],
+    [class~='bg-slate-950/45'],
+    [class~='bg-slate-950/50'],
+    [class~='bg-slate-950/55'],
+    [class~='bg-slate-950/60'],
+    [class~='bg-slate-950/70'],
+    [class~='bg-slate-950/80']
+) {
+    background-color: #ffffff !important;
+}
+
+html[data-theme='light'] :where(
+    [class~='bg-slate-900'],
+    [class~='bg-slate-900/40'],
+    [class~='bg-slate-900/50'],
+    [class~='bg-slate-900/60'],
+    [class~='bg-slate-900/65'],
+    [class~='bg-slate-900/70'],
+    [class~='bg-slate-900/80']
+) {
+    background-color: #ffffff !important;
+}
+
+html[data-theme='light'] :where(
+    [class~='bg-slate-800'],
+    [class~='bg-slate-800/40'],
+    [class~='bg-slate-800/50'],
+    [class~='bg-slate-800/60'],
+    [class~='bg-slate-800/70'],
+    [class~='bg-slate-800/80']
+) {
+    background-color: #f1f5f9 !important;
+}
+
+html[data-theme='light'] :where([class~='bg-slate-700'], [class~='bg-slate-700/80']) {
+    background-color: #e2e8f0 !important;
+}
+
+html[data-theme='light'] :where(
+    [class~='border-slate-800'],
+    [class~='border-slate-800/60'],
+    [class~='border-slate-800/80'],
+    [class~='border-slate-700'],
+    [class~='border-slate-700/80'],
+    [class~='border-slate-600']
+) {
+    border-color: #dbe3ee !important;
+}
+
+html[data-theme='light'] [class~='text-slate-100'] { color: #0f172a !important; }
+html[data-theme='light'] [class~='text-slate-200'] { color: #1e293b !important; }
+html[data-theme='light'] [class~='text-slate-300'] { color: #334155 !important; }
+html[data-theme='light'] [class~='text-slate-400'] { color: #475569 !important; }
+html[data-theme='light'] [class~='text-slate-500'] { color: #64748b !important; }
+html[data-theme='light'] [class~='text-slate-600'] { color: #64748b !important; }
+
+html[data-theme='light'] [class~='text-white']:not([class*='bg-indigo-']):not([class*='bg-emerald-']):not([class*='bg-cyan-']):not([class*='bg-amber-']):not([class*='bg-rose-']):not([class*='bg-violet-']) {
+    color: #0f172a !important;
+}
+
+html[data-theme='light'] [class~='text-indigo-300'] { color: #4338ca !important; }
+html[data-theme='light'] [class~='text-indigo-200'] { color: #4f46e5 !important; }
+html[data-theme='light'] [class~='text-emerald-300'] { color: #047857 !important; }
+html[data-theme='light'] [class~='text-cyan-300'] { color: #0e7490 !important; }
+html[data-theme='light'] [class~='text-amber-300'] { color: #b45309 !important; }
+html[data-theme='light'] [class~='text-violet-300'] { color: #6d28d9 !important; }
+html[data-theme='light'] [class~='text-rose-300'] { color: #be123c !important; }
+
+html[data-theme='light'] :where([class~='from-slate-900'], [class~='to-slate-900']) {
+    --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: #ffffff var(--tw-gradient-to-position) !important;
+}
+
+html[data-theme='light'] .ui-field {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html[data-theme='light'] .ui-field:disabled {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+html[data-theme='light'] .ui-field::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme='light'] .shadow-xl,
+html[data-theme='light'] .shadow-2xl,
+html[data-theme='light'] .shadow-lg,
+html[data-theme='light'] .shadow-md {
+    --tw-shadow-color: rgb(15 23 42 / 0.08) !important;
+}
+
+.education-book-float {
+    transform-origin: center;
+    animation: education-book-float 4.8s ease-in-out infinite;
+}
+
+.education-ornament {
+    animation: education-ornament-float 6s ease-in-out infinite;
+}
+
+@keyframes education-book-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-2px) rotate(-2deg); }
+}
+
+@keyframes education-ornament-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
 .a11y-skip-link {
     position: fixed;
     z-index: 9999;
