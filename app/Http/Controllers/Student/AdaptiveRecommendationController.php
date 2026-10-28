@@ -65,17 +65,27 @@ class AdaptiveRecommendationController extends Controller
     /** @param Collection<int, array<string, mixed>> $rows */
     private function summary(Collection $rows): array
     {
+        $actions = $rows->map(
+            fn (array $row): string => $row['recommendation']->action
+        );
+
         return [
             'total' => $rows->count(),
-            'remediation' => $rows->whereIn('recommendation.action', [
-                'remediation',
-                'prerequisite_remediation',
-            ])->count(),
-            'reinforcement' => $rows->where('recommendation.action', 'reinforcement')->count(),
-            'progression' => $rows->whereIn('recommendation.action', [
-                'next_concept',
-                'enrichment',
-            ])->count(),
+            'remediation' => $actions->filter(
+                fn (string $action): bool => in_array($action, [
+                    'remediation',
+                    'prerequisite_remediation',
+                ], true)
+            )->count(),
+            'reinforcement' => $actions->filter(
+                fn (string $action): bool => $action === 'reinforcement'
+            )->count(),
+            'progression' => $actions->filter(
+                fn (string $action): bool => in_array($action, [
+                    'next_concept',
+                    'enrichment',
+                ], true)
+            )->count(),
         ];
     }
 
