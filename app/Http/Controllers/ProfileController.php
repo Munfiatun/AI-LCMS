@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,11 +13,19 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         $user = $request->user();
-        $avatarUrl = $user->avatar
-            ? Storage::disk('public')->url($user->avatar)
-            : null;
+        $avatarUrl = $this->avatarUrl($user->avatar);
 
         return view('profile.edit', compact('user', 'avatarUrl'));
+    }
+
+    public function avatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'name' => $user->name,
+            'avatar_url' => $this->avatarUrl($user->avatar),
+        ]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -47,5 +56,10 @@ class ProfileController extends Controller
         $user->save();
 
         return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    private function avatarUrl(?string $avatar): ?string
+    {
+        return $avatar ? Storage::disk('public')->url($avatar) : null;
     }
 }
