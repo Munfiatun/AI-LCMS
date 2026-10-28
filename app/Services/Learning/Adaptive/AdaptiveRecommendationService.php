@@ -17,8 +17,11 @@ class AdaptiveRecommendationService
         private AdaptiveAlgorithmRegistry $registry,
     ) {}
 
-    /** @return Collection<int, AdaptiveRecommendation> */
-    public function generateForCourse(User $student, Course $course): Collection
+    /**
+     * @param array<string, mixed> $context
+     * @return Collection<int, AdaptiveRecommendation>
+     */
+    public function generateForCourse(User $student, Course $course, array $context = []): Collection
     {
         $concepts = LearningConcept::query()
             ->where('course_id', $course->id)
@@ -27,12 +30,25 @@ class AdaptiveRecommendationService
             ->orderBy('id')
             ->get();
 
-        return $concepts->map(fn (LearningConcept $concept): AdaptiveRecommendation => $this->persistDecision(
-            $student,
-            $course,
-            $concept,
-            $this->engine->decide($student, $concept),
-        ));
+        return $concepts->map(function (LearningConcept $concept) use ($student, $course, $context): AdaptiveRecommendation {
+            $decision = $this->engine->decide($student, $concept);
+
+            if ($context !== []) {
+                $decision = new AdaptiveDecision(
+                    action: $decision->action,
+                    targetConceptId: $decision->targetConceptId,
+                    reasonCode: $decision->reasonCode,
+                    algorithmCode: $decision->algorithmCode,
+                    algorithmVersion: $decision->algorithmVersion,
+                    inputs: $decision->inputs,
+                    metadata: array_merge($decision->metadata, [
+                        'adaptation_context' => $context,
+                    ]),
+                );
+            }
+
+            return $this->persistDecision($student, $course, $concept, $decision);
+        });
     }
 
     public function persistDecision(
