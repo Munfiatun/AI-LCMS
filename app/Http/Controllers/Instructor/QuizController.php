@@ -78,8 +78,13 @@ class QuizController extends Controller
             'inferred' => $questions->where('answer_source', Question::SOURCE_INFERRED)->count(),
             'manual' => $questions->where('answer_source', Question::SOURCE_MANUAL)->count(),
         ];
+        $attemptStats = [
+            'total' => $quiz->attempts()->count(),
+            'in_progress' => $quiz->attempts()->whereNull('submitted_at')->count(),
+            'completed' => $quiz->attempts()->whereNotNull('submitted_at')->count(),
+        ];
 
-        return view('instructor.quizzes.show', compact('quiz', 'publicationErrors', 'reviewStats'));
+        return view('instructor.quizzes.show', compact('quiz', 'publicationErrors', 'reviewStats', 'attemptStats'));
     }
 
     public function builder(Quiz $quiz)
@@ -133,6 +138,6 @@ class QuizController extends Controller
         Gate::authorize('update', $quiz);
         $this->quizService->unpublishQuiz($quiz);
 
-        return back()->with('success', 'Quiz kembali ke draft untuk ditinjau.');
+        return back()->with('success', 'Quiz kembali ke draft untuk ditinjau. Attempt yang belum selesai dibatalkan.');
     }
 }
