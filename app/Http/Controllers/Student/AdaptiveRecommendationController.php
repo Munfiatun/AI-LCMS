@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\AdaptiveRecommendation;
 use App\Models\User;
+use App\Services\Learning\Adaptive\AdaptiveLearningPathService;
 use App\Services\Learning\Adaptive\AdaptiveLearningResourceResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -12,7 +13,10 @@ use Illuminate\View\View;
 
 class AdaptiveRecommendationController extends Controller
 {
-    public function __construct(private AdaptiveLearningResourceResolver $resources) {}
+    public function __construct(
+        private AdaptiveLearningResourceResolver $resources,
+        private AdaptiveLearningPathService $learningPath,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -72,6 +76,7 @@ class AdaptiveRecommendationController extends Controller
             'student' => $student,
             'rows' => $rows,
             'courseGroups' => $courseGroups,
+            'learningPaths' => $this->learningPath->build($rows),
             'summary' => $this->summary($rows),
         ]);
     }
