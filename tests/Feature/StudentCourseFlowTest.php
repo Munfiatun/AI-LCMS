@@ -36,7 +36,7 @@ class StudentCourseFlowTest extends TestCase
             ->assertSee('Kursus Kedua')
             ->assertSee('Tanpa Kategori')
             ->assertSee(route('student.courses.continue', $course))
-            ->assertSee('0% selesai');
+            ->assertSee('0% Selesai');
         $queries = collect(DB::getQueryLog());
         $this->assertCount(1, $queries->filter(fn (array $query): bool => str_contains($query['query'], 'from "categories"')));
         $this->assertTrue(Model::preventsLazyLoading());
@@ -68,7 +68,7 @@ class StudentCourseFlowTest extends TestCase
         $this->post(route('student.materials.complete', $materials[1]))->assertRedirect();
         $this->assertSame(1, MaterialProgress::where('learning_material_id', $materials[1]->id)->where('student_id', $student->id)->count());
         $this->get(route('courses.show', $course->slug))->assertSee('Progress: 33% Selesai');
-        $this->get(route('student.dashboard'))->assertOk()->assertSee('33% selesai');
+        $this->get(route('student.dashboard'))->assertOk()->assertSee('33% Selesai');
         $this->assertTrue(Model::preventsLazyLoading());
     }
 
