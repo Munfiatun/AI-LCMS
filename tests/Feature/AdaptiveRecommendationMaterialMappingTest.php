@@ -99,7 +99,7 @@ class AdaptiveRecommendationMaterialMappingTest extends TestCase
             ->assertSee('Latihan Variabel dan Tipe Data')
             ->assertSee('Mulai Belajar')
             ->assertSee(route('student.materials.show', [$course, $material]), false)
-            ->assertSee('Detail Sistem & Transparansi');
+            ->assertSee('Detail Sistem & Transparansi', false);
     }
 
     /** @return array{Course, LearningConcept, AdaptiveRecommendation} */
