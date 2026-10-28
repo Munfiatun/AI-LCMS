@@ -2,350 +2,338 @@
 
 @php
     $title = $questionBank->title;
-    $breadcrumb = 'Detail Bank Soal';
+    $breadcrumb = 'Bank Soal';
+    $reviewCount = $questions->where('needs_review', true)->count();
+    $verifiedCount = $questions->filter(fn ($question) => ! $question->needs_review && $question->status === 'approved')->count();
 @endphp
 
 @section('content')
-<div class="space-y-6" x-data="{ showEditModal: false, showAddModal: false }">
-    <!-- Header Card -->
-    <div class="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 relative overflow-hidden">
-        <div class="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-        <div class="flex flex-col md:flex-row justify-between gap-6 relative z-10">
-            <div class="space-y-2 flex-1">
-                <div class="flex items-center gap-3">
-                    <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {{ $questionBank->course?->title ?? 'Global (Semua Kursus)' }}
-                    </span>
-                    @if($questionBank->status === 'active')
-                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Active</span>
-                    @else
-                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-500/20 text-slate-400 border border-slate-500/30">Archived</span>
-                    @endif
+<div class="space-y-6" x-data="{ showEditModal: false, showAddModal: false }" @keydown.escape.window="showEditModal = false; showAddModal = false">
+    @if($errors->any())
+        <div role="alert" class="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4 text-sm text-rose-200">
+            <p class="font-bold">Ada yang perlu diperbaiki:</p>
+            <div class="mt-2 space-y-1">
+                @foreach($errors->all() as $error)
+                    <p>• {{ $error }}</p>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <section class="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 sm:p-7">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0 max-w-3xl">
+                <a href="{{ route('instructor.question-banks.index') }}" class="text-sm font-semibold text-slate-500 transition hover:text-indigo-300">← Kembali ke Bank Soal</a>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-300">{{ $questionBank->course?->title ?? 'Global' }}</span>
+                    <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $questionBank->status === 'active' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400' }}">{{ $questionBank->status === 'active' ? 'Aktif' : 'Arsip' }}</span>
                 </div>
-                <h1 class="text-2xl font-extrabold text-white">{{ $questionBank->title }}</h1>
-                <p class="text-sm text-slate-400">{{ $questionBank->description ?? 'Tidak ada deskripsi.' }}</p>
-                
-                <div class="flex flex-wrap gap-4 pt-3 text-sm">
-                    <div class="flex items-center gap-2 bg-slate-950/50 px-3 py-1.5 rounded-lg border border-slate-800">
-                        <span class="text-slate-400">Total Soal:</span>
-                        <span class="text-white font-bold">{{ $questions->count() }}</span>
-                    </div>
-                    @php
-                        $reviewCount = $questions->where('needs_review', true)->count();
-                    @endphp
+                <h1 class="mt-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{{ $questionBank->title }}</h1>
+                <p class="mt-2 text-base leading-7 text-slate-400">{{ $questionBank->description ?? 'Tambahkan soal, review hasil ekstraksi, lalu gunakan bank ini untuk membuat formative atau kuis.' }}</p>
+
+                <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
+                    <span><strong class="text-white">{{ $questions->count() }}</strong> soal</span>
+                    <span><strong class="text-emerald-300">{{ $verifiedCount }}</strong> terverifikasi</span>
                     @if($reviewCount > 0)
-                    <div class="flex items-center gap-2 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
-                        <span class="text-amber-500/80">Perlu Review:</span>
-                        <span class="text-amber-400 font-bold">{{ $reviewCount }}</span>
-                        <a href="{{ route('instructor.question-banks.review', $questionBank) }}" class="ml-2 text-xs text-amber-400 hover:text-amber-300 underline font-semibold">Tinjau Sekarang</a>
-                    </div>
+                        <span><strong class="text-amber-300">{{ $reviewCount }}</strong> perlu review</span>
                     @endif
                 </div>
             </div>
-            
+
+            <div class="flex flex-wrap gap-2">
+                <button type="button" @click="showEditModal = true" class="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700">Edit Info</button>
+                <a href="{{ route('instructor.quizzes.index') }}" class="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white">Kuis →</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-3">
+        <article class="rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.05] p-5">
             <div class="flex items-start gap-3">
-                <button @click="showEditModal = true" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-xl transition-colors border border-slate-700">
-                    Edit Info
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Content: Questions List -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-bold text-white">Daftar Pertanyaan</h2>
-                <button @click="showAddModal = true" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Tambah Manual
-                </button>
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-sm font-extrabold text-white">1</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Tambah Soal</h2>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">Pilih cara yang paling nyaman. Manual untuk satu-dua soal, dokumen untuk jumlah banyak.</p>
+                </div>
             </div>
 
-            @forelse($questions as $question)
-                <div class="bg-slate-900/60 rounded-xl border {{ $question->needs_review ? 'border-amber-500/30' : 'border-slate-800' }} p-5 relative overflow-hidden group">
-                    @if($question->needs_review)
-                        <div class="absolute top-0 right-0 bg-amber-500/10 px-3 py-1 text-[10px] font-bold text-amber-400 rounded-bl-lg border-b border-l border-amber-500/20 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            Kunci Jawaban Inferred (Butuh Review)
-                        </div>
-                    @endif
+            <button type="button" @click="showAddModal = true" class="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-500">+ Tambah Soal Manual</button>
 
-                    <div class="flex gap-4">
-                        <div class="shrink-0 w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-300">
-                            {{ $loop->iteration }}
-                        </div>
-                        <div class="flex-1 space-y-4 pt-1">
-                            <div class="text-sm text-slate-200">
-                                {!! nl2br(e($question->question_text)) !!}
-                            </div>
-                            
-                            <div class="space-y-2 mt-4">
-                                @foreach($question->options as $option)
-                                    <div class="flex items-start gap-3 p-3 rounded-lg border {{ $option->is_correct ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-950/50 border-slate-800' }}">
-                                        <div class="mt-0.5 {{ $option->is_correct ? 'text-emerald-400' : 'text-slate-500' }}">
-                                            @if($option->is_correct)
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                            @else
-                                                <div class="w-4 h-4 rounded-full border border-slate-600"></div>
-                                            @endif
-                                        </div>
-                                        <div class="text-sm {{ $option->is_correct ? 'text-emerald-100' : 'text-slate-400' }}">
-                                            {{ $option->option_text }}
-                                        </div>
+            <details class="mt-3 rounded-xl border border-slate-800 bg-slate-950/40">
+                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-300">Unggah dokumen & ekstrak AI</summary>
+                <div class="space-y-4 border-t border-slate-800 p-4">
+                    <form action="{{ route('instructor.question-banks.upload-document', $questionBank) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                        @csrf
+                        <label class="block text-sm font-semibold text-slate-400">PDF / DOCX
+                            <input type="file" name="document" accept=".pdf,.doc,.docx" required class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white">
+                        </label>
+                        <button type="submit" class="w-full rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-bold text-indigo-200 transition hover:bg-indigo-500/20">Unggah Dokumen</button>
+                    </form>
+
+                    @if($documents->count() > 0)
+                        <div class="space-y-2 border-t border-slate-800 pt-4">
+                            <p class="text-xs font-semibold text-slate-500">Dokumen yang dapat diekstrak</p>
+                            @foreach($documents as $doc)
+                                <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold text-slate-300">{{ $doc->original_name }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-600">{{ number_format($doc->size / 1024, 1) }} KB</p>
                                     </div>
-                                @endforeach
-                            </div>
-
-                            <div class="flex items-center gap-4 pt-4 mt-4 border-t border-slate-800/80">
-                                <span class="text-xs text-slate-500">Kesulitan: <strong class="text-slate-300 capitalize">{{ $question->difficulty }}</strong></span>
-                                <span class="text-xs text-slate-500">Bobot: <strong class="text-slate-300">{{ $question->points }} pts</strong></span>
-                                
-                                <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                                    <form action="{{ route('instructor.questions.destroy', $question) }}" method="POST" onsubmit="return confirm('Hapus pertanyaan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-xs text-rose-400 hover:text-rose-300 font-medium">Hapus</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="p-8 text-center rounded-2xl bg-slate-900/60 border border-slate-800 border-dashed">
-                    <p class="text-slate-400 text-sm">Belum ada pertanyaan di bank soal ini.</p>
-                </div>
-            @endforelse
-        </div>
-
-        <!-- Sidebar: Upload & AI Extraction -->
-        <div class="space-y-6">
-            <div class="bg-slate-900/80 rounded-2xl border border-slate-800 p-5">
-                <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-                    Ekstraksi Soal dengan AI
-                </h3>
-                
-                <form action="{{ route('instructor.question-banks.upload-document', $questionBank) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                    @csrf
-                    <div class="border-2 border-dashed border-slate-700 rounded-xl p-4 text-center hover:bg-slate-800/50 transition-colors relative cursor-pointer" x-data="{ fileName: '' }">
-                        <input type="file" name="document" accept=".pdf,.doc,.docx" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" @change="fileName = $event.target.files[0].name">
-                        
-                        <div x-show="!fileName">
-                            <svg class="mx-auto h-8 w-8 text-slate-500 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <p class="text-xs text-slate-400">Pilih dokumen soal (PDF/DOCX)</p>
-                            <p class="text-[10px] text-slate-500 mt-1">Maks 10MB</p>
-                        </div>
-                        <div x-show="fileName" style="display: none;">
-                            <svg class="mx-auto h-8 w-8 text-indigo-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <p class="text-xs text-indigo-300 font-medium break-all" x-text="fileName"></p>
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-indigo-600/20">
-                        Unggah & Siapkan AI
-                    </button>
-                </form>
-
-                @if($documents->count() > 0)
-                    <div class="mt-6 pt-5 border-t border-slate-800/80 space-y-3">
-                        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dokumen Siap Ekstrak</h4>
-                        @foreach($documents as $doc)
-                            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="flex-1 truncate">
-                                        <p class="text-xs font-medium text-slate-300 truncate" title="{{ $doc->original_name }}">{{ $doc->original_name }}</p>
-                                        <p class="text-[10px] text-slate-500 mt-0.5">{{ number_format($doc->size / 1024, 1) }} KB</p>
-                                    </div>
-                                    
                                     <form action="{{ route('instructor.question-banks.extract', $questionBank) }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="document_id" value="{{ $doc->id }}">
-                                        <button type="submit" class="px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-bold rounded border border-indigo-500/20 transition-colors whitespace-nowrap">
-                                            Ekstrak AI
-                                        </button>
+                                        <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-500">Ekstrak AI</button>
                                     </form>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </details>
+        </article>
+
+        <article class="rounded-3xl border {{ $reviewCount > 0 ? 'border-amber-500/20 bg-amber-500/[0.04]' : 'border-emerald-500/20 bg-emerald-500/[0.04]' }} p-5">
+            <div class="flex items-start gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $reviewCount > 0 ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950' }} text-sm font-extrabold">2</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Review Soal</h2>
+                    @if($reviewCount > 0)
+                        <p class="mt-1 text-sm leading-6 text-slate-500">Ada {{ $reviewCount }} soal yang masih membutuhkan keputusan guru sebelum dapat digunakan.</p>
+                    @else
+                        <p class="mt-1 text-sm leading-6 text-slate-500">Semua soal saat ini sudah terverifikasi dan siap digunakan.</p>
+                    @endif
+                </div>
             </div>
 
-            <div class="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.06] p-5">
-                <div class="mb-4">
-                    <p class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-300">R4 Adaptive Flow</p>
-                    <h3 class="mt-1 text-base font-bold text-white">Siapkan Formative Otomatis</h3>
-                    <p class="mt-2 text-xs leading-5 text-slate-400">Pilih satu concept. Sistem akan memetakan seluruh soal terverifikasi di bank ini ke concept tersebut, membuat quiz formative draft, dan memasukkan semua soal secara otomatis.</p>
+            <div class="mt-5 rounded-2xl border border-slate-800 bg-slate-950/45 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-slate-400">Terverifikasi</span>
+                    <strong class="text-xl text-emerald-300">{{ $verifiedCount }}</strong>
                 </div>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                    <span class="text-sm text-slate-400">Perlu review</span>
+                    <strong class="text-xl {{ $reviewCount > 0 ? 'text-amber-300' : 'text-slate-500' }}">{{ $reviewCount }}</strong>
+                </div>
+            </div>
 
-                @if($questionBank->course && $concepts->isNotEmpty())
-                    <form action="{{ route('instructor.question-banks.create-formative', $questionBank) }}" method="POST" class="space-y-3">
-                        @csrf
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold text-slate-300">Target Concept</label>
-                            <select name="learning_concept_id" required class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500">
-                                <option value="">— Pilih Concept —</option>
-                                @foreach($concepts as $concept)
-                                    <option value="{{ $concept->id }}">{{ $concept->code }} — {{ $concept->name }}</option>
+            @if($reviewCount > 0)
+                <a href="{{ route('instructor.question-banks.review', $questionBank) }}" class="mt-4 block rounded-xl bg-amber-400 px-4 py-2.5 text-center text-sm font-extrabold text-slate-950 transition hover:bg-amber-300">Review {{ $reviewCount }} Soal</a>
+            @else
+                <div class="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center text-sm font-semibold text-emerald-200">✓ Siap digunakan</div>
+            @endif
+        </article>
+
+        <article class="rounded-3xl border border-slate-800 bg-slate-900/60 p-5">
+            <div class="flex items-start gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-sm font-extrabold text-white">3</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Siapkan Formative</h2>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">Untuk adaptive learning, pilih concept sekali. Sistem akan mapping soal dan membuat draft formative otomatis.</p>
+                </div>
+            </div>
+
+            @if(!$questionBank->course)
+                <div class="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100/80">
+                    Hubungkan bank soal ini ke satu kursus melalui <button type="button" @click="showEditModal = true" class="font-bold text-amber-200 underline">Edit Info</button> terlebih dahulu.
+                </div>
+            @elseif($concepts->isEmpty())
+                <div class="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100/80">
+                    Kursus ini belum memiliki Learning Concept. Buka <a href="{{ route('instructor.learning-concepts.index', ['course_id' => $questionBank->course_id]) }}" class="font-bold text-amber-200 underline">Konsep & Mapping</a> untuk menambahkannya.
+                </div>
+            @else
+                <form action="{{ route('instructor.question-banks.create-formative', $questionBank) }}" method="POST" class="mt-5 space-y-3">
+                    @csrf
+                    <label class="block text-sm font-semibold text-slate-400">Target Concept
+                        <select name="learning_concept_id" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white focus:border-indigo-500">
+                            <option value="">Pilih concept</option>
+                            @foreach($concepts as $concept)
+                                <option value="{{ $concept->id }}">{{ $concept->code }} — {{ $concept->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit" @disabled($questions->isEmpty() || $reviewCount > 0) class="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Siapkan Formative Otomatis</button>
+                    @if($questions->isEmpty())
+                        <p class="text-xs leading-5 text-slate-600">Tambahkan soal terlebih dahulu.</p>
+                    @elseif($reviewCount > 0)
+                        <p class="text-xs leading-5 text-slate-600">Selesaikan review sebelum formative dibuat.</p>
+                    @else
+                        <p class="text-xs leading-5 text-slate-600">Draft quiz akan dibuat otomatis; publikasi tetap dilakukan oleh guru.</p>
+                    @endif
+                </form>
+            @endif
+        </article>
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-xl font-extrabold text-white">Daftar Soal</h2>
+                <p class="mt-1 text-sm text-slate-500">Pertanyaan diringkas agar halaman tidak terlalu panjang. Klik satu soal untuk melihat pilihan jawabannya.</p>
+            </div>
+            <span class="text-sm text-slate-500">{{ $questions->count() }} soal</span>
+        </div>
+
+        <div class="space-y-3">
+            @forelse($questions as $question)
+                <details class="group overflow-hidden rounded-2xl border {{ $question->needs_review ? 'border-amber-500/20' : 'border-slate-800' }} bg-slate-900/65">
+                    <summary class="flex cursor-pointer list-none items-start gap-4 p-4 sm:p-5">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-sm font-extrabold text-slate-300">{{ $loop->iteration }}</div>
+                        <div class="min-w-0 flex-1">
+                            <p class="line-clamp-2 text-sm font-semibold leading-6 text-slate-100">{{ $question->question_text }}</p>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span class="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-xs text-slate-400">{{ ucfirst($question->difficulty) }}</span>
+                                <span class="rounded-full border px-2.5 py-1 text-xs font-semibold {{ $question->needs_review ? 'border-amber-500/20 bg-amber-500/10 text-amber-300' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' }}">{{ $question->needs_review ? 'Perlu review' : 'Terverifikasi' }}</span>
+                            </div>
+                        </div>
+                        <span class="mt-1 text-sm font-semibold text-indigo-300 group-open:hidden">Lihat ↓</span>
+                        <span class="mt-1 hidden text-sm font-semibold text-indigo-300 group-open:inline">Tutup ↑</span>
+                    </summary>
+
+                    <div class="border-t border-slate-800 px-4 pb-5 pt-4 sm:px-5 sm:pl-[4.5rem]">
+                        <div class="grid gap-2">
+                            @foreach($question->options as $index => $option)
+                                <div class="flex items-start gap-3 rounded-xl border {{ $option->is_correct ? 'border-emerald-500/20 bg-emerald-500/[0.06]' : 'border-slate-800 bg-slate-950/40' }} p-3">
+                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border {{ $option->is_correct ? 'border-emerald-500/30 text-emerald-300' : 'border-slate-700 text-slate-500' }} text-xs font-bold">{{ chr(65 + $index) }}</span>
+                                    <span class="text-sm leading-6 {{ $option->is_correct ? 'font-semibold text-emerald-100' : 'text-slate-400' }}">{{ $option->option_text }}</span>
+                                    @if($option->is_correct)
+                                        <span class="ml-auto shrink-0 text-xs font-semibold text-emerald-300">Kunci</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if(filled($question->explanation))
+                            <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                                <p class="text-xs font-semibold text-slate-500">Pembahasan</p>
+                                <p class="mt-1 text-sm leading-6 text-slate-400">{{ $question->explanation }}</p>
+                            </div>
+                        @endif
+
+                        <div class="mt-4 flex justify-end">
+                            <form action="{{ route('instructor.questions.destroy', $question) }}" method="POST" onsubmit="return confirm('Hapus pertanyaan ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-sm font-semibold text-rose-300 hover:text-rose-200">Hapus soal</button>
+                            </form>
+                        </div>
+                    </div>
+                </details>
+            @empty
+                <div class="rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 p-10 text-center">
+                    <h3 class="text-lg font-bold text-white">Belum ada soal</h3>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Gunakan tombol Tambah Soal Manual atau unggah dokumen pada langkah pertama.</p>
+                    <button type="button" @click="showAddModal = true" class="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">+ Tambah Soal</button>
+                </div>
+            @endforelse
+        </div>
+    </section>
+
+    <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm" @click="showEditModal = false"></div>
+            <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+                <form action="{{ route('instructor.question-banks.update', $questionBank) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="border-b border-slate-800 px-6 py-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Edit Bank Soal</h3>
+                                <p class="mt-1 text-sm text-slate-500">Atur identitas dan course bank soal.</p>
+                            </div>
+                            <button type="button" @click="showEditModal = false" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-white">✕</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4 p-6">
+                        <label class="block text-sm font-semibold text-slate-300">Judul
+                            <input type="text" name="title" value="{{ old('title', $questionBank->title) }}" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-indigo-500">
+                        </label>
+                        <label class="block text-sm font-semibold text-slate-300">Kursus
+                            <select name="course_id" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-indigo-500">
+                                <option value="">Global / lintas kursus</option>
+                                @foreach($courses as $course)
+                                    <option value="{{ $course->id }}" @selected((string) old('course_id', $questionBank->course_id) === (string) $course->id)>{{ $course->title }}</option>
                                 @endforeach
                             </select>
-                            @error('learning_concept_id')
-                                <p class="mt-2 text-xs font-medium text-rose-300">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <button type="submit" class="w-full rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-500">
-                            Siapkan Formative
-                        </button>
-                        <p class="text-[11px] leading-5 text-slate-500">Quiz tetap dibuat sebagai Draft. Guru masih harus meninjau lalu menekan <strong class="text-slate-300">Terbitkan Kuis</strong>.</p>
-                    </form>
-                @elseif(!$questionBank->course)
-                    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs leading-5 text-amber-200">Hubungkan bank soal ke course melalui <strong>Edit Info</strong> terlebih dahulu.</div>
-                @else
-                    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs leading-5 text-amber-200">Course ini belum memiliki Learning Concept aktif.</div>
-                @endif
-            </div>
-
-            <!-- Guidelines -->
-            <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-5 text-sm text-slate-400 space-y-3">
-                <h4 class="font-bold text-slate-300 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Panduan AI
-                </h4>
-                <ul class="list-disc pl-4 space-y-1 text-xs">
-                    <li>Gunakan dokumen berekstensi PDF atau DOCX.</li>
-                    <li>Sertakan kunci jawaban di akhir soal jika ada. Jika tidak, AI akan menandai soal untuk direview manual.</li>
-                    <li>Struktur soal yang jelas (nomor, pilihan A/B/C/D) akan mempercepat proses ekstraksi.</li>
-                </ul>
+                        </label>
+                        <label class="block text-sm font-semibold text-slate-300">Status
+                            <select name="status" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-indigo-500">
+                                <option value="active" @selected(old('status', $questionBank->status) === 'active')>Aktif</option>
+                                <option value="archived" @selected(old('status', $questionBank->status) === 'archived')>Arsip</option>
+                            </select>
+                        </label>
+                        <label class="block text-sm font-semibold text-slate-300">Deskripsi
+                            <textarea name="description" rows="3" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-indigo-500">{{ old('description', $questionBank->description) }}</textarea>
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-3 border-t border-slate-800 bg-slate-950/40 px-6 py-4">
+                        <button type="button" @click="showEditModal = false" class="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800">Batal</button>
+                        <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal (AlpineJS) -->
-    <div
-        x-cloak
-        x-show="showEditModal"
-        @keydown.escape.window="showEditModal = false"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4"
-        aria-labelledby="edit-question-bank-title"
-        role="dialog"
-        aria-modal="true"
-    >
-        <div @click="showEditModal = false" class="absolute inset-0 z-0 bg-slate-950/80 backdrop-blur-sm" aria-hidden="true"></div>
-        <div class="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-left shadow-2xl">
-            <form action="{{ route('instructor.question-banks.update', $questionBank) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="px-6 py-5 border-b border-slate-800">
-                    <h3 id="edit-question-bank-title" class="text-lg font-bold text-white">Edit Bank Soal</h3>
-                </div>
-                <div class="p-6 space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Judul Bank Soal <span class="text-rose-500">*</span></label>
-                        <input type="text" name="title" value="{{ old('title', $questionBank->title) }}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Course</label>
-                        <select name="course_id" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            <option value="">Global (Semua Kursus)</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}" @selected((string) old('course_id', $questionBank->course_id) === (string) $course->id)>{{ $course->title }}</option>
-                            @endforeach
-                        </select>
-                        <p class="mt-1.5 text-xs leading-relaxed text-slate-500">Bank soal global dapat dipindahkan ke course tertentu. Jika soal sudah memiliki Concept Mapping dari course lain, perpindahan akan ditolak agar relasi tetap konsisten.</p>
-                        @error('course_id')
-                            <p class="mt-1.5 text-xs font-medium text-rose-300">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
-                        <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            <option value="active" @selected(old('status', $questionBank->status) === 'active')>Active</option>
-                            <option value="archived" @selected(old('status', $questionBank->status) === 'archived')>Archived</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Deskripsi Singkat</label>
-                        <textarea name="description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ old('description', $questionBank->description) }}</textarea>
-                    </div>
-                </div>
-                <div class="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
-                    <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors">Simpan Perubahan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Add Question Modal (AlpineJS) -->
-    <div x-show="showAddModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="showAddModal" @click="showAddModal = false" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="showAddModal" class="inline-block align-bottom bg-slate-900 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-slate-800">
+    <div x-show="showAddModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm" @click="showAddModal = false"></div>
+            <div class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
                 <form action="{{ route('instructor.question-banks.questions.store', $questionBank) }}" method="POST">
                     @csrf
-                    <div class="px-6 py-5 border-b border-slate-800">
-                        <h3 class="text-lg font-bold text-white">Tambah Pertanyaan Manual</h3>
-                    </div>
-                    <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-1">Pertanyaan <span class="text-rose-500">*</span></label>
-                            <textarea name="question_text" rows="3" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-600" placeholder="Tuliskan pertanyaan di sini..."></textarea>
-                        </div>
-                        
-                        <div class="space-y-3">
-                            <label class="block text-sm font-medium text-slate-300">Pilihan Jawaban <span class="text-rose-500">*</span></label>
-                            <p class="text-xs text-slate-500 mb-2">Pilih salah satu radio button untuk menandai kunci jawaban yang benar.</p>
-                            
-                            @foreach(['A', 'B', 'C', 'D'] as $idx => $label)
-                            <div class="flex items-center gap-3">
-                                <input type="radio" name="correct_option" value="{{ $idx }}" {{ $idx === 0 ? 'checked' : '' }} class="w-4 h-4 text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500 focus:ring-offset-slate-900">
-                                <div class="flex-1 flex gap-2">
-                                    <span class="inline-flex items-center justify-center w-10 bg-slate-800 text-slate-300 rounded-lg text-sm font-bold">{{ $label }}</span>
-                                    <input type="text" name="options[{{ $idx }}]" required placeholder="Opsi {{ $label }}..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                                </div>
+                    <div class="border-b border-slate-800 px-6 py-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Tambah Soal Manual</h3>
+                                <p class="mt-1 text-sm text-slate-500">Isi pertanyaan dan tandai satu jawaban yang benar.</p>
                             </div>
-                            @endforeach
+                            <button type="button" @click="showAddModal = false" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-white">✕</button>
                         </div>
+                    </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Tingkat Kesulitan</label>
-                                <select name="difficulty" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                                    <option value="easy">Easy</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="hard">Hard</option>
-                                </select>
+                    <div class="max-h-[70vh] space-y-5 overflow-y-auto p-6">
+                        <label class="block text-sm font-semibold text-slate-300">Pertanyaan
+                            <textarea name="question_text" rows="3" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white focus:border-indigo-500" placeholder="Tuliskan pertanyaan..."></textarea>
+                        </label>
+
+                        <fieldset>
+                            <legend class="text-sm font-semibold text-slate-300">Pilihan jawaban</legend>
+                            <p class="mt-1 text-xs text-slate-500">Pilih radio button pada jawaban yang benar.</p>
+                            <div class="mt-3 space-y-3">
+                                @foreach(['A', 'B', 'C', 'D'] as $idx => $label)
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="correct_option" value="{{ $idx }}" @checked($idx === 0) class="h-4 w-4 border-slate-600 bg-slate-950 text-emerald-500">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-sm font-bold text-slate-300">{{ $label }}</span>
+                                        <input type="text" name="options[{{ $idx }}]" required class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-indigo-500" placeholder="Opsi {{ $label }}">
+                                    </div>
+                                @endforeach
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Bobot Nilai</label>
-                                <input type="number" name="points" value="10" min="1" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                        </fieldset>
+
+                        <details class="rounded-xl border border-slate-800 bg-slate-950/40">
+                            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-300">Pengaturan tambahan</summary>
+                            <div class="grid gap-4 border-t border-slate-800 p-4 sm:grid-cols-2">
+                                <label class="text-sm font-semibold text-slate-400">Kesulitan
+                                    <select name="difficulty" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white">
+                                        <option value="easy">Mudah</option>
+                                        <option value="medium" selected>Sedang</option>
+                                        <option value="hard">Sulit</option>
+                                    </select>
+                                </label>
+                                <label class="text-sm font-semibold text-slate-400">Bobot
+                                    <input type="number" name="points" value="10" min="1" max="100" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white">
+                                </label>
                             </div>
-                        </div>
+                        </details>
                     </div>
-                    <div class="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
-                        <button type="button" @click="showAddModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors">Simpan Pertanyaan</button>
+
+                    <div class="flex justify-end gap-3 border-t border-slate-800 bg-slate-950/40 px-6 py-4">
+                        <button type="button" @click="showAddModal = false" class="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800">Batal</button>
+                        <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">Simpan Soal</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #334155;
-    border-radius: 10px;
-}
-</style>
 @endsection
