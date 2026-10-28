@@ -103,7 +103,7 @@
                                             </div>
                                             <div>
                                                 <dt class="text-slate-600">Algorithm</dt>
-                                                <dd class="mt-0.5 font-mono text-slate-300">{{ $recommendation->algorithmVersion?->code }}@{{ $recommendation->algorithmVersion?->version }}</dd>
+                                                <dd class="mt-0.5 font-mono text-slate-300">{{ ($recommendation->algorithmVersion?->code ?? 'unknown') . '@' . ($recommendation->algorithmVersion?->version ?? 'unknown') }}</dd>
                                             </div>
                                             <div>
                                                 <dt class="text-slate-600">Generated</dt>
