@@ -51,7 +51,7 @@ class LearningObjectiveAlignmentTest extends TestCase
         $this->actingAs($this->instructor)
             ->get(route('instructor.dashboard'))
             ->assertOk()
-            ->assertSee('Learning Objectives')
+            ->assertSee('Tujuan Pembelajaran')
             ->assertSee(route('instructor.learning-objectives.index'), false);
     }
 
