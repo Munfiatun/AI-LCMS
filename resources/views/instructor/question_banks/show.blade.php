@@ -190,40 +190,45 @@
     </div>
 
     <!-- Edit Modal (AlpineJS) -->
-    <div x-show="showEditModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="showEditModal" @click="showEditModal = false" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="showEditModal" class="inline-block align-bottom bg-slate-900 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-slate-800">
-                <form action="{{ route('instructor.question-banks.update', $questionBank) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="px-6 py-5 border-b border-slate-800">
-                        <h3 class="text-lg font-bold text-white">Edit Bank Soal</h3>
+    <div
+        x-cloak
+        x-show="showEditModal"
+        @keydown.escape.window="showEditModal = false"
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4"
+        aria-labelledby="edit-question-bank-title"
+        role="dialog"
+        aria-modal="true"
+    >
+        <div @click="showEditModal = false" class="absolute inset-0 z-0 bg-slate-950/80 backdrop-blur-sm" aria-hidden="true"></div>
+        <div class="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-left shadow-2xl">
+            <form action="{{ route('instructor.question-banks.update', $questionBank) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="px-6 py-5 border-b border-slate-800">
+                    <h3 id="edit-question-bank-title" class="text-lg font-bold text-white">Edit Bank Soal</h3>
+                </div>
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Judul Bank Soal <span class="text-rose-500">*</span></label>
+                        <input type="text" name="title" value="{{ $questionBank->title }}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                     </div>
-                    <div class="p-6 space-y-5">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-1">Judul Bank Soal <span class="text-rose-500">*</span></label>
-                            <input type="text" name="title" value="{{ $questionBank->title }}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
-                            <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                                <option value="active" @selected($questionBank->status === 'active')>Active</option>
-                                <option value="archived" @selected($questionBank->status === 'archived')>Archived</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-1">Deskripsi Singkat</label>
-                            <textarea name="description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ $questionBank->description }}</textarea>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
+                        <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                            <option value="active" @selected($questionBank->status === 'active')>Active</option>
+                            <option value="archived" @selected($questionBank->status === 'archived')>Archived</option>
+                        </select>
                     </div>
-                    <div class="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
-                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors">Simpan Perubahan</button>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Deskripsi Singkat</label>
+                        <textarea name="description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">{{ $questionBank->description }}</textarea>
                     </div>
-                </form>
-            </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
+                    <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
     
