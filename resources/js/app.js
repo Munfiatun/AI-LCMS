@@ -3,6 +3,7 @@ import { enhanceLearningAnalytics } from './analytics/learning-signals';
 import { enhanceSlidebookThemePicker } from './slidebook/theme-picker';
 import { enhanceSlidebookAuthoring } from './slidebook/authoring';
 import { enhanceSlidebookQualityPanel } from './slidebook/quality-panel';
+import { enhanceThemeExperience } from './theme';
 
 function initializeEnhancements() {
     enhanceAccessibility();
@@ -10,6 +11,7 @@ function initializeEnhancements() {
     enhanceSlidebookThemePicker();
     enhanceSlidebookAuthoring();
     enhanceSlidebookQualityPanel();
+    enhanceThemeExperience();
 }
 
 if (document.readyState === 'loading') {
