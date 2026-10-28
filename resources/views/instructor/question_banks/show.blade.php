@@ -174,6 +174,40 @@
                 @endif
             </div>
 
+            <div class="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.06] p-5">
+                <div class="mb-4">
+                    <p class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-300">R4 Adaptive Flow</p>
+                    <h3 class="mt-1 text-base font-bold text-white">Siapkan Formative Otomatis</h3>
+                    <p class="mt-2 text-xs leading-5 text-slate-400">Pilih satu concept. Sistem akan memetakan seluruh soal terverifikasi di bank ini ke concept tersebut, membuat quiz formative draft, dan memasukkan semua soal secara otomatis.</p>
+                </div>
+
+                @if($questionBank->course && $concepts->isNotEmpty())
+                    <form action="{{ route('instructor.question-banks.create-formative', $questionBank) }}" method="POST" class="space-y-3">
+                        @csrf
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-slate-300">Target Concept</label>
+                            <select name="learning_concept_id" required class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500">
+                                <option value="">— Pilih Concept —</option>
+                                @foreach($concepts as $concept)
+                                    <option value="{{ $concept->id }}">{{ $concept->code }} — {{ $concept->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('learning_concept_id')
+                                <p class="mt-2 text-xs font-medium text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit" class="w-full rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-500">
+                            Siapkan Formative
+                        </button>
+                        <p class="text-[11px] leading-5 text-slate-500">Quiz tetap dibuat sebagai Draft. Guru masih harus meninjau lalu menekan <strong class="text-slate-300">Terbitkan Kuis</strong>.</p>
+                    </form>
+                @elseif(!$questionBank->course)
+                    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs leading-5 text-amber-200">Hubungkan bank soal ke course melalui <strong>Edit Info</strong> terlebih dahulu.</div>
+                @else
+                    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs leading-5 text-amber-200">Course ini belum memiliki Learning Concept aktif.</div>
+                @endif
+            </div>
+
             <!-- Guidelines -->
             <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-5 text-sm text-slate-400 space-y-3">
                 <h4 class="font-bold text-slate-300 flex items-center gap-2">
