@@ -2,219 +2,188 @@
 
 @php
     $title = 'Review Kuis';
-    $breadcrumb = 'Review Kuis';
+    $breadcrumb = 'Kuis & Evaluasi';
+    $isDraft = $quiz->status === 'draft';
+    $isPublished = $quiz->status === 'published';
+    $questionsReady = $quiz->quizQuestions->count() >= $quiz->total_questions && $reviewStats['pending'] === 0;
+    $canPublish = $isDraft && $publicationErrors === [];
 @endphp
 
 @section('content')
 <div class="space-y-6">
-    @if($quiz->status === 'draft' && $publicationErrors)
-        <div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            <div class="flex items-start gap-3">
-                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-300">!</div>
-                <div>
-                    <p class="font-semibold text-amber-100">Quiz belum siap diterbitkan</p>
-                    <p class="mt-1 text-xs leading-5 text-amber-200/80">{{ implode(' ', $publicationErrors) }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
-
     @if($errors->any())
-        <div role="alert" class="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-            @foreach($errors->all() as $error)
-                <p>{{ $error }}</p>
-            @endforeach
+        <div role="alert" class="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4 text-sm text-rose-200">
+            <p class="font-bold">Ada yang perlu diperbaiki:</p>
+            <div class="mt-2 space-y-1">
+                @foreach($errors->all() as $error)
+                    <p>• {{ $error }}</p>
+                @endforeach
+            </div>
         </div>
     @endif
 
-    @if($quiz->status === 'published')
-        <div class="rounded-2xl border {{ $attemptStats['completed'] > 0 ? 'border-rose-500/20 bg-rose-500/10' : 'border-amber-500/20 bg-amber-500/10' }} px-4 py-3 text-sm">
-            @if($attemptStats['completed'] > 0)
-                <p class="font-semibold text-rose-100">Quiz terkunci karena sudah memiliki attempt selesai.</p>
-                <p class="mt-1 text-xs leading-5 text-rose-200/80">Builder dan perubahan soal dinonaktifkan untuk menjaga histori hasil belajar. Buat quiz baru jika komposisi soal perlu diubah.</p>
-            @else
-                <p class="font-semibold text-amber-100">Quiz sedang Published.</p>
-                <p class="mt-1 text-xs leading-5 text-amber-200/80">Kembalikan ke Draft sebelum membuka Builder. {{ $attemptStats['in_progress'] > 0 ? $attemptStats['in_progress'].' attempt yang belum selesai akan dibatalkan.' : 'Belum ada attempt yang selesai, jadi quiz masih aman untuk diedit.' }}</p>
-            @endif
-        </div>
-    @endif
-
-    <section class="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-black/10">
-        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/70 to-transparent"></div>
-        <div class="p-6 lg:p-8">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                <div class="max-w-3xl">
-                    <div class="mb-3 flex flex-wrap items-center gap-2">
-                        <span class="rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] {{ $quiz->status === 'published' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/20 bg-amber-500/10 text-amber-300' }}">
-                            {{ $quiz->status === 'published' ? 'Published' : 'Draft Review' }}
-                        </span>
-                        @if($quiz->status === 'draft')
-                            <span class="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-300">AI Generated Draft</span>
-                        @endif
-                    </div>
-                    <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{{ $quiz->title }}</h1>
-                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-400">
-                        <span>Kursus: <strong class="font-semibold text-slate-200">{{ $quiz->course->title }}</strong></span>
-                        <span class="hidden h-1 w-1 rounded-full bg-slate-600 sm:block"></span>
-                        <span>{{ $quiz->quizQuestions->count() }} soal tersinkronisasi</span>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('instructor.quizzes.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
-                        ← Daftar Kuis
-                    </a>
-
-                    @if($quiz->status === 'draft')
-                        <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20">
-                            Buka Builder
-                        </a>
-                    @else
-                        <span class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-semibold text-slate-500" title="Kembalikan quiz ke Draft sebelum membuka Builder">
-                            Builder Terkunci
-                        </span>
-                    @endif
-
-                    @if($publicationErrors === [] && $quiz->status === 'draft')
-                        <form action="{{ route('instructor.quizzes.publish', $quiz) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400">
-                                Terbitkan Kuis
-                            </button>
-                        </form>
-                    @endif
-
-                    @if($quiz->status === 'published' && $attemptStats['completed'] === 0)
-                        <form action="{{ route('instructor.quizzes.unpublish', $quiz) }}" method="POST" onsubmit="return confirm('{{ $attemptStats['in_progress'] > 0 ? 'Quiz memiliki attempt yang belum selesai. Attempt tersebut akan dibatalkan. Kembalikan quiz ke Draft?' : 'Kembalikan quiz ke Draft agar dapat diedit?' }}')">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20">
-                                Kembalikan ke Draft
-                            </button>
-                        </form>
+    <section class="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 sm:p-7">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0 max-w-3xl">
+                <a href="{{ route('instructor.quizzes.index') }}" class="text-sm font-semibold text-slate-500 transition hover:text-indigo-300">← Kembali ke Kuis</a>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $isPublished ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/20 bg-amber-500/10 text-amber-300' }}">{{ $isPublished ? 'Terbit' : 'Draft' }}</span>
+                    <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-400">{{ ucfirst($quiz->assessment_type ?? 'formative') }}</span>
+                    @if($isDraft)
+                        <span class="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-300">AI Generated Draft</span>
                     @endif
                 </div>
+                <h1 class="mt-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{{ $quiz->title }}</h1>
+                <p class="mt-2 text-base leading-7 text-slate-400">{{ $quiz->course->title }} · {{ $quiz->quizQuestions->count() }} soal dipilih · nilai lulus {{ $quiz->passing_score }}%</p>
             </div>
 
-            <div class="mt-8 grid grid-cols-2 gap-3 border-t border-slate-800 pt-6 lg:grid-cols-4">
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Target Soal</p>
-                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $quiz->total_questions }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Tersinkronisasi</p>
-                    <p class="mt-2 text-2xl font-extrabold {{ $quiz->quizQuestions->count() < $quiz->total_questions ? 'text-amber-300' : 'text-emerald-300' }}">{{ $quiz->quizQuestions->count() }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Durasi</p>
-                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $quiz->duration_minutes ? $quiz->duration_minutes . ' m' : '∞' }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Nilai Lulus</p>
-                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $quiz->passing_score }}</p>
-                </div>
-            </div>
+            <a href="{{ route('instructor.quizzes.results', $quiz) }}" class="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700">Lihat Hasil</a>
         </div>
     </section>
 
-    @if($quiz->status === 'draft')
-        <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:p-8">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <p class="text-[11px] font-extrabold uppercase tracking-[0.22em] text-indigo-300">Assessment Quality Gate</p>
-                    <h2 class="mt-2 text-xl font-bold text-white">Review & Verifikasi Soal</h2>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Periksa kualitas pertanyaan, kunci jawaban, dan pembahasan sebelum quiz diterbitkan. AI membantu menyusun draft, keputusan akhir tetap pada guru.</p>
-                </div>
-                <div class="rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-xs text-slate-400">
-                    {{ $reviewStats['pending'] > 0 ? $reviewStats['pending'].' soal masih menunggu verifikasi' : 'Semua soal sudah lolos review guru' }}
-                </div>
-            </div>
-
-            <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div class="rounded-2xl border {{ $reviewStats['pending'] > 0 ? 'border-amber-500/20 bg-amber-500/5' : 'border-emerald-500/20 bg-emerald-500/5' }} p-4">
-                    <div class="flex items-center justify-between gap-2">
-                        <p class="text-xs font-semibold text-slate-400">Perlu Review</p>
-                        <span class="h-2 w-2 rounded-full {{ $reviewStats['pending'] > 0 ? 'bg-amber-400' : 'bg-emerald-400' }}"></span>
-                    </div>
-                    <p class="mt-3 text-3xl font-extrabold {{ $reviewStats['pending'] > 0 ? 'text-amber-300' : 'text-emerald-300' }}">{{ $reviewStats['pending'] }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500">{{ $reviewStats['pending'] }} perlu review guru</p>
-                </div>
-                <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                    <p class="text-xs font-semibold text-slate-400">Terverifikasi</p>
-                    <p class="mt-3 text-3xl font-extrabold text-emerald-300">{{ $reviewStats['verified'] }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500">Siap masuk quality gate</p>
-                </div>
-                <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-                    <p class="text-xs font-semibold text-slate-400">AI Inferred</p>
-                    <p class="mt-3 text-3xl font-extrabold text-amber-300">{{ $reviewStats['inferred'] }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500">Kunci diinferensikan dari materi</p>
-                </div>
-                <div class="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4">
-                    <p class="text-xs font-semibold text-slate-400">Sumber Terverifikasi</p>
-                    <p class="mt-3 text-3xl font-extrabold text-indigo-300">{{ $reviewStats['explicit'] + $reviewStats['manual'] }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500">{{ $reviewStats['explicit'] }} eksplisit · {{ $reviewStats['manual'] }} manual</p>
-                </div>
-            </div>
-
-            <div class="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-xs leading-5 text-slate-400">Edit dan simpan setiap soal untuk memverifikasi jawaban. Gunakan Builder jika ingin menghapus atau mengganti komposisi soal.</p>
-                @foreach($quiz->quizQuestions->pluck('question.questionBank')->unique('id') as $bank)
-                    <a href="{{ route('instructor.question-banks.show', $bank) }}" class="shrink-0 text-xs font-semibold text-indigo-300 transition hover:text-indigo-200">Tambah soal manual →</a>
-                @endforeach
-            </div>
-
-            <div class="mt-6 space-y-4">
-                @foreach($quiz->quizQuestions as $quizQuestion)
-                    @include('instructor.quizzes.question-review', ['question' => $quizQuestion->question, 'number' => $quizQuestion->order])
-                @endforeach
-            </div>
+    @if($isPublished)
+        <section class="rounded-2xl border {{ $attemptStats['completed'] > 0 ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-indigo-500/20 bg-indigo-500/[0.05]' }} p-5">
+            @if($attemptStats['completed'] > 0)
+                <h2 class="font-bold text-emerald-200">Kuis sudah digunakan siswa</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-400">{{ $attemptStats['completed'] }} attempt sudah selesai. Komposisi soal dikunci agar histori hasil belajar tetap valid. Jika ingin versi berbeda, buat kuis baru.</p>
+            @else
+                <h2 class="font-bold text-indigo-200">Kuis sudah terbit</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-400">Belum ada attempt yang selesai. Jika masih perlu mengubah soal, kembalikan ke Draft terlebih dahulu.</p>
+            @endif
         </section>
     @endif
 
-    <section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-        <div class="flex flex-col gap-2 border-b border-slate-800 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Question Set</p>
-                <h2 class="mt-1 text-lg font-bold text-white">Daftar Soal Saat Ini</h2>
+    @if($isDraft && $publicationErrors !== [])
+        <section class="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-5">
+            <h2 class="font-bold text-amber-200">Belum siap diterbitkan</h2>
+            <p class="mt-1 text-sm leading-6 text-slate-400">{{ implode(' ', $publicationErrors) }}</p>
+        </section>
+    @endif
+
+    <section class="grid gap-4 lg:grid-cols-3">
+        <article class="rounded-3xl border {{ $quiz->quizQuestions->count() > 0 ? 'border-indigo-500/20 bg-indigo-500/[0.05]' : 'border-slate-800 bg-slate-900/60' }} p-5">
+            <div class="flex items-start gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $quiz->quizQuestions->count() > 0 ? 'bg-indigo-600' : 'bg-slate-800' }} text-sm font-extrabold text-white">1</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Pilih Soal</h2>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">{{ $quiz->quizQuestions->count() }}/{{ $quiz->total_questions }} soal sudah masuk ke kuis.</p>
+                </div>
             </div>
-            @if($quiz->quizQuestions->count() < $quiz->total_questions && $quiz->status === 'draft')
-                <span class="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">Butuh {{ $quiz->total_questions - $quiz->quizQuestions->count() }} soal lagi</span>
+
+            @if($isDraft)
+                <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="mt-5 block rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-indigo-500">Buka Builder Soal</a>
+            @else
+                <div class="mt-5 rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 text-center text-sm font-semibold text-slate-500">Builder terkunci saat kuis terbit</div>
             @endif
+        </article>
+
+        <article class="rounded-3xl border {{ $reviewStats['pending'] === 0 && $quiz->quizQuestions->count() > 0 ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-amber-500/20 bg-amber-500/[0.04]' }} p-5">
+            <div class="flex items-start gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $reviewStats['pending'] === 0 && $quiz->quizQuestions->count() > 0 ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950' }} text-sm font-extrabold">2</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Review</h2>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">{{ $reviewStats['pending'] > 0 ? $reviewStats['pending'].' soal masih perlu diverifikasi guru.' : ($quiz->quizQuestions->count() > 0 ? 'Semua soal sudah terverifikasi.' : 'Pilih soal terlebih dahulu.') }}</p>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 gap-2">
+                <div class="rounded-xl border border-slate-800 bg-slate-950/45 p-3 text-center">
+                    <div class="text-xl font-extrabold text-emerald-300">{{ $reviewStats['verified'] }}</div>
+                    <div class="mt-1 text-xs text-slate-500">Terverifikasi</div>
+                </div>
+                <div class="rounded-xl border border-slate-800 bg-slate-950/45 p-3 text-center">
+                    <div class="text-xl font-extrabold {{ $reviewStats['pending'] > 0 ? 'text-amber-300' : 'text-slate-500' }}">{{ $reviewStats['pending'] }}</div>
+                    <div class="mt-1 text-xs text-slate-500">Perlu review</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="rounded-3xl border {{ $isPublished ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : ($canPublish ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-slate-800 bg-slate-900/60') }} p-5">
+            <div class="flex items-start gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $isPublished || $canPublish ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-white' }} text-sm font-extrabold">3</div>
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Terbitkan</h2>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">{{ $isPublished ? 'Kuis sudah dapat diakses sesuai aturan course.' : ($canPublish ? 'Semua quality gate terpenuhi.' : 'Selesaikan langkah sebelumnya terlebih dahulu.') }}</p>
+                </div>
+            </div>
+
+            @if($canPublish)
+                <form action="{{ route('instructor.quizzes.publish', $quiz) }}" method="POST" class="mt-5">
+                    @csrf
+                    <button type="submit" class="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-extrabold text-slate-950 transition hover:bg-emerald-400">Terbitkan Kuis</button>
+                </form>
+            @elseif($isPublished)
+                <div class="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center text-sm font-bold text-emerald-200">✓ Sudah terbit</div>
+            @else
+                <div class="mt-5 rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 text-center text-sm font-semibold text-slate-500">Belum siap terbit</div>
+            @endif
+        </article>
+    </section>
+
+    @if($isPublished && $attemptStats['completed'] === 0)
+        <details class="rounded-2xl border border-slate-800 bg-slate-900/60">
+            <summary class="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-300">Perlu mengubah kuis yang sudah terbit?</summary>
+            <div class="border-t border-slate-800 p-5">
+                <p class="text-sm leading-6 text-slate-500">Kuis dapat dikembalikan ke Draft karena belum ada attempt selesai. {{ $attemptStats['in_progress'] > 0 ? $attemptStats['in_progress'].' attempt yang sedang berjalan akan dibatalkan agar siswa tidak melanjutkan snapshot soal lama.' : '' }}</p>
+                <form action="{{ route('instructor.quizzes.unpublish', $quiz) }}" method="POST" class="mt-4" onsubmit="return confirm('{{ $attemptStats['in_progress'] > 0 ? 'Attempt yang belum selesai akan dibatalkan. Kembalikan kuis ke Draft?' : 'Kembalikan kuis ke Draft agar dapat diedit?' }}')">
+                    @csrf
+                    <button type="submit" class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Kembalikan ke Draft</button>
+                </form>
+            </div>
+        </details>
+    @endif
+
+    <section class="space-y-4">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-xl font-extrabold text-white">Soal dalam Kuis</h2>
+                <p class="mt-1 text-sm text-slate-500">Klik satu soal untuk melihat atau memverifikasi detailnya.</p>
+            </div>
+            <span class="text-sm text-slate-500">{{ $quiz->quizQuestions->count() }} soal</span>
         </div>
 
-        @if($quiz->quizQuestions->count() > 0)
-            <div class="divide-y divide-slate-800">
-                @foreach($quiz->quizQuestions as $quizQuestion)
-                    <div class="flex items-start gap-4 px-6 py-4 transition hover:bg-slate-800/30">
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-sm font-extrabold text-indigo-300">{{ $quizQuestion->order }}</div>
+        <div class="space-y-3">
+            @forelse($quiz->quizQuestions as $quizQuestion)
+                <details class="group overflow-hidden rounded-2xl border {{ $quizQuestion->question->needs_review ? 'border-amber-500/20' : 'border-slate-800' }} bg-slate-900/65" @if($quizQuestion->question->needs_review && $isDraft) open @endif>
+                    <summary class="flex cursor-pointer list-none items-start gap-4 p-4 sm:p-5">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-sm font-extrabold text-slate-300">{{ $quizQuestion->order }}</div>
                         <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold leading-6 text-slate-200">{{ strip_tags($quizQuestion->question->question_text) }}</p>
-                            <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                                <span class="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-1">{{ str_replace('_', ' ', $quizQuestion->question->type) }}</span>
-                                <span>{{ ucfirst($quizQuestion->question->difficulty) }}</span>
-                                <span>·</span>
-                                <span>{{ $quizQuestion->points }} poin</span>
-                                @if($quizQuestion->question->needs_review)
-                                    <span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 font-semibold text-amber-300">Perlu review</span>
-                                @else
-                                    <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 font-semibold text-emerald-300">Terverifikasi</span>
-                                @endif
+                            <p class="line-clamp-2 text-sm font-semibold leading-6 text-slate-100">{{ strip_tags($quizQuestion->question->question_text) }}</p>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span class="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-xs text-slate-400">{{ ucfirst($quizQuestion->question->difficulty) }}</span>
+                                <span class="rounded-full border px-2.5 py-1 text-xs font-semibold {{ $quizQuestion->question->needs_review ? 'border-amber-500/20 bg-amber-500/10 text-amber-300' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' }}">{{ $quizQuestion->question->needs_review ? 'Perlu review' : 'Terverifikasi' }}</span>
+                                <span class="text-xs text-slate-600">{{ $quizQuestion->points }} poin</span>
                             </div>
                         </div>
+                        <span class="mt-1 text-sm font-semibold text-indigo-300 group-open:hidden">Lihat ↓</span>
+                        <span class="mt-1 hidden text-sm font-semibold text-indigo-300 group-open:inline">Tutup ↑</span>
+                    </summary>
+
+                    <div class="border-t border-slate-800 p-4 sm:p-5 sm:pl-[4.5rem]">
+                        @if($isDraft)
+                            @include('instructor.quizzes.question-review', ['question' => $quizQuestion->question, 'number' => $quizQuestion->order])
+                        @else
+                            <div class="grid gap-2">
+                                @foreach($quizQuestion->question->options as $index => $option)
+                                    <div class="flex items-start gap-3 rounded-xl border {{ $option->is_correct ? 'border-emerald-500/20 bg-emerald-500/[0.06]' : 'border-slate-800 bg-slate-950/40' }} p-3">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border {{ $option->is_correct ? 'border-emerald-500/30 text-emerald-300' : 'border-slate-700 text-slate-500' }} text-xs font-bold">{{ chr(65 + $index) }}</span>
+                                        <span class="text-sm leading-6 {{ $option->is_correct ? 'font-semibold text-emerald-100' : 'text-slate-400' }}">{{ $option->option_text }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
-                @endforeach
-            </div>
-        @else
-            <div class="px-6 py-14 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 text-slate-500">?</div>
-                <h3 class="mt-4 text-sm font-bold text-white">Belum Ada Soal</h3>
-                <p class="mx-auto mt-2 max-w-md text-xs leading-5 text-slate-400">Buka Builder Kuis untuk memilih dan menyinkronkan soal dari Bank Soal Anda.</p>
-                @if($quiz->status === 'draft')
-                    <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">Buka Builder Kuis</a>
-                @else
-                    <p class="mx-auto mt-4 max-w-md text-xs text-amber-300">Kembalikan quiz ke Draft sebelum membuka Builder.</p>
-                @endif
-            </div>
-        @endif
+                </details>
+            @empty
+                <div class="rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 p-10 text-center">
+                    <h3 class="text-lg font-bold text-white">Belum ada soal</h3>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Buka Builder untuk memilih soal dari bank soal Anda.</p>
+                    @if($isDraft)
+                        <a href="{{ route('instructor.quizzes.builder', $quiz) }}" class="mt-5 inline-flex rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">Buka Builder Soal</a>
+                    @endif
+                </div>
+            @endforelse
+        </div>
     </section>
 </div>
 @endsection
