@@ -191,12 +191,14 @@ class FormativeReassessmentLoopTest extends TestCase
             'generated_at' => now(),
         ]);
 
+        $formativeRoute = route('student.quizzes.show', $formative);
+
         $this->actingAs($student)
             ->get(route('student.adaptive-recommendations.index'))
             ->assertOk()
             ->assertSee('Uji Pemahaman C01')
             ->assertSee('Tersedia setelah materi di atas selesai.')
-            ->assertDontSee('>Uji Pemahaman<', false);
+            ->assertDontSee($formativeRoute, false);
 
         MaterialProgress::create([
             'student_id' => $student->id,
@@ -208,8 +210,8 @@ class FormativeReassessmentLoopTest extends TestCase
         $this->actingAs($student)
             ->get(route('student.adaptive-recommendations.index'))
             ->assertOk()
-            ->assertSee('>Uji Pemahaman<', false)
-            ->assertSee(route('student.quizzes.show', $formative), false);
+            ->assertSee('Uji Pemahaman')
+            ->assertSee($formativeRoute, false);
     }
 
     /** @return array{User, Course, QuestionBank} */
