@@ -10,9 +10,9 @@
     <section class="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-3xl">
-                <span class="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">R4.3 — Adaptive Learning Path</span>
+                <span class="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">R4.4 — Formative Reassessment Loop</span>
                 <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Rekomendasi Belajar untuk {{ $student->name }}</h1>
-                <p class="mt-2 text-sm leading-6 text-slate-400">Sistem menggabungkan recommendation yang mengarah ke concept target yang sama, lalu menentukan satu fokus belajar utama secara deterministik. Langkah berikutnya bersifat sementara dan akan dihitung ulang ketika mastery atau evidence siswa berubah.</p>
+                <p class="mt-2 text-sm leading-6 text-slate-400">Sistem menentukan satu fokus belajar utama, menghubungkannya ke material target, lalu membuka reassessment formatif setelah aktivitas belajar selesai. Hasil formatif menjadi evidence baru untuk learner mastery; perubahan recommendation otomatis dilakukan pada tahap R4.5.</p>
             </div>
             <a href="{{ route('student.dashboard') }}" class="rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800">Kembali ke Dashboard</a>
         </div>
@@ -50,9 +50,9 @@
                     $course = $path['course'];
                     $current = $path['current_step'];
                     $currentRow = $current['representative_row'];
-                    $currentRecommendation = $currentRow['recommendation'];
                     $currentTarget = $current['target_concept'];
                     $currentMaterial = $currentRow['recommended_material'];
+                    $currentFormative = $currentRow['formative_quiz'];
                 @endphp
 
                 <section class="overflow-hidden rounded-3xl border border-cyan-500/20 bg-slate-900/80 shadow-xl">
@@ -70,7 +70,7 @@
                     <div class="p-6">
                         <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
                             <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <span class="rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-950">Fokus Sekarang</span>
                                         <span class="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-bold text-slate-400">Langkah {{ $current['position'] }}</span>
@@ -91,17 +91,40 @@
                                             <p class="text-[10px] font-bold uppercase tracking-wide text-emerald-300">Aktivitas Utama</p>
                                             <p class="mt-1 text-sm font-bold text-white">{{ $currentMaterial->title }}</p>
                                             <p class="mt-1 text-xs text-slate-500">{{ $currentMaterial->section?->title ?? 'Materi Course' }}@if($currentMaterial->duration_minutes) &bull; {{ $currentMaterial->duration_minutes }} menit @endif</p>
+                                            <p class="mt-2 text-xs {{ $currentRow['material_completed'] ? 'text-emerald-300' : 'text-amber-300' }}">
+                                                {{ $currentRow['material_completed'] ? 'Materi sudah selesai — reassessment dapat dilanjutkan.' : 'Selesaikan materi ini sebelum reassessment formatif.' }}
+                                            </p>
+                                        </div>
+                                    @endif
+
+                                    @if($currentFormative)
+                                        <div class="mt-4 rounded-xl border {{ $currentRow['reassessment_ready'] ? 'border-cyan-500/30 bg-cyan-500/5' : 'border-amber-500/20 bg-amber-500/5' }} p-4">
+                                            <p class="text-[10px] font-bold uppercase tracking-wide {{ $currentRow['reassessment_ready'] ? 'text-cyan-300' : 'text-amber-300' }}">Formative Reassessment</p>
+                                            <p class="mt-1 text-sm font-bold text-white">{{ $currentFormative->title }}</p>
+                                            <p class="mt-1 text-xs text-slate-500">Quiz ini memiliki soal yang dipetakan ke {{ $currentTarget?->code }} dan akan menambah evidence mastery setelah disubmit.</p>
+                                            @if(!$currentRow['reassessment_ready'])
+                                                <p class="mt-2 text-xs text-amber-300">Belum aktif: tandai material rekomendasi sebagai selesai terlebih dahulu.</p>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div class="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-950/30 p-4">
+                                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-500">Formative Reassessment</p>
+                                            <p class="mt-1 text-xs text-slate-500">Belum ada quiz formative published yang dipetakan ke concept target ini.</p>
                                         </div>
                                     @endif
                                 </div>
 
-                                <div class="shrink-0">
+                                <div class="flex shrink-0 flex-col gap-2">
                                     @if($currentRow['activity_type'] === 'material' && $currentMaterial)
-                                        <a href="{{ route('student.materials.show', [$course, $currentMaterial]) }}" class="inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-500">Mulai Fokus Sekarang</a>
+                                        <a href="{{ route('student.materials.show', [$course, $currentMaterial]) }}" class="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-500">{{ $currentRow['material_completed'] ? 'Buka Materi Lagi' : 'Mulai Fokus Sekarang' }}</a>
                                     @elseif($currentRow['activity_type'] === 'diagnostic')
-                                        <a href="{{ route('student.quizzes.index') }}" class="inline-flex rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-500">Lengkapi Assessment</a>
+                                        <a href="{{ route('student.quizzes.index') }}" class="inline-flex justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-500">Lengkapi Assessment</a>
                                     @else
-                                        <a href="{{ route('student.courses.progress', $course) }}" class="inline-flex rounded-xl border border-slate-700 px-5 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Progres Kursus</a>
+                                        <a href="{{ route('student.courses.progress', $course) }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-5 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Progres Kursus</a>
+                                    @endif
+
+                                    @if($currentFormative && $currentRow['reassessment_ready'])
+                                        <a href="{{ route('student.quizzes.show', $currentFormative) }}" class="inline-flex justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-500">Uji Pemahaman</a>
                                     @endif
                                 </div>
                             </div>
@@ -162,6 +185,7 @@
                                 $source = $recommendation->sourceConcept;
                                 $target = $recommendation->targetConcept;
                                 $material = $row['recommended_material'];
+                                $formativeQuiz = $row['formative_quiz'];
                             @endphp
                             <article class="px-6 py-5">
                                 <div class="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -216,6 +240,19 @@
                                                 <a href="{{ route('student.courses.progress', $course) }}" class="shrink-0 rounded-xl border border-slate-700 px-4 py-2.5 text-center text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Progres Kursus</a>
                                             </div>
                                         @endif
+
+                                        @if($formativeQuiz)
+                                            <div class="mt-3 flex flex-col gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                                <div>
+                                                    <p class="text-[10px] font-bold uppercase tracking-wide text-cyan-300">Reassessment Formatif</p>
+                                                    <p class="mt-1 text-sm font-bold text-white">{{ $formativeQuiz->title }}</p>
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $row['reassessment_ready'] ? 'Siap dikerjakan dan akan menambah evidence mastery.' : 'Tersedia setelah material rekomendasi ditandai selesai.' }}</p>
+                                                </div>
+                                                @if($row['reassessment_ready'])
+                                                    <a href="{{ route('student.quizzes.show', $formativeQuiz) }}" class="shrink-0 rounded-xl bg-cyan-600 px-4 py-2.5 text-center text-sm font-bold text-white hover:bg-cyan-500">Uji Pemahaman</a>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="min-w-[190px] rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs">
@@ -233,6 +270,12 @@
                                                 <div>
                                                     <dt class="text-slate-600">Material relevance</dt>
                                                     <dd class="mt-0.5 font-mono text-slate-300">{{ number_format($row['material_relevance'], 2) }}</dd>
+                                                </div>
+                                            @endif
+                                            @if($formativeQuiz)
+                                                <div>
+                                                    <dt class="text-slate-600">Formative quiz</dt>
+                                                    <dd class="mt-0.5 text-slate-300">#{{ $formativeQuiz->id }} · {{ $row['reassessment_ready'] ? 'ready' : 'locked' }}</dd>
                                                 </div>
                                             @endif
                                             <div>
