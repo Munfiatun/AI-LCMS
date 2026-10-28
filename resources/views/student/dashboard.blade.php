@@ -62,7 +62,7 @@
             <div class="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div class="min-w-0">
                     <p class="text-sm font-semibold text-emerald-300">Fokus Belajar Berikutnya</p>
-                    <h2 class="mt-2 text-xl font-extrabold text-white">{{ $focusRow['course']->title }}</h2>
+                    <h2 class="mt-2 text-xl font-extrabold text-white"><a href="{{ route('courses.show', $focusRow['course']->slug) }}" class="hover:text-emerald-200">{{ $focusRow['course']->title }}</a></h2>
                     <p class="mt-2 text-base leading-7 text-slate-300">{{ $focusRow['recommendation'] }}</p>
                     <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
                         <span>Progres {{ number_format($focusRow['enrollment']->progress_percentage, 0) }}%</span>
@@ -101,8 +101,8 @@
                     <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <h3 class="truncate text-base font-bold text-white">{{ $row['course']->title }}</h3>
-                                <p class="mt-1 text-sm text-slate-500">{{ $row['course']->category?->name ?? 'Kursus' }}</p>
+                                <h3 class="truncate text-base font-bold text-white"><a href="{{ route('courses.show', $row['course']->slug) }}" class="hover:text-emerald-200">{{ $row['course']->title }}</a></h3>
+                                <p class="mt-1 text-sm text-slate-500">{{ $row['course']->category?->name ?? 'Uncategorized' }}</p>
                             </div>
                             @if($row['enrollment']->status === 'completed')
                                 <span class="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">Tuntas</span>
@@ -113,7 +113,7 @@
                             <div class="h-full rounded-full bg-emerald-500" style="width: {{ max(0, min(100, (float) $row['enrollment']->progress_percentage)) }}%"></div>
                         </div>
                         <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
-                            <span>{{ number_format($row['enrollment']->progress_percentage, 0) }}% selesai</span>
+                            <span>{{ number_format($row['enrollment']->progress_percentage, 0) }}% Selesai</span>
                             <span>{{ $row['completed_materials'] }}/{{ $row['total_materials'] }} materi</span>
                         </div>
 
