@@ -8,6 +8,7 @@ use App\Models\QuestionBank;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class QuestionBankController extends Controller
@@ -67,9 +68,12 @@ class QuestionBankController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
+        $courseId = isset($validated['course_id']) ? (int) $validated['course_id'] : null;
+        $this->authorizeCourseSelection($request, $courseId);
+
         $bank = QuestionBank::create([
             'instructor_id' => $request->user()->id,
-            'course_id' => $validated['course_id'] ?? null,
+            'course_id' => $courseId,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'status' => QuestionBank::STATUS_ACTIVE,
@@ -93,10 +97,16 @@ class QuestionBankController extends Controller
             'questions.options',
         ]);
 
+        $user = $request->user();
+        $courses = $user->isAdmin()
+            ? Course::orderBy('title')->get()
+            : Course::where('instructor_id', $user->id)->orderBy('title')->get();
+
         return view('instructor.question_banks.show', [
             'questionBank' => $questionBank,
             'questions' => $questionBank->questions,
             'documents' => $questionBank->documents,
+            'courses' => $courses,
         ]);
     }
 
@@ -114,6 +124,23 @@ class QuestionBankController extends Controller
             'status' => ['required', 'in:active,archived'],
         ]);
 
+        $targetCourseId = isset($validated['course_id']) ? (int) $validated['course_id'] : null;
+        $this->authorizeCourseSelection($request, $targetCourseId);
+
+        if ($targetCourseId !== null && (int) $questionBank->course_id !== $targetCourseId) {
+            $hasForeignConceptMappings = $questionBank->questions()
+                ->whereHas('learningConcepts', fn ($query) => $query
+                    ->where('learning_concepts.course_id', '!=', $targetCourseId))
+                ->exists();
+
+            if ($hasForeignConceptMappings) {
+                throw ValidationException::withMessages([
+                    'course_id' => 'Bank soal tidak dapat dipindahkan karena ada soal yang sudah dipetakan ke concept dari course lain. Sesuaikan Concept Mapping terlebih dahulu.',
+                ]);
+            }
+        }
+
+        $validated['course_id'] = $targetCourseId;
         $questionBank->update($validated);
 
         return back()->with('success', 'Informasi bank soal berhasil diperbarui.');
@@ -131,5 +158,19 @@ class QuestionBankController extends Controller
         return redirect()
             ->route('instructor.question-banks.index')
             ->with('success', 'Bank soal berhasil dihapus.');
+    }
+
+    private function authorizeCourseSelection(Request $request, ?int $courseId): void
+    {
+        if ($courseId === null || $request->user()->isAdmin()) {
+            return;
+        }
+
+        $ownsCourse = Course::query()
+            ->whereKey($courseId)
+            ->where('instructor_id', $request->user()->id)
+            ->exists();
+
+        abort_unless($ownsCourse, 403);
     }
 }
