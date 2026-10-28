@@ -61,12 +61,16 @@
 
     @if($courseRows->isNotEmpty())
         <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
-            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-4">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Next Learning Action</p>
                     <h3 class="mt-1 text-lg font-bold text-white">Fokus Belajar Berikutnya</h3>
-                    <p class="mt-1 text-xs text-slate-500">Saran dibuat dari progres materi dan quiz pada kursus yang Anda ikuti.</p>
+                    <p class="mt-1 text-xs text-slate-500">Saran di bawah adalah ringkasan umum dari progres materi dan quiz. Untuk rekomendasi berbasis mastery dan prasyarat, buka Adaptive Learning.</p>
                 </div>
+                <a href="{{ route('student.adaptive-recommendations.index') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-bold text-cyan-300 transition-colors hover:bg-cyan-500/20 hover:text-cyan-200">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m4.75-11.396A2.25 2.25 0 0112 1.5h0a2.25 2.25 0 012.25 1.604v5.714c0 .597.237 1.169.659 1.591L19 14.5m-9.25-11.396h4.5M5 14.5h14m-14 0v2.25A2.25 2.25 0 007.25 19h9.5A2.25 2.25 0 0019 16.75V14.5M9 19v1.5m6-1.5v1.5" /></svg>
+                    Lihat Rekomendasi Adaptif
+                </a>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
