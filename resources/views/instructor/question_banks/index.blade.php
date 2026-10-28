@@ -33,7 +33,7 @@
         <div class="rounded-2xl border teacher-step-card p-4">
             <div class="flex h-8 w-8 items-center justify-center rounded-xl teacher-step-number text-sm font-extrabold">2</div>
             <h2 class="mt-3 font-bold theme-heading">Tambah soal</h2>
-            <p class="mt-1 text-sm leading-6 theme-muted">Tulis manual atau unggah dokumen untuk ekstraksi AI.</p>
+            <p class="mt-1 text-sm leading-6 theme-muted">Tulis manual, buat dari prompt AI, atau unggah dokumen untuk ekstraksi.</p>
         </div>
         <div class="rounded-2xl border teacher-step-card p-4">
             <div class="flex h-8 w-8 items-center justify-center rounded-xl teacher-step-number text-sm font-extrabold">3</div>
@@ -100,6 +100,9 @@
 
                     <div class="flex items-center gap-2 border-t theme-border p-4">
                         <a href="{{ route('instructor.question-banks.show', $bank) }}" class="flex-1 rounded-xl theme-accent-fill px-4 py-2.5 text-center text-sm font-bold teacher-on-solid transition theme-accent-fill-hover">Buka Bank Soal</a>
+                        @if($bank->status === 'active')
+                            <a href="{{ route('instructor.question-banks.ai-authoring.create', $bank) }}" class="teacher-secondary-button inline-flex h-10 items-center justify-center rounded-xl border theme-accent-border theme-accent-surface px-3 text-sm font-bold theme-accent-text transition theme-accent-surface-hover" title="Buat soal dari prompt AI">✨ AI</a>
+                        @endif
                         <details class="relative">
                             <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border theme-border theme-body theme-muted-surface-hover theme-heading-hover" aria-label="Opsi lainnya">•••</summary>
                             <div class="absolute bottom-12 right-0 z-20 w-40 rounded-xl border teacher-card p-2 shadow-2xl">
@@ -115,7 +118,7 @@
             @empty
                 <div class="col-span-full rounded-3xl border border-dashed teacher-card p-10 text-center">
                     <h3 class="text-lg font-bold theme-heading">Belum ada bank soal</h3>
-                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Buat satu bank soal untuk kursus, lalu tambahkan pertanyaan manual atau ekstrak dari dokumen.</p>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Buat satu bank soal untuk kursus, lalu tambahkan pertanyaan manual, buat dari prompt AI, atau ekstrak dari dokumen.</p>
                     <button type="button" @click="showCreateModal = true" class="mt-5 rounded-xl theme-accent-fill px-5 py-2.5 text-sm font-bold teacher-on-solid theme-accent-fill-hover">+ Buat Bank Soal</button>
                 </div>
             @endforelse
