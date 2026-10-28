@@ -7,13 +7,10 @@
 
     <title>{{ $title ?? 'Dashboard' }} — AI LCMS</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
 
-    <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Alpine.js + Plugins -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.8/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
@@ -21,168 +18,205 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="h-full flex antialiased bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white" x-data="{ sidebarOpen: false, profileDropdown: false }">
-    <!-- Mobile Sidebar Backdrop -->
-    <div x-show="sidebarOpen"
-         x-transition:enter="transition-opacity ease-linear duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-linear duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         @click="sidebarOpen = false"
-         class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" x-cloak></div>
+<body class="flex h-full bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white"
+      x-data="{ sidebarOpen: false }">
 
-    <!-- Sidebar -->
+    <div x-show="sidebarOpen"
+         x-cloak
+         x-transition.opacity
+         @click="sidebarOpen = false"
+         class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden"></div>
+
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-           class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0">
-        
-        <!-- App Brand -->
-        <div class="h-16 px-6 border-b border-slate-800 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="flex items-center space-x-3 group">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center shadow-md shadow-indigo-500/20">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+           class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800 bg-slate-900 transition-transform duration-200 lg:static lg:translate-x-0">
+
+        <div class="flex h-16 items-center justify-between border-b border-slate-800 px-5">
+            <a href="{{ route('home') }}" class="flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-400 shadow-md shadow-indigo-500/20">
+                    <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
-                <div class="flex flex-col">
-                    <span class="text-base font-bold text-white tracking-tight">AI-LCMS</span>
-                    <span class="text-[10px] text-slate-400 font-medium">Enterprise Learning</span>
+                <div>
+                    <div class="text-base font-extrabold tracking-tight text-white">AI-LCMS</div>
+                    <div class="text-xs text-slate-500">Learning Workspace</div>
                 </div>
             </a>
-            <button @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+
+            <button @click="sidebarOpen = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden" aria-label="Tutup menu">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
 
-        <!-- Role Badge & User Info Card -->
-        <div class="p-4 mx-3 my-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-sm shadow">
-                {{ substr(auth()->user()->name, 0, 1) }}
+        <div class="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/55 p-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-sm font-extrabold text-white">
+                {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
             </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-xs font-semibold text-white truncate">{{ auth()->user()->name }}</p>
-                <div class="mt-0.5 flex items-center gap-1.5">
-                    @if(auth()->user()->isAdmin())
-                        <span class="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Admin</span>
-                    @elseif(auth()->user()->isInstructor())
-                        <span class="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Instructor</span>
-                    @else
-                        <span class="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Student</span>
-                    @endif
-                </div>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-white">{{ auth()->user()->name }}</p>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    {{ auth()->user()->isAdmin() ? 'Administrator' : (auth()->user()->isInstructor() ? 'Guru / Instructor' : 'Siswa') }}
+                </p>
             </div>
         </div>
 
-        <!-- Navigation Links -->
-        <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+        <nav class="flex-1 overflow-y-auto px-3 py-4">
             @if(auth()->user()->isAdmin())
-                <div class="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Admin Controls</div>
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                    Dashboard Admin
+                <p class="mb-2 px-3 text-xs font-bold text-slate-500">Menu Utama</p>
+
+                <a href="{{ route('admin.dashboard') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10h14V10" /></svg>
+                    Dashboard
                 </a>
-                <a href="{{ route('admin.categories.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                    Kategori & Manajemen Kursus
+
+                <a href="{{ route('admin.categories.index') }}"
+                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    Kategori & Kursus
                 </a>
 
             @elseif(auth()->user()->isInstructor())
-                <div class="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Area Guru</div>
-                <a href="{{ route('instructor.dashboard') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('instructor.dashboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                    Dashboard Guru
-                </a>
-                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Konten & AI</div>
-                <a href="{{ route('instructor.courses.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('instructor.courses.*') || request()->routeIs('instructor.materials.*') || request()->routeIs('instructor.slidebooks.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    Kursus & Materi Saya
-                </a>
-                <a href="{{ route('instructor.question-banks.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('instructor.question-banks.*') || request()->routeIs('instructor.questions.*') || request()->routeIs('instructor.quizzes.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Bank Soal & Kuis
+                @php
+                    $adaptiveOpen = request()->routeIs('instructor.learning-objectives.*')
+                        || request()->routeIs('instructor.learning-concepts.*')
+                        || request()->routeIs('instructor.diagnostics.*')
+                        || request()->routeIs('instructor.mastery.*')
+                        || request()->routeIs('instructor.courses.research.*');
+                @endphp
+
+                <p class="mb-2 px-3 text-xs font-bold text-slate-500">Kerja Harian</p>
+
+                <a href="{{ route('instructor.dashboard') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('instructor.dashboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10h14V10" /></svg>
+                    Beranda Guru
                 </a>
 
-            @else
-                <div class="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Siswa</div>
-                <a href="{{ route('student.dashboard') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('student.dashboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                    Portal Siswa
+                <a href="{{ route('instructor.courses.index') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('instructor.courses.*') || request()->routeIs('instructor.materials.*') || request()->routeIs('instructor.slidebooks.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    Kursus & Materi
                 </a>
-                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pembelajaran</div>
-                <a href="{{ route('student.courses.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ (request()->routeIs('student.courses.*') && !request()->routeIs('student.courses.explore')) || request()->routeIs('student.materials.*') || request()->routeIs('student.slidebooks.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-300' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+
+                <a href="{{ route('instructor.question-banks.index') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('instructor.question-banks.*') || request()->routeIs('instructor.questions.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-7 4h8m-8 4h8m-8 4h5M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>
+                    Bank Soal
+                </a>
+
+                <a href="{{ route('instructor.quizzes.index') }}"
+                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('instructor.quizzes.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 12h6M9 16h4" /></svg>
+                    Kuis & Evaluasi
+                </a>
+
+                <div class="my-4 border-t border-slate-800"></div>
+
+                <div x-data="{ open: {{ $adaptiveOpen ? 'true' : 'false' }} }">
+                    <button type="button"
+                            @click="open = !open"
+                            class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition {{ $adaptiveOpen ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                        <span class="flex items-center gap-3">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V3m0 18v-3m6-6h3M3 12h3m10.243-4.243l2.121-2.121M5.636 18.364l2.121-2.121m8.486 0l2.121 2.121M5.636 5.636l2.121 2.121" /></svg>
+                            Pengaturan Adaptif
+                        </span>
+                        <svg class="h-4 w-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+
+                    <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-3">
+                        <a href="{{ route('instructor.learning-objectives.index') }}" class="block rounded-lg px-3 py-2 text-sm {{ request()->routeIs('instructor.learning-objectives.*') ? 'bg-indigo-500/15 font-semibold text-indigo-200' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Tujuan Pembelajaran</a>
+                        <a href="{{ route('instructor.learning-concepts.index') }}" class="block rounded-lg px-3 py-2 text-sm {{ request()->routeIs('instructor.learning-concepts.*') ? 'bg-indigo-500/15 font-semibold text-indigo-200' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Konsep & Mapping</a>
+                        <a href="{{ route('instructor.diagnostics.index') }}" class="block rounded-lg px-3 py-2 text-sm {{ request()->routeIs('instructor.diagnostics.*') ? 'bg-indigo-500/15 font-semibold text-indigo-200' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Diagnostik Awal</a>
+                        <a href="{{ route('instructor.mastery.index') }}" class="block rounded-lg px-3 py-2 text-sm {{ request()->routeIs('instructor.mastery.*') ? 'bg-indigo-500/15 font-semibold text-indigo-200' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Mastery Siswa</a>
+                    </div>
+                </div>
+
+                <p class="mt-3 px-3 text-xs leading-5 text-slate-600">Fitur adaptif tetap tersedia, tetapi tidak mengganggu alur kerja harian.</p>
+
+            @else
+                <p class="mb-2 px-3 text-xs font-bold text-slate-500">Pembelajaran</p>
+
+                <a href="{{ route('student.dashboard') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('student.dashboard') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10h14V10" /></svg>
+                    Beranda
+                </a>
+
+                @if(Route::has('student.adaptive-recommendations.index'))
+                    <a href="{{ route('student.adaptive-recommendations.index') }}"
+                       class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('student.adaptive-recommendations.*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        Rekomendasi Belajar
+                    </a>
+                @endif
+
+                <a href="{{ route('student.courses.index') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ (request()->routeIs('student.courses.*') && ! request()->routeIs('student.courses.explore')) || request()->routeIs('student.materials.*') || request()->routeIs('student.slidebooks.*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" /></svg>
                     Kursus Saya
                 </a>
-                <a href="{{ route('student.courses.explore') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('student.courses.explore') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-300' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+
+                <a href="{{ route('student.courses.explore') }}"
+                   class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('student.courses.explore') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     Jelajah Kursus
                 </a>
-                <a href="{{ route('student.quizzes.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('student.quizzes.*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-300' }} transition-colors">
-                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+
+                <a href="{{ route('student.quizzes.index') }}"
+                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('student.quizzes.*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 12h6M9 16h4" /></svg>
                     Kuis & Nilai
                 </a>
             @endif
         </nav>
 
-        <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-slate-800">
+        <div class="border-t border-slate-800 p-3">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                    <span>Keluar (Logout)</span>
+                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    Keluar
                 </button>
             </form>
         </div>
     </aside>
 
-    <!-- Main Wrapper -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <!-- Top Navigation -->
-        <header class="h-16 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
-            <div class="flex items-center space-x-4">
-                <button @click="sidebarOpen = true" class="lg:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header class="z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-900/70 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+            <div class="flex min-w-0 items-center gap-3">
+                <button @click="sidebarOpen = true" class="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden" aria-label="Buka menu">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
-
-                <!-- Breadcrumbs -->
-                <div class="flex items-center space-x-2 text-sm text-slate-400">
-                    <span>AI-LCMS</span>
-                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                    <span class="text-white font-medium capitalize">{{ $breadcrumb ?? 'Dashboard' }}</span>
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-bold text-white">{{ $breadcrumb ?? $title ?? 'Dashboard' }}</p>
+                    <p class="hidden text-xs text-slate-500 sm:block">{{ auth()->user()->isInstructor() ? 'Ruang kerja pembelajaran' : 'AI-LCMS' }}</p>
                 </div>
             </div>
 
-            <!-- Right Controls -->
-            <div class="flex items-center space-x-4">
-                <a href="{{ route('home') }}" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600 text-xs font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 shadow-sm border border-slate-700/50 hover:border-indigo-500" aria-label="Kembali ke Beranda">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                    <span class="hidden sm:inline">Kembali ke Beranda</span>
-                </a>
-            </div>
+            <a href="{{ route('home') }}" class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 transition hover:bg-slate-800 hover:text-white">
+                Beranda Publik
+            </a>
         </header>
 
-        <!-- Flash Alerts -->
-        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div class="mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
             @if(session('success'))
-                <div class="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-sm flex items-center space-x-3 shadow-lg">
-                    <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <div class="flex items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                    <span class="mt-0.5">✓</span>
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="p-4 rounded-xl bg-rose-950/60 border border-rose-500/30 text-rose-300 text-sm flex items-center space-x-3 shadow-lg">
-                    <svg class="w-5 h-5 text-rose-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <div class="flex items-start gap-3 rounded-xl border border-rose-500/25 bg-rose-500/10 p-4 text-sm text-rose-200">
+                    <span class="mt-0.5">!</span>
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
         </div>
 
-        <!-- Main Body -->
         <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div class="max-w-7xl mx-auto space-y-6">
+            <div class="mx-auto max-w-7xl space-y-6">
                 {{ $slot ?? '' }}
                 @yield('content')
             </div>
