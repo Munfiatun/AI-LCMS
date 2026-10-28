@@ -4,18 +4,22 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\LearningConcept;
+use App\Models\Question;
 use App\Models\QuestionBank;
+use App\Services\Quiz\QuizService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class QuestionBankController extends Controller
 {
-    /**
-     * Display a listing of the instructor's question banks.
-     */
+    public function __construct(private QuizService $quizService) {}
+
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', QuestionBank::class);
@@ -55,9 +59,6 @@ class QuestionBankController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created question bank.
-     */
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('create', QuestionBank::class);
@@ -84,9 +85,6 @@ class QuestionBankController extends Controller
             ->with('success', 'Bank soal baru berhasil dibuat. Silakan tambahkan pertanyaan atau unggah berkas naskah soal.');
     }
 
-    /**
-     * Display the specified question bank with question list and upload options.
-     */
     public function show(Request $request, QuestionBank $questionBank): View
     {
         Gate::authorize('view', $questionBank);
@@ -102,17 +100,103 @@ class QuestionBankController extends Controller
             ? Course::orderBy('title')->get()
             : Course::where('instructor_id', $user->id)->orderBy('title')->get();
 
+        $concepts = $questionBank->course
+            ? $questionBank->course->learningConcepts()->where('is_active', true)->orderBy('order')->orderBy('code')->get()
+            : collect();
+
         return view('instructor.question_banks.show', [
             'questionBank' => $questionBank,
             'questions' => $questionBank->questions,
             'documents' => $questionBank->documents,
             'courses' => $courses,
+            'concepts' => $concepts,
         ]);
     }
 
-    /**
-     * Update the specified question bank.
-     */
+    public function createFormative(Request $request, QuestionBank $questionBank): RedirectResponse
+    {
+        Gate::authorize('update', $questionBank);
+        $questionBank->loadMissing('course');
+
+        if (! $questionBank->course) {
+            throw ValidationException::withMessages([
+                'learning_concept_id' => 'Hubungkan bank soal ke course terlebih dahulu sebelum membuat formative quiz.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'learning_concept_id' => [
+                'required',
+                'integer',
+                Rule::exists('learning_concepts', 'id')->where(fn ($query) => $query
+                    ->where('course_id', $questionBank->course_id)
+                    ->where('is_active', true)),
+            ],
+        ]);
+
+        $questions = $questionBank->questions()->with('options')->orderBy('order')->orderBy('id')->get();
+        if ($questions->isEmpty()) {
+            throw ValidationException::withMessages([
+                'learning_concept_id' => 'Bank soal belum memiliki pertanyaan.',
+            ]);
+        }
+
+        $invalidCount = $questions->filter(fn (Question $question): bool =>
+            $question->status !== Question::STATUS_APPROVED
+            || $question->needs_review
+            || $question->options->count() < 2
+            || $question->options->where('is_correct', true)->count() !== 1
+        )->count();
+
+        if ($invalidCount > 0) {
+            throw ValidationException::withMessages([
+                'learning_concept_id' => "Masih ada {$invalidCount} soal yang belum terverifikasi atau belum memiliki kunci jawaban valid. Selesaikan review terlebih dahulu.",
+            ]);
+        }
+
+        $concept = LearningConcept::query()
+            ->whereKey($validated['learning_concept_id'])
+            ->where('course_id', $questionBank->course_id)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $quiz = DB::transaction(function () use ($questionBank, $questions, $concept) {
+            foreach ($questions as $question) {
+                $question->learningConcepts()->sync([
+                    $concept->id => [
+                        'weight' => 1.00,
+                        'difficulty_level' => $question->difficulty,
+                    ],
+                ]);
+            }
+
+            $quiz = $this->quizService->createQuiz($questionBank->course, [
+                'title' => "Formative {$concept->code} — {$concept->name}",
+                'description' => "Formative reassessment otomatis dari bank soal {$questionBank->title} untuk {$concept->code} — {$concept->name}.",
+                'instructions' => 'Kerjakan seluruh soal untuk mengukur pemahaman setelah mempelajari materi rekomendasi.',
+                'assessment_type' => 'formative',
+                'passing_score' => 70,
+                'duration_minutes' => 10,
+                'total_questions' => $questions->count(),
+                'randomize_questions' => true,
+                'randomize_options' => true,
+                'max_attempts' => 2,
+            ]);
+
+            $this->quizService->syncQuestions($quiz, $questions->values()->map(fn (Question $question, int $index): array => [
+                'id' => $question->id,
+                'points' => max(1, (int) ($question->points ?: 10)),
+                'order' => $index + 1,
+            ])->all());
+
+            return $quiz->fresh();
+        });
+
+        return redirect()
+            ->route('instructor.quizzes.show', $quiz)
+            ->with('success', "Formative {$concept->code} berhasil disiapkan otomatis. Periksa hasilnya lalu klik Terbitkan Kuis.");
+    }
+
     public function update(Request $request, QuestionBank $questionBank): RedirectResponse
     {
         Gate::authorize('update', $questionBank);
@@ -146,9 +230,6 @@ class QuestionBankController extends Controller
         return back()->with('success', 'Informasi bank soal berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified question bank.
-     */
     public function destroy(Request $request, QuestionBank $questionBank): RedirectResponse
     {
         Gate::authorize('delete', $questionBank);
