@@ -94,8 +94,10 @@ class QuizService
 
     public function assertEditable(Quiz $quiz): void
     {
-        if ($quiz->status !== 'draft' || $quiz->attempts()->exists()) {
-            throw ValidationException::withMessages(['quiz' => 'Quiz published atau yang memiliki attempt tidak dapat diedit. Batalkan publikasi quiz yang belum dikerjakan terlebih dahulu.']);
+        $hasCompletedAttempts = $quiz->attempts()->whereNotNull('submitted_at')->exists();
+
+        if ($quiz->status !== 'draft' || $hasCompletedAttempts) {
+            throw ValidationException::withMessages(['quiz' => 'Quiz hanya dapat diedit saat berstatus draft dan belum memiliki attempt yang sudah selesai.']);
         }
     }
 
@@ -111,9 +113,21 @@ class QuizService
     {
         DB::transaction(function () use ($quiz): void {
             $quiz = Quiz::whereKey($quiz->id)->lockForUpdate()->firstOrFail();
-            if ($quiz->status !== 'published' || $quiz->attempts()->exists()) {
-                throw ValidationException::withMessages(['quiz' => 'Hanya quiz published tanpa attempt yang dapat dikembalikan ke draft.']);
+
+            if ($quiz->status !== 'published') {
+                throw ValidationException::withMessages(['quiz' => 'Hanya quiz published yang dapat dikembalikan ke draft.']);
             }
+
+            $hasCompletedAttempts = $quiz->attempts()->whereNotNull('submitted_at')->exists();
+            if ($hasCompletedAttempts) {
+                throw ValidationException::withMessages(['quiz' => 'Quiz tidak dapat dikembalikan ke draft karena sudah memiliki attempt yang selesai. Histori hasil belajar harus tetap dipertahankan.']);
+            }
+
+            // A started-but-unsubmitted attempt contains no final learning evidence yet.
+            // Cancel it before reopening the quiz for editing so the student never
+            // resumes an obsolete question snapshot after the quiz changes.
+            $quiz->attempts()->whereNull('submitted_at')->delete();
+
             $quiz->update(['status' => 'draft', 'published_at' => null]);
         });
     }
