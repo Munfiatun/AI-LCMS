@@ -37,11 +37,6 @@ use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\SlidebookViewerController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Public & Guest Routes
-|--------------------------------------------------------------------------
-*/
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/courses', [CourseCatalogController::class, 'index'])->name('courses.index');
 Route::get('/courses/{slug}', [CourseCatalogController::class, 'show'])->name('courses.show');
@@ -49,18 +44,12 @@ Route::get('/courses/{slug}', [CourseCatalogController::class, 'show'])->name('c
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-/*
-|--------------------------------------------------------------------------
-| Admin Area
-|--------------------------------------------------------------------------
-*/
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
@@ -72,18 +61,12 @@ Route::middleware(['auth', 'role:admin'])
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Instructor Area
-|--------------------------------------------------------------------------
-*/
 Route::middleware(['auth', 'role:instructor'])
     ->prefix('instructor')
     ->name('instructor.')
     ->group(function (): void {
         Route::get('/dashboard', [InstructorDashboardController::class, 'index'])->name('dashboard');
 
-        // Research foundation: Learning Objectives & alignment
         Route::get('/learning-objectives', [LearningObjectiveController::class, 'index'])->name('learning-objectives.index');
         Route::post('/courses/{course}/learning-objectives', [LearningObjectiveController::class, 'store'])->name('learning-objectives.store');
         Route::put('/learning-objectives/{learningObjective}', [LearningObjectiveController::class, 'update'])->name('learning-objectives.update');
@@ -91,7 +74,6 @@ Route::middleware(['auth', 'role:instructor'])
         Route::put('/materials/{material}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncMaterial'])->name('materials.learning-objectives.sync');
         Route::put('/questions/{question}/learning-objectives', [LearningObjectiveAlignmentController::class, 'syncQuestion'])->name('questions.learning-objectives.sync');
 
-        // R1 Domain Model: Concepts, prerequisites, and concept-level alignment
         Route::get('/learning-concepts', [LearningConceptController::class, 'index'])->name('learning-concepts.index');
         Route::post('/courses/{course}/learning-concepts', [LearningConceptController::class, 'store'])->name('learning-concepts.store');
         Route::put('/learning-concepts/{learningConcept}', [LearningConceptController::class, 'update'])->name('learning-concepts.update');
@@ -100,11 +82,9 @@ Route::middleware(['auth', 'role:instructor'])
         Route::put('/materials/{material}/learning-concepts', [LearningConceptAlignmentController::class, 'syncMaterial'])->name('materials.learning-concepts.sync');
         Route::put('/questions/{question}/learning-concepts', [LearningConceptAlignmentController::class, 'syncQuestion'])->name('questions.learning-concepts.sync');
 
-        // Research instrumentation: experiment assignment only (no adaptive behavior yet)
         Route::get('/courses/{course}/research-experiment', [ResearchExperimentController::class, 'show'])->name('courses.research.show');
         Route::put('/courses/{course}/research-experiment/assignment', [ResearchExperimentController::class, 'updateAssignment'])->name('courses.research.assignment');
 
-        // Course CRUD
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
         Route::post('/courses/{course}/archive', [InstructorCourseController::class, 'archive'])->name('courses.archive');
         Route::post('/courses/{course}/publish', [InstructorCourseController::class, 'publish'])->name('courses.publish');
@@ -112,11 +92,9 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/courses/{course}/analytics/students/{student}', [AnalyticsController::class, 'student'])->name('courses.analytics.student');
         Route::post('/courses/{course}/enrollment-code/regenerate', [InstructorCourseController::class, 'regenerateEnrollmentCode'])->name('courses.regenerate-code');
 
-        // Sections
         Route::post('/courses/{course}/sections', [InstructorSectionController::class, 'store'])->name('sections.store');
         Route::delete('/sections/{section}', [InstructorSectionController::class, 'destroy'])->name('sections.destroy');
 
-        // Materials
         Route::get('/sections/{section}/materials/create', [InstructorMaterialController::class, 'create'])->name('materials.create');
         Route::post('/sections/{section}/materials', [InstructorMaterialController::class, 'store'])->name('materials.store');
         Route::get('/materials/{material}/edit', [InstructorMaterialController::class, 'edit'])->name('materials.edit');
@@ -126,11 +104,9 @@ Route::middleware(['auth', 'role:instructor'])
         Route::put('/materials/{material}', [InstructorMaterialController::class, 'update'])->name('materials.update');
         Route::delete('/materials/{material}', [InstructorMaterialController::class, 'destroy'])->name('materials.destroy');
 
-        // Documents
         Route::post('/materials/{material}/documents', [InstructorMaterialDocumentController::class, 'store'])->name('materials.documents.store');
         Route::delete('/documents/{document}', [InstructorMaterialDocumentController::class, 'destroy'])->name('documents.destroy');
 
-        // AI Slidebook Generation & Review
         Route::post('/materials/{material}/ai/generate-slidebook', [AIProcessController::class, 'generateSlidebook'])->name('materials.ai.slidebook');
         Route::get('/materials/{material}/slidebook/review', [SlidebookReviewController::class, 'show'])->name('materials.slidebook.review');
         Route::post('/slidebooks/{slidebook}/revision', [SlidebookReviewController::class, 'revision'])->name('slidebooks.revision');
@@ -139,27 +115,23 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/slidebooks/{slidebook}/preview', [SlidebookReviewController::class, 'preview'])->name('slidebooks.preview');
         Route::put('/slidebooks/{slidebook}/design', [SlidebookReviewController::class, 'updateDesign'])->name('slidebooks.design.update');
 
-        // Slide CRUD & Reordering
         Route::post('/slidebooks/{slidebook}/slides', [SlideController::class, 'store'])->name('slidebooks.slides.store');
         Route::put('/slides/{slide}', [SlideController::class, 'update'])->name('slides.update');
         Route::delete('/slides/{slide}', [SlideController::class, 'destroy'])->name('slides.destroy');
         Route::post('/slidebooks/{slidebook}/slides/reorder', [SlideController::class, 'reorder'])->name('slidebooks.slides.reorder');
 
-        // Question Banks
         Route::resource('question-banks', QuestionBankController::class);
+        Route::post('/question-banks/{question_bank}/create-formative', [QuestionBankController::class, 'createFormative'])->name('question-banks.create-formative');
 
-        // Questions
         Route::post('/question-banks/{question_bank}/questions', [QuestionController::class, 'store'])->name('question-banks.questions.store');
         Route::put('/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
         Route::delete('/questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
         Route::post('/questions/{question}/approve', [QuestionController::class, 'approve'])->name('questions.approve');
 
-        // AI Question Extraction
         Route::post('/question-banks/{question_bank}/upload-document', [AIQuestionExtractController::class, 'uploadDocument'])->name('question-banks.upload-document');
         Route::post('/question-banks/{question_bank}/extract', [AIQuestionExtractController::class, 'extract'])->name('question-banks.extract');
         Route::get('/question-banks/{question_bank}/review', [AIQuestionExtractController::class, 'review'])->name('question-banks.review');
 
-        // Quizzes
         Route::post('/quizzes/generate-ai', [AIQuizController::class, 'store'])->name('quizzes.generate-ai')->middleware('throttle:5,1');
         Route::resource('quizzes', QuizController::class)->except(['edit', 'update', 'destroy']);
         Route::get('/quizzes/{quiz}/builder', [QuizController::class, 'builder'])->name('quizzes.builder');
@@ -169,20 +141,10 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/quizzes/{quiz}/results', [QuizResultController::class, 'index'])->name('quizzes.results');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Shared Authenticated Document Download (Protected by Policy)
-|--------------------------------------------------------------------------
-*/
 Route::middleware('auth')
     ->get('/documents/{document}/download', [InstructorMaterialDocumentController::class, 'download'])
     ->name('documents.download');
 
-/*
-|--------------------------------------------------------------------------
-| Student Area
-|--------------------------------------------------------------------------
-*/
 Route::middleware(['auth', 'role:student'])
     ->prefix('student')
     ->name('student.')
@@ -190,18 +152,15 @@ Route::middleware(['auth', 'role:student'])
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
         Route::get('/slidebooks/{slidebook}', [SlidebookViewerController::class, 'show'])->name('slidebooks.show');
 
-        // Course Discovery & Lists
         Route::get('/courses', [StudentCourseController::class, 'index'])->name('courses.index');
         Route::get('/courses/explore', [StudentCourseController::class, 'explore'])->name('courses.explore');
         Route::get('/courses/{course}/progress', [StudentCourseController::class, 'progress'])->name('courses.progress');
 
-        // Enrollment & Progress
         Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
         Route::get('/courses/{course}/continue', [EnrollmentController::class, 'continue'])->name('courses.continue');
         Route::post('/materials/{material}/complete', [ProgressController::class, 'complete'])->name('materials.complete');
         Route::get('/courses/{course}/materials/{material}', [MaterialController::class, 'show'])->name('materials.show');
 
-        // Quizzes
         Route::get('/quizzes', [StudentQuizController::class, 'index'])->name('quizzes.index');
         Route::get('/quizzes/{quiz}', [QuizAttemptController::class, 'show'])->name('quizzes.show');
         Route::post('/quizzes/{quiz}/start', [QuizAttemptController::class, 'start'])->name('quizzes.start');
