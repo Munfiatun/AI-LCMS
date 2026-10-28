@@ -24,7 +24,7 @@
 <body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
     @unless($focusMode ?? false)
     <!-- Navbar -->
-    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <header class="theme-guest-header border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <a href="{{ route('home') }}" class="flex items-center space-x-2.5 group">
@@ -34,7 +34,7 @@
                         </svg>
                     </div>
                     <div>
-                        <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">AI-LCMS</span>
+                        <span class="guest-brand-text text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">AI-LCMS</span>
                         <span class="hidden sm:inline-block ml-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Pro</span>
                     </div>
                 </a>
@@ -51,7 +51,13 @@
             </div>
 
             <!-- Right Actions -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <button type="button" data-theme-toggle
+                        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700"
+                        aria-label="Ganti tema">
+                    Tema
+                </button>
+
                 @auth
                     @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/20 transition-colors">
@@ -67,7 +73,7 @@
                         </a>
                     @endif
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                    <a href="{{ route('login') }}" class="hidden sm:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
                         Masuk
                     </a>
                     <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 rounded-lg shadow-md shadow-indigo-600/25 transition-all hover:scale-[1.02]">
@@ -88,7 +94,7 @@
 
     @unless($focusMode ?? false)
     <!-- Footer -->
-    <footer class="border-t border-slate-800/80 bg-slate-950 py-10 mt-auto">
+    <footer class="theme-guest-footer border-t border-slate-800/80 bg-slate-950 py-10 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center space-x-2 text-slate-400 text-sm">
                 <span>&copy; {{ date('Y') }} AI-Powered LCMS. Built with Laravel 13 & PHP 8.5.</span>
