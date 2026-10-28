@@ -10,9 +10,9 @@
     <section class="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-3xl">
-                <span class="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">R4.2 — Adaptive Material Mapping</span>
+                <span class="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">R4.3 — Adaptive Learning Path</span>
                 <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Rekomendasi Belajar untuk {{ $student->name }}</h1>
-                <p class="mt-2 text-sm leading-6 text-slate-400">Rekomendasi menggunakan profil penguasaan konsep dan prasyarat. Jika concept target memiliki material published yang sudah dipetakan, sistem langsung memilih material dengan relevance tertinggi sebagai aktivitas belajar berikutnya.</p>
+                <p class="mt-2 text-sm leading-6 text-slate-400">Sistem menggabungkan recommendation yang mengarah ke concept target yang sama, lalu menentukan satu fokus belajar utama secara deterministik. Langkah berikutnya bersifat sementara dan akan dihitung ulang ketika mastery atau evidence siswa berubah.</p>
             </div>
             <a href="{{ route('student.dashboard') }}" class="rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800">Kembali ke Dashboard</a>
         </div>
@@ -45,6 +45,101 @@
         </section>
     @else
         <div class="space-y-6">
+            @foreach($learningPaths as $path)
+                @php
+                    $course = $path['course'];
+                    $current = $path['current_step'];
+                    $currentRow = $current['representative_row'];
+                    $currentRecommendation = $currentRow['recommendation'];
+                    $currentTarget = $current['target_concept'];
+                    $currentMaterial = $currentRow['recommended_material'];
+                @endphp
+
+                <section class="overflow-hidden rounded-3xl border border-cyan-500/20 bg-slate-900/80 shadow-xl">
+                    <div class="border-b border-slate-800 px-6 py-5">
+                        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Jalur Prioritas Adaptif</p>
+                                <h2 class="mt-1 text-xl font-bold text-white">{{ $course->title }}</h2>
+                                <p class="mt-1 text-sm text-slate-500">{{ $path['recommendation_count'] }} recommendation diringkas menjadi {{ $path['unique_target_count'] }} target belajar unik.</p>
+                            </div>
+                            <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1.5 text-xs font-semibold text-slate-400">Path akan dihitung ulang setelah learner state berubah</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-950">Fokus Sekarang</span>
+                                        <span class="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-bold text-slate-400">Langkah {{ $current['position'] }}</span>
+                                        <span class="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-bold text-cyan-300">{{ $currentRow['action_label'] }}</span>
+                                    </div>
+
+                                    <h3 class="mt-4 text-xl font-extrabold text-white">{{ $currentTarget?->code }} — {{ $currentTarget?->name }}</h3>
+                                    <p class="mt-2 text-sm leading-6 text-slate-400">{{ $current['priority_reason'] }}</p>
+
+                                    <div class="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+                                        <span>{{ $current['support_count'] }} recommendation mendukung fokus ini</span>
+                                        <span>&bull;</span>
+                                        <span>Sumber: {{ $current['source_concepts']->pluck('code')->implode(', ') }}</span>
+                                    </div>
+
+                                    @if($currentRow['activity_type'] === 'material' && $currentMaterial)
+                                        <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                                            <p class="text-[10px] font-bold uppercase tracking-wide text-emerald-300">Aktivitas Utama</p>
+                                            <p class="mt-1 text-sm font-bold text-white">{{ $currentMaterial->title }}</p>
+                                            <p class="mt-1 text-xs text-slate-500">{{ $currentMaterial->section?->title ?? 'Materi Course' }}@if($currentMaterial->duration_minutes) &bull; {{ $currentMaterial->duration_minutes }} menit @endif</p>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="shrink-0">
+                                    @if($currentRow['activity_type'] === 'material' && $currentMaterial)
+                                        <a href="{{ route('student.materials.show', [$course, $currentMaterial]) }}" class="inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-500">Mulai Fokus Sekarang</a>
+                                    @elseif($currentRow['activity_type'] === 'diagnostic')
+                                        <a href="{{ route('student.quizzes.index') }}" class="inline-flex rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-500">Lengkapi Assessment</a>
+                                    @else
+                                        <a href="{{ route('student.courses.progress', $course) }}" class="inline-flex rounded-xl border border-slate-700 px-5 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Progres Kursus</a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($path['queued_steps']->isNotEmpty())
+                            <div class="mt-5">
+                                <div class="mb-3 flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Antrean Sementara</p>
+                                        <p class="mt-1 text-xs text-slate-600">Urutan ini bukan jalur tetap; sistem akan menilai ulang setelah fokus sekarang menghasilkan evidence baru.</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    @foreach($path['queued_steps'] as $step)
+                                        @php
+                                            $stepRow = $step['representative_row'];
+                                            $stepTarget = $step['target_concept'];
+                                        @endphp
+                                        <div class="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="flex min-w-0 items-start gap-3">
+                                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-xs font-bold text-slate-400">{{ $step['position'] }}</span>
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-bold text-white">{{ $stepTarget?->code }} — {{ $stepTarget?->name }}</p>
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $stepRow['action_label'] }} &bull; didukung {{ $step['support_count'] }} recommendation</p>
+                                                </div>
+                                            </div>
+                                            <span class="shrink-0 rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-500">Menunggu evaluasi ulang</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </section>
+            @endforeach
+
             @foreach($courseGroups as $group)
                 @php
                     $first = $group->first();
@@ -53,11 +148,11 @@
                 <section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
                     <div class="flex flex-col gap-3 border-b border-slate-800 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Adaptive Learning Path</p>
+                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Detail Keputusan Engine</p>
                             <h2 class="mt-1 text-xl font-bold text-white">{{ $course->title }}</h2>
-                            <p class="mt-1 text-sm text-slate-500">{{ $group->count() }} recommendation aktif berdasarkan baseline adaptive engine.</p>
+                            <p class="mt-1 text-sm text-slate-500">{{ $group->count() }} recommendation aktif tetap ditampilkan untuk transparansi dan audit.</p>
                         </div>
-                        <a href="{{ route('student.courses.continue', $course) }}" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-500">Buka Course</a>
+                        <a href="{{ route('student.courses.progress', $course) }}" class="rounded-xl border border-slate-700 px-4 py-2.5 text-center text-sm font-semibold text-slate-300 hover:bg-slate-800">Lihat Progres Kursus</a>
                     </div>
 
                     <div class="divide-y divide-slate-800">
@@ -99,12 +194,7 @@
                                                 <div>
                                                     <p class="text-[10px] font-bold uppercase tracking-wide text-emerald-300">Aktivitas yang Disarankan</p>
                                                     <p class="mt-1 text-sm font-bold text-white">{{ $material->title }}</p>
-                                                    <p class="mt-1 text-xs text-slate-500">
-                                                        {{ $material->section?->title ?? 'Materi Course' }}
-                                                        @if($material->duration_minutes)
-                                                            &bull; {{ $material->duration_minutes }} menit
-                                                        @endif
-                                                    </p>
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $material->section?->title ?? 'Materi Course' }}@if($material->duration_minutes) &bull; {{ $material->duration_minutes }} menit @endif</p>
                                                 </div>
                                                 <a href="{{ route('student.materials.show', [$course, $material]) }}" class="shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-center text-sm font-bold text-white hover:bg-emerald-500">Mulai Materi</a>
                                             </div>
@@ -121,9 +211,9 @@
                                                 <div>
                                                     <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Aktivitas yang Disarankan</p>
                                                     <p class="mt-1 text-sm font-bold text-white">Belum ada material published yang dipetakan ke konsep target ini.</p>
-                                                    <p class="mt-1 text-xs text-slate-500">Buka course untuk melihat aktivitas belajar yang tersedia.</p>
+                                                    <p class="mt-1 text-xs text-slate-500">Buka progres course untuk melihat aktivitas belajar yang tersedia.</p>
                                                 </div>
-                                                <a href="{{ route('student.courses.continue', $course) }}" class="shrink-0 rounded-xl border border-slate-700 px-4 py-2.5 text-center text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Course</a>
+                                                <a href="{{ route('student.courses.progress', $course) }}" class="shrink-0 rounded-xl border border-slate-700 px-4 py-2.5 text-center text-sm font-bold text-slate-200 hover:bg-slate-800">Buka Progres Kursus</a>
                                             </div>
                                         @endif
                                     </div>
