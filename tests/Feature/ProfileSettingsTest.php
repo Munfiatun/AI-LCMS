@@ -30,7 +30,7 @@ class ProfileSettingsTest extends TestCase
     {
         Storage::fake('public');
         $user = $this->student();
-        $avatar = UploadedFile::fake()->image('avatar.png', 128, 128);
+        $avatar = $this->png('avatar.png');
 
         $this->actingAs($user)
             ->put(route('profile.update'), [
@@ -57,7 +57,7 @@ class ProfileSettingsTest extends TestCase
     {
         Storage::fake('public');
         $user = $this->student();
-        $path = UploadedFile::fake()->image('old-avatar.png', 64, 64)->store('avatars', 'public');
+        $path = $this->png('old-avatar.png')->store('avatars', 'public');
         $user->update(['avatar' => $path]);
 
         $this->actingAs($user)
@@ -81,5 +81,12 @@ class ProfileSettingsTest extends TestCase
             'is_active' => true,
             'name' => 'Ruby',
         ]);
+    }
+
+    private function png(string $name): UploadedFile
+    {
+        $bytes = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=', true);
+
+        return UploadedFile::fake()->createWithContent($name, $bytes ?: '');
     }
 }
