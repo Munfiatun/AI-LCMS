@@ -108,6 +108,7 @@ html[data-theme='light'] :where(
     [class~='bg-slate-900/60'],
     [class~='bg-slate-900/65'],
     [class~='bg-slate-900/70'],
+    [class~='bg-slate-900/75'],
     [class~='bg-slate-900/80']
 ) {
     background-color: #ffffff !important;
@@ -126,6 +127,25 @@ html[data-theme='light'] :where(
 
 html[data-theme='light'] :where([class~='bg-slate-700'], [class~='bg-slate-700/80']) {
     background-color: #e2e8f0 !important;
+}
+
+/* Instructor page hero panels use a calm lavender surface in light mode. */
+html[data-theme='light'] main section[class~='bg-slate-900/75'] {
+    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #f5f3ff 100%) !important;
+    border-color: #c7d2fe !important;
+    box-shadow: 0 14px 36px rgb(79 70 229 / 0.06);
+}
+
+html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-white'] {
+    color: #111827 !important;
+}
+
+html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-slate-400'] {
+    color: #475569 !important;
+}
+
+html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-indigo-300'] {
+    color: #4f46e5 !important;
 }
 
 /* Public dark gradients receive a light lavender/blue counterpart. */
