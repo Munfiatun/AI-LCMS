@@ -28,7 +28,8 @@ class AdaptiveFlowAcceptanceAuditService
      *     gates:list<array{passed:bool,title:string,detail:string}>,
      *     rows:Collection<int,array<string,mixed>>,
      *     summary:array{passed_gates:int,total_gates:int,passed:bool},
-     *     current_focus:array<string,mixed>|null
+     *     current_focus:array<string,mixed>|null,
+     *     last_intervention:array<string,mixed>|null
      * }
      */
     public function audit(User $student, Course $course): array
@@ -88,18 +89,6 @@ class AdaptiveFlowAcceptanceAuditService
         $currentRecommendation = $currentStep['representative_row']['recommendation'] ?? null;
         $currentMaterial = $currentRecommendation ? $this->resources->materialFor($currentRecommendation) : null;
         $currentFormative = $currentRecommendation ? $this->resources->formativeQuizFor($currentRecommendation) : null;
-        $materialCompleted = $currentMaterial !== null
-            && MaterialProgress::query()
-                ->where('student_id', $student->id)
-                ->where('learning_material_id', $currentMaterial->id)
-                ->where('status', 'completed')
-                ->exists();
-
-        $resourceReady = $currentRecommendation !== null
-            && $currentRecommendation->action !== 'additional_diagnostic'
-            && $currentMaterial !== null
-            && $currentFormative !== null
-            && $materialCompleted;
 
         $formativeHistory = MasteryHistory::query()
             ->where('student_id', $student->id)
@@ -124,12 +113,45 @@ class AdaptiveFlowAcceptanceAuditService
         $formativeEvidenceReady = $formativeHistory->isNotEmpty()
             && $formativeHistory->every(fn (MasteryHistory $history): bool => $formativeAttempts->has($history->evidence_id));
 
-        $supersededCount = AdaptiveRecommendation::query()
+        $supersededRecommendations = AdaptiveRecommendation::query()
             ->where('student_id', $student->id)
             ->where('course_id', $course->id)
             ->where('algorithm_version_id', $baseline->id)
             ->where('status', AdaptiveRecommendation::STATUS_SUPERSEDED)
-            ->count();
+            ->with([
+                'course:id,title,slug',
+                'targetConcept:id,course_id,code,name,order',
+            ])
+            ->orderByDesc('superseded_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $interventionHistory = $formativeHistory->first(function (MasteryHistory $history) use ($supersededRecommendations): bool {
+            return $supersededRecommendations->contains(
+                fn (AdaptiveRecommendation $recommendation): bool => $recommendation->target_concept_id === $history->concept_id
+            );
+        });
+
+        $interventionRecommendation = $interventionHistory
+            ? $supersededRecommendations->first(
+                fn (AdaptiveRecommendation $recommendation): bool => $recommendation->target_concept_id === $interventionHistory->concept_id
+            )
+            : null;
+        $interventionAttempt = $interventionHistory ? $formativeAttempts->get($interventionHistory->evidence_id) : null;
+        $interventionMaterial = $interventionRecommendation ? $this->resources->materialFor($interventionRecommendation) : null;
+        $interventionMaterialCompleted = $interventionMaterial !== null
+            && MaterialProgress::query()
+                ->where('student_id', $student->id)
+                ->where('learning_material_id', $interventionMaterial->id)
+                ->where('status', 'completed')
+                ->exists();
+
+        $resourceReady = $interventionRecommendation !== null
+            && $interventionRecommendation->action !== 'additional_diagnostic'
+            && $interventionMaterial !== null
+            && $interventionMaterialCompleted
+            && $interventionAttempt !== null
+            && $interventionAttempt->quiz?->assessment_type === Quiz::ASSESSMENT_FORMATIVE;
 
         $readaptedActive = $activeRecommendations->filter(function (AdaptiveRecommendation $recommendation) use ($formativeAttemptIds): bool {
             $context = data_get($recommendation->metadata, 'adaptation_context', []);
@@ -144,7 +166,7 @@ class AdaptiveFlowAcceptanceAuditService
         $readaptationReady = $concepts->isNotEmpty()
             && $activeRecommendations->count() === $concepts->count()
             && $readaptedActive->count() === $activeRecommendations->count()
-            && $supersededCount > 0
+            && $supersededRecommendations->isNotEmpty()
             && $engineReady;
 
         $rows = $concepts->map(function (LearningConcept $concept) use ($masteries, $activeRecommendations): array {
@@ -182,10 +204,11 @@ class AdaptiveFlowAcceptanceAuditService
             ],
             [
                 'passed' => $resourceReady,
-                'title' => 'Fokus saat ini memiliki material selesai dan formative reassessment',
-                'detail' => 'Material: '.($currentMaterial?->title ?? 'MISSING')
-                    .'; status: '.($materialCompleted ? 'completed' : 'not completed')
-                    .'; formative: '.($currentFormative?->title ?? 'MISSING').'.',
+                'title' => 'Intervensi yang diuji memiliki material selesai dan formative reassessment valid',
+                'detail' => 'Target: '.($interventionRecommendation?->targetConcept?->code ?? 'MISSING')
+                    .'; material: '.($interventionMaterial?->title ?? 'MISSING')
+                    .'; status: '.($interventionMaterialCompleted ? 'completed' : 'not completed')
+                    .'; formative: '.($interventionAttempt?->quiz?->title ?? 'MISSING').'.',
             ],
             [
                 'passed' => $formativeEvidenceReady,
@@ -197,7 +220,7 @@ class AdaptiveFlowAcceptanceAuditService
                 'passed' => $readaptationReady,
                 'title' => 'Automatic re-adaptation tersimpan dan dapat ditelusuri',
                 'detail' => $readaptedActive->count().' dari '.$activeRecommendations->count()
-                    .' active recommendation membawa formative trigger; '.$supersededCount.' recommendation lama superseded.',
+                    .' active recommendation membawa formative trigger; '.$supersededRecommendations->count().' recommendation lama superseded.',
             ],
         ];
 
@@ -211,7 +234,13 @@ class AdaptiveFlowAcceptanceAuditService
                 'action' => $currentRecommendation->action,
                 'material' => $currentMaterial,
                 'formative' => $currentFormative,
-                'material_completed' => $materialCompleted,
+            ] : null,
+            'last_intervention' => $interventionRecommendation ? [
+                'concept' => $interventionRecommendation->targetConcept,
+                'action' => $interventionRecommendation->action,
+                'material' => $interventionMaterial,
+                'formative_attempt' => $interventionAttempt,
+                'material_completed' => $interventionMaterialCompleted,
             ] : null,
             'summary' => [
                 'passed_gates' => $passedGates,
