@@ -56,7 +56,14 @@ class AIQuestionExtractController extends Controller
             $documentText = $this->documentService->extractTextFromQuestionDocument($document);
             $startedAt = now()->timestamp;
 
-            ExtractQuestionsAIJob::dispatch($questionBank, $documentText);
+            if (app()->environment('local')) {
+                // Local development should work without requiring a second
+                // terminal just to keep a queue worker alive. Production and
+                // non-local environments retain the asynchronous queue path.
+                ExtractQuestionsAIJob::dispatchSync($questionBank, $documentText);
+            } else {
+                ExtractQuestionsAIJob::dispatch($questionBank, $documentText);
+            }
 
             return redirect()->route('instructor.question-banks.review', [
                 'question_bank' => $questionBank,
