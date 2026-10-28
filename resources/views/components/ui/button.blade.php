@@ -8,15 +8,15 @@
 ])
 
 @php
-    $base = 'inline-flex items-center justify-center gap-2 rounded-xl font-bold transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    $base = 'teacher-button inline-flex items-center justify-center gap-2 rounded-xl font-bold transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
     $variants = [
-        'primary' => 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm shadow-indigo-950/30',
-        'success' => 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm shadow-emerald-950/30',
-        'secondary' => 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700',
-        'warning' => 'border border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20',
-        'danger' => 'border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20',
-        'ghost' => 'text-slate-300 hover:bg-slate-800 hover:text-white',
-        'link' => 'text-indigo-300 hover:text-indigo-200',
+        'primary' => 'bg-indigo-600 theme-accent-fill text-white teacher-on-solid hover:bg-indigo-500 theme-accent-fill-hover shadow-sm shadow-indigo-950/30',
+        'success' => 'bg-emerald-600 theme-success-fill text-white teacher-on-solid hover:bg-emerald-500 theme-success-fill-hover shadow-sm shadow-emerald-950/30',
+        'secondary' => 'teacher-secondary-button border border-slate-700 theme-border bg-slate-800 theme-muted-surface text-slate-200 theme-heading hover:bg-slate-700 theme-muted-surface-hover',
+        'warning' => 'border border-amber-500/30 theme-warning-border bg-amber-500/10 theme-warning-surface text-amber-200 theme-warning-text hover:bg-amber-500/20 theme-warning-surface-hover',
+        'danger' => 'border border-rose-500/30 theme-danger-border bg-rose-500/10 theme-danger-surface text-rose-300 theme-danger-text hover:bg-rose-500/20 theme-danger-surface-hover',
+        'ghost' => 'text-slate-300 theme-body hover:bg-slate-800 theme-muted-surface-hover hover:text-white theme-heading-hover',
+        'link' => 'text-indigo-300 theme-accent-text hover:text-indigo-200 theme-accent-text-hover',
     ];
     $sizes = [
         'sm' => 'min-h-9 px-3 py-1.5 text-xs',

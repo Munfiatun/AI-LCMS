@@ -107,36 +107,36 @@ export function enhanceSlidebookThemePicker() {
     intro.className = 'flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between';
     intro.innerHTML = `
         <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-300">Pilih Tema Visual</p>
-            <p class="mt-1 text-xs text-slate-500">Tema hanya mengubah tampilan. Konten dan layout slide tetap dipertahankan.</p>
+            <p class="text-sm font-semibold uppercase tracking-wider theme-body">Pilih Tema Visual</p>
+            <p class="mt-1 text-sm theme-muted">Tema hanya mengubah tampilan. Konten dan layout slide tetap dipertahankan.</p>
         </div>
-        <span data-theme-state class="inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300">Tersimpan</span>
+        <span data-theme-state class="inline-flex w-fit items-center rounded-full border theme-success-border theme-success-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-success-text">Tersimpan</span>
     `;
 
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
 
     const livePreview = document.createElement('section');
-    livePreview.className = 'rounded-2xl border border-slate-800 bg-slate-950/50 p-4';
+    livePreview.className = 'rounded-2xl border teacher-card p-4';
     livePreview.innerHTML = `
         <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Design Preview</p>
-                <p class="mt-1 text-xs text-slate-500">Pratinjau ini sementara. Tema belum diterapkan ke data sampai tombol Simpan Desain ditekan.</p>
+                <p class="text-sm font-semibold uppercase tracking-wider theme-body">Live Design Preview</p>
+                <p class="mt-1 text-sm theme-muted">Pratinjau ini sementara. Tema belum diterapkan ke data sampai tombol Simpan Desain ditekan.</p>
             </div>
-            <span data-preview-theme class="inline-flex w-fit rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-300"></span>
+            <span data-preview-theme class="inline-flex w-fit rounded-full border theme-accent-border theme-accent-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-accent-text"></span>
         </div>
-        <div class="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
-            <div data-preview-loading class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/90 text-xs font-semibold text-slate-300 transition-opacity">Memuat pratinjau…</div>
+        <div class="relative overflow-hidden rounded-xl border teacher-card shadow-inner">
+            <div data-preview-loading class="absolute inset-0 z-10 flex items-center justify-center theme-surface text-sm font-semibold theme-body transition-opacity">Memuat pratinjau…</div>
             <div class="aspect-video min-h-[280px] w-full">
-                <iframe data-theme-live-preview class="h-full min-h-[280px] w-full border-0 bg-slate-950" title="Live preview desain Slidebook" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
+                <iframe data-theme-live-preview class="h-full min-h-[280px] w-full border-0 theme-surface" title="Live preview desain Slidebook" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
             </div>
         </div>
-        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm theme-muted">
             <span>Gunakan preview penuh untuk mengecek semua 18 slide.</span>
             <div class="flex items-center gap-3">
-                <button type="button" data-reset-theme class="hidden font-semibold text-slate-400 hover:text-white">Kembalikan tema tersimpan</button>
-                <a data-open-full-preview target="_blank" rel="noopener" class="font-semibold text-indigo-300 hover:text-indigo-200">Buka Preview Penuh ↗</a>
+                <button type="button" data-reset-theme class="hidden font-semibold theme-body theme-heading-hover">Kembalikan tema tersimpan</button>
+                <a data-open-full-preview target="_blank" rel="noopener" class="font-semibold theme-accent-text theme-accent-text-hover">Buka Preview Penuh ↗</a>
             </div>
         </div>
     `;
@@ -207,8 +207,8 @@ export function enhanceSlidebookThemePicker() {
             const active = value === select.value;
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
             button.className = active
-                ? 'group rounded-2xl border border-indigo-400 bg-indigo-500/10 p-3 text-left shadow-lg shadow-indigo-950/20 ring-2 ring-indigo-500/30 transition-all'
-                : 'group rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-left hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-900 transition-all';
+                ? 'group rounded-2xl border theme-accent-border theme-accent-surface p-3 text-left shadow-lg shadow-indigo-950/20 ring-2 ring-indigo-500/30 transition-all'
+                : 'group rounded-2xl border teacher-card p-3 text-left hover:-translate-y-0.5 theme-border-hover theme-surface-hover transition-all';
 
             const marker = button.querySelector('[data-theme-active]');
             if (marker) {
@@ -223,8 +223,8 @@ export function enhanceSlidebookThemePicker() {
         if (stateBadge) {
             stateBadge.textContent = isDirty ? 'Belum disimpan' : 'Tersimpan';
             stateBadge.className = isDirty
-                ? 'inline-flex w-fit items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300'
-                : 'inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
+                ? 'inline-flex w-fit items-center rounded-full border theme-warning-border theme-warning-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-warning-text'
+                : 'inline-flex w-fit items-center rounded-full border theme-success-border theme-success-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-success-text';
         }
 
         if (submitButton) {
@@ -255,10 +255,10 @@ export function enhanceSlidebookThemePicker() {
         meta.className = 'mt-3 flex items-start justify-between gap-3';
         meta.innerHTML = `
             <div>
-                <p class="text-sm font-bold text-white">${theme.label}</p>
-                <p class="mt-1 text-[11px] leading-relaxed text-slate-400">${theme.description}</p>
+                <p class="text-sm font-bold theme-heading">${theme.label}</p>
+                <p class="mt-1 text-sm leading-relaxed theme-body">${theme.description}</p>
             </div>
-            <span data-theme-active class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white opacity-0 transition-opacity" aria-hidden="true">
+            <span data-theme-active class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full theme-accent-fill teacher-on-solid opacity-0 transition-opacity" aria-hidden="true">
                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.31a1 1 0 0 1-1.42 0l-3.75-3.78a1 1 0 1 1 1.42-1.408l3.04 3.064 6.54-6.594a1 1 0 0 1 1.414-.006Z" clip-rule="evenodd" /></svg>
             </span>
         `;

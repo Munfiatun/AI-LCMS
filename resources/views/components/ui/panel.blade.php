@@ -5,12 +5,12 @@
 
 @php
     $variants = [
-        'default' => 'border-slate-800 bg-slate-900/80',
-        'muted' => 'border-slate-800 bg-slate-950/50',
-        'elevated' => 'border-slate-800 bg-slate-900 shadow-xl',
-        'success' => 'border-emerald-800/40 bg-emerald-950/20',
-        'warning' => 'border-amber-800/40 bg-amber-950/20',
-        'danger' => 'border-rose-800/40 bg-rose-950/20',
+        'default' => 'border-slate-800 theme-border bg-slate-900/80 theme-surface',
+        'muted' => 'border-slate-800 theme-border bg-slate-950/50 theme-surface',
+        'elevated' => 'border-slate-800 theme-border bg-slate-900 theme-surface shadow-xl',
+        'success' => 'border-emerald-800/40 theme-success-border bg-emerald-950/20 theme-success-surface',
+        'warning' => 'border-amber-800/40 theme-warning-border bg-amber-950/20 theme-warning-surface',
+        'danger' => 'border-rose-800/40 theme-danger-border bg-rose-950/20 theme-danger-surface',
     ];
     $paddings = [
         'none' => '',

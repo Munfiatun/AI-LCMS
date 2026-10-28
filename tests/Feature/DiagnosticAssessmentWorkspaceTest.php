@@ -58,7 +58,7 @@ class DiagnosticAssessmentWorkspaceTest extends TestCase
         $this->actingAs($this->instructor)
             ->get(route('instructor.diagnostics.index', ['course_id' => $ownCourse->id]))
             ->assertOk()
-            ->assertSee('Diagnostic Assessment Workspace')
+            ->assertSee('>Diagnostik Awal</h1>', false)
             ->assertSee('Diagnostik Awal')
             ->assertDontSee('Quiz Rahasia');
     }

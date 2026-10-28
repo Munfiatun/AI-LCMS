@@ -55,7 +55,7 @@ class LearningConceptWorkspaceTest extends TestCase
         $this->actingAs($this->instructor)
             ->get(route('instructor.learning-concepts.index', ['course_id' => $course->id]))
             ->assertOk()
-            ->assertSee('Learning Concepts &amp; Content Alignment', false)
+            ->assertSee('Konsep &amp; Mapping', false)
             ->assertSee($course->title)
             ->assertDontSee($otherCourse->title);
     }

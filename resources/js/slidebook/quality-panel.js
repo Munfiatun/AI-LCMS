@@ -3,15 +3,15 @@ const REVIEW_PATH = /^\/instructor\/materials\/\d+\/slidebook\/review\/?$/;
 const statusMeta = {
     good: {
         label: 'Siap Ditinjau',
-        className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+        className: 'theme-success-surface theme-success-text theme-success-border',
     },
     needs_attention: {
         label: 'Perlu Perhatian',
-        className: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+        className: 'theme-warning-surface theme-warning-text theme-warning-border',
     },
     blocked: {
         label: 'Perlu Diperbaiki',
-        className: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
+        className: 'theme-danger-surface theme-danger-text theme-danger-border',
     },
 };
 
@@ -29,10 +29,10 @@ function audienceLabel(audience) {
 }
 
 function metric(label, value) {
-    const card = element('div', 'rounded-xl bg-slate-950/70 border border-slate-800 px-3 py-2.5');
+    const card = element('div', 'rounded-xl theme-surface border theme-border px-3 py-2.5');
     card.append(
-        element('div', 'text-lg font-extrabold text-white', String(value)),
-        element('div', 'text-[10px] uppercase tracking-wider text-slate-500 mt-0.5', label),
+        element('div', 'text-lg font-extrabold theme-heading', String(value)),
+        element('div', 'text-sm uppercase tracking-wider theme-muted mt-0.5', label),
     );
     return card;
 }
@@ -42,18 +42,18 @@ function issueRow(issue) {
     const row = element(
         'div',
         `flex items-start gap-3 rounded-xl border px-3 py-2.5 ${critical
-            ? 'bg-rose-950/20 border-rose-900/40'
-            : 'bg-amber-950/15 border-amber-900/30'}`,
+            ? 'theme-danger-surface theme-danger-border'
+            : 'theme-warning-surface theme-warning-border'}`,
     );
     row.append(
         element(
             'span',
-            `mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black ${critical
-                ? 'bg-rose-500/20 text-rose-300'
-                : 'bg-amber-500/20 text-amber-300'}`,
+            `mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-sm font-black ${critical
+                ? 'theme-danger-surface theme-danger-text'
+                : 'theme-warning-surface theme-warning-text'}`,
             critical ? '!' : 'i',
         ),
-        element('p', `text-xs leading-relaxed ${critical ? 'text-rose-100' : 'text-amber-100/90'}`, issue.message),
+        element('p', `text-sm leading-relaxed ${critical ? 'theme-danger-text' : 'theme-warning-text'}`, issue.message),
     );
     return row;
 }
@@ -64,28 +64,28 @@ function renderQualityPanel(report) {
 
     document.querySelector('[data-slidebook-quality-panel]')?.remove();
 
-    const panel = element('section', 'rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden');
+    const panel = element('section', 'rounded-2xl theme-surface border theme-border shadow-xl overflow-hidden');
     panel.dataset.slidebookQualityPanel = 'true';
 
-    const header = element('div', 'p-5 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4');
+    const header = element('div', 'p-5 border-b theme-border flex flex-col lg:flex-row lg:items-center justify-between gap-4');
     const intro = element('div');
     intro.append(
-        element('div', 'text-[10px] uppercase tracking-[0.18em] font-bold text-cyan-400', 'Slide Quality Check'),
-        element('h2', 'text-base font-extrabold text-white mt-1', 'Pemeriksaan Kualitas Slidebook'),
+        element('div', 'text-sm uppercase tracking-[0.18em] font-bold theme-accent-text', 'Slide Quality Check'),
+        element('h2', 'text-base font-extrabold theme-heading mt-1', 'Pemeriksaan Kualitas Slidebook'),
         element(
             'p',
-            'text-xs text-slate-400 mt-1',
+            'text-sm theme-body mt-1',
             `Pemeriksaan otomatis untuk target ${audienceLabel(report.audience)}. Warning membantu guru meninjau kualitas; masalah kritis harus diperbaiki sebelum persetujuan.`,
         ),
     );
 
     const scoreWrap = element('div', 'flex items-center gap-3');
     const meta = statusMeta[report.status] || statusMeta.needs_attention;
-    const badge = element('span', `px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase ${meta.className}`, meta.label);
+    const badge = element('span', `px-2.5 py-1 rounded-full border text-sm font-bold uppercase ${meta.className}`, meta.label);
     const score = element('div', 'text-right');
     score.append(
-        element('div', 'text-3xl font-black text-white leading-none', `${report.score}/100`),
-        element('div', 'text-[10px] uppercase tracking-wider text-slate-500 mt-1', 'Quality Score'),
+        element('div', 'text-3xl font-black theme-heading leading-none', `${report.score}/100`),
+        element('div', 'text-sm uppercase tracking-wider theme-muted mt-1', 'Quality Score'),
     );
     scoreWrap.append(badge, score);
     header.append(intro, scoreWrap);
@@ -105,17 +105,17 @@ function renderQualityPanel(report) {
     const issues = Array.isArray(report.issues) ? report.issues : [];
     const issueSection = element('div', 'space-y-2');
     if (issues.length === 0) {
-        issueSection.append(element('div', 'rounded-xl bg-emerald-950/20 border border-emerald-900/30 px-4 py-3 text-xs text-emerald-200', 'Tidak ada masalah kualitas yang terdeteksi. Tetap lakukan pengecekan akhir sebelum menerbitkan.'));
+        issueSection.append(element('div', 'rounded-xl theme-success-surface border theme-success-border px-4 py-3 text-sm theme-success-text', 'Tidak ada masalah kualitas yang terdeteksi. Tetap lakukan pengecekan akhir sebelum menerbitkan.'));
     } else {
         const heading = element('div', 'flex items-center justify-between gap-3');
         heading.append(
-            element('h3', 'text-xs font-bold text-white', 'Temuan yang Perlu Diperiksa'),
-            element('span', 'text-[10px] text-slate-500', `${issues.length} temuan`),
+            element('h3', 'text-sm font-bold theme-heading', 'Temuan yang Perlu Diperiksa'),
+            element('span', 'text-sm theme-muted', `${issues.length} temuan`),
         );
         issueSection.append(heading);
         issues.slice(0, 8).forEach((issue) => issueSection.append(issueRow(issue)));
         if (issues.length > 8) {
-            issueSection.append(element('p', 'text-[11px] text-slate-500', `+ ${issues.length - 8} temuan lain. Perbaiki temuan utama terlebih dahulu lalu muat ulang halaman.`));
+            issueSection.append(element('p', 'text-sm theme-muted', `+ ${issues.length - 8} temuan lain. Perbaiki temuan utama terlebih dahulu lalu muat ulang halaman.`));
         }
     }
     body.append(issueSection);

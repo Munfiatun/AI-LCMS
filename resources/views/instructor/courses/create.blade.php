@@ -7,12 +7,12 @@
 
 @section('content')
 <div class="mx-auto max-w-3xl space-y-6">
-    <div class="flex items-center justify-between gap-4">
+    <div class="teacher-page-header flex items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold tracking-tight text-white">Buat Kursus Baru</h1>
-            <p class="mt-1 text-sm text-slate-400">Lengkapi informasi umum kursus sebelum menambahkan bab dan modul pembelajaran.</p>
+            <h1 class="teacher-page-title text-2xl font-extrabold tracking-tight theme-heading">Buat Kursus Baru</h1>
+            <p class="mt-1 text-sm theme-body">Lengkapi informasi umum kursus sebelum menambahkan bab dan modul pembelajaran.</p>
         </div>
-        <a href="{{ route('instructor.courses.index') }}" class="text-xs font-semibold text-slate-400 transition-colors hover:text-white">&larr; Kembali</a>
+        <a href="{{ route('instructor.courses.index') }}" class="text-sm font-semibold theme-body transition-colors theme-heading-hover">&larr; Kembali</a>
     </div>
 
     @if($errors->any())
@@ -30,7 +30,7 @@
             @csrf
 
             <div>
-                <label for="title" class="ui-label">Judul Kursus <span class="text-rose-400">*</span></label>
+                <label for="title" class="ui-label">Judul Kursus <span class="theme-danger-text">*</span></label>
                 <input type="text" id="title" name="title" required value="{{ old('title') }}" class="ui-field" placeholder="Contoh: Pemrograman Web dengan Laravel 13">
             </div>
 
@@ -50,7 +50,7 @@
                 <p class="ui-help">Gunakan deskripsi singkat yang membantu siswa memahami fokus dan tujuan kursus.</p>
             </div>
 
-            <div class="flex items-center justify-end gap-3 border-t border-slate-800 pt-3">
+            <div class="flex items-center justify-end gap-3 border-t theme-border pt-3">
                 <x-ui.button :href="route('instructor.courses.index')" variant="ghost">Batal</x-ui.button>
                 <x-ui.button type="submit">Simpan & Lanjutkan ke Silabus →</x-ui.button>
             </div>

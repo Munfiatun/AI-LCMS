@@ -38,8 +38,8 @@ function enhanceLayoutSelect(select) {
     const toolbar = document.createElement('div');
     toolbar.className = 'flex items-center justify-between gap-3';
     toolbar.innerHTML = `
-        <p class="text-[11px] text-slate-500">Pilih komposisi visual. Konten slide tidak berubah saat layout diganti.</p>
-        <span data-layout-current class="shrink-0 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-300"></span>
+        <p class="text-sm theme-muted">Pilih komposisi visual. Konten slide tidak berubah saat layout diganti.</p>
+        <span data-layout-current class="shrink-0 rounded-full border theme-accent-border theme-accent-surface px-2 py-1 text-sm font-bold uppercase tracking-wide theme-accent-text"></span>
     `;
 
     const grid = document.createElement('div');
@@ -51,12 +51,12 @@ function enhanceLayoutSelect(select) {
         const button = document.createElement('button');
         button.type = 'button';
         button.dataset.layoutValue = value;
-        button.className = 'rounded-xl border border-slate-800 bg-slate-950/70 p-2 text-left transition-all hover:border-slate-600';
+        button.className = 'rounded-xl border teacher-card p-2 text-left transition-all theme-border-hover';
         button.innerHTML = `
-            <div class="h-14 rounded-lg border border-slate-800 bg-slate-950 p-2" aria-hidden="true">${layoutPreviewMarkup(value)}</div>
+            <div class="h-14 rounded-lg border teacher-card p-2" aria-hidden="true">${layoutPreviewMarkup(value)}</div>
             <div class="mt-2 flex items-center justify-between gap-2">
-                <span class="truncate text-[11px] font-semibold text-slate-300">${option.textContent}</span>
-                <span data-layout-check class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[9px] font-bold text-white opacity-0">✓</span>
+                <span class="truncate text-sm font-semibold theme-body">${option.textContent}</span>
+                <span data-layout-check class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full theme-accent-fill text-sm font-bold teacher-on-solid opacity-0">✓</span>
             </div>
         `;
 
@@ -77,8 +77,8 @@ function enhanceLayoutSelect(select) {
             const active = value === select.value;
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
             button.className = active
-                ? 'rounded-xl border border-indigo-400 bg-indigo-500/10 p-2 text-left ring-2 ring-indigo-500/30 transition-all'
-                : 'rounded-xl border border-slate-800 bg-slate-950/70 p-2 text-left transition-all hover:border-slate-600';
+                ? 'rounded-xl border theme-accent-border theme-accent-surface p-2 text-left ring-2 ring-indigo-500/30 transition-all'
+                : 'rounded-xl border teacher-card p-2 text-left transition-all theme-border-hover';
             button.querySelector('[data-layout-check]')?.classList.toggle('opacity-0', !active);
         });
 
@@ -226,15 +226,15 @@ function enhanceSlideDeckOrdering() {
 
     const toolbar = document.createElement('div');
     toolbar.dataset.slideOrderToolbar = 'true';
-    toolbar.className = 'mb-4 flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 sm:flex-row sm:items-center sm:justify-between';
+    toolbar.className = 'mb-4 flex flex-col gap-3 rounded-xl border teacher-card p-3 sm:flex-row sm:items-center sm:justify-between';
     toolbar.innerHTML = `
         <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-200">Urutan Slide</p>
-            <p class="mt-1 text-[11px] text-slate-500">Seret pegangan atau gunakan tombol naik/turun. Perubahan baru diterapkan setelah disimpan.</p>
+            <p class="text-sm font-bold uppercase tracking-wider theme-heading">Urutan Slide</p>
+            <p class="mt-1 text-sm theme-muted">Seret pegangan atau gunakan tombol naik/turun. Perubahan baru diterapkan setelah disimpan.</p>
         </div>
         <div class="flex items-center gap-2">
-            <span data-order-state class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300">Tersimpan</span>
-            <button type="button" data-save-order disabled class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Simpan Urutan</button>
+            <span data-order-state class="rounded-full border theme-success-border theme-success-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-success-text">Tersimpan</span>
+            <button type="button" data-save-order disabled class="rounded-lg theme-accent-fill px-3 py-1.5 text-sm font-bold teacher-on-solid transition-colors disabled:cursor-not-allowed disabled:opacity-50">Simpan Urutan</button>
         </div>
     `;
     deck.parentElement?.insertBefore(toolbar, deck);
@@ -262,8 +262,8 @@ function enhanceSlideDeckOrdering() {
         if (stateBadge) {
             stateBadge.textContent = isDirty ? 'Belum disimpan' : 'Tersimpan';
             stateBadge.className = isDirty
-                ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300'
-                : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
+                ? 'rounded-full border theme-warning-border theme-warning-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-warning-text'
+                : 'rounded-full border theme-success-border theme-success-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-success-text';
         }
         if (saveButton) {
             saveButton.disabled = !isDirty;
@@ -288,14 +288,14 @@ function enhanceSlideDeckOrdering() {
         }
 
         const controls = document.createElement('div');
-        controls.className = 'mb-3 flex items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-900/70 px-2.5 py-2';
+        controls.className = 'mb-3 flex items-center justify-between gap-2 rounded-lg border teacher-card px-2.5 py-2';
         controls.innerHTML = `
-            <button type="button" draggable="true" data-drag-handle class="flex cursor-grab items-center gap-2 rounded-md px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-slate-800 hover:text-white active:cursor-grabbing" title="Seret untuk mengubah urutan">
+            <button type="button" draggable="true" data-drag-handle class="flex cursor-grab items-center gap-2 rounded-md px-2 py-1 text-sm font-semibold theme-body theme-muted-surface-hover theme-heading-hover active:cursor-grabbing" title="Seret untuk mengubah urutan">
                 <span aria-hidden="true">⠿</span><span>Geser slide</span>
             </button>
             <div class="flex items-center gap-1">
-                <button type="button" data-move-slide="up" class="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke atas">↑</button>
-                <button type="button" data-move-slide="down" class="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke bawah">↓</button>
+                <button type="button" data-move-slide="up" class="rounded-md px-2 py-1 text-sm theme-body theme-muted-surface-hover theme-heading-hover disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke atas">↑</button>
+                <button type="button" data-move-slide="down" class="rounded-md px-2 py-1 text-sm theme-body theme-muted-surface-hover theme-heading-hover disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke bawah">↓</button>
             </div>
         `;
         card.insertBefore(controls, card.firstChild);
@@ -367,12 +367,12 @@ function enhanceSlideDeckOrdering() {
             isDirty = false;
             window.removeEventListener('beforeunload', beforeUnloadHandler);
             stateBadge.textContent = 'Tersimpan';
-            stateBadge.className = 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
+            stateBadge.className = 'rounded-full border theme-success-border theme-success-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-success-text';
             saveButton.textContent = 'Urutan Tersimpan';
             window.setTimeout(() => window.location.reload(), 450);
         } catch (error) {
             stateBadge.textContent = 'Gagal menyimpan';
-            stateBadge.className = 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-300';
+            stateBadge.className = 'rounded-full border theme-danger-border theme-danger-surface px-2.5 py-1 text-sm font-bold uppercase tracking-wide theme-danger-text';
             saveButton.disabled = false;
             saveButton.textContent = 'Coba Simpan Lagi';
             window.alert(error.message);

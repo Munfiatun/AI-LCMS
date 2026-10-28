@@ -83,11 +83,11 @@ function createHeaderControls() {
     const themeButton = document.createElement('button');
     themeButton.type = 'button';
     themeButton.dataset.themeToggle = 'true';
-    themeButton.className = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700';
+    themeButton.className = 'teacher-secondary-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700';
 
     const profileLink = document.createElement('a');
     profileLink.href = '/profile';
-    profileLink.className = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700';
+    profileLink.className = 'teacher-secondary-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700';
     profileLink.setAttribute('aria-label', 'Buka profil');
     profileLink.innerHTML = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 21a8 8 0 0116 0"/></svg><span class="hidden md:inline">Profil</span>';
 

@@ -129,25 +129,6 @@ html[data-theme='light'] :where([class~='bg-slate-700'], [class~='bg-slate-700/8
     background-color: #e2e8f0 !important;
 }
 
-/* Instructor page hero panels use a calm lavender surface in light mode. */
-html[data-theme='light'] main section[class~='bg-slate-900/75'] {
-    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #f5f3ff 100%) !important;
-    border-color: #c7d2fe !important;
-    box-shadow: 0 14px 36px rgb(79 70 229 / 0.06);
-}
-
-html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-white'] {
-    color: #111827 !important;
-}
-
-html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-slate-400'] {
-    color: #475569 !important;
-}
-
-html[data-theme='light'] main section[class~='bg-slate-900/75'] [class~='text-indigo-300'] {
-    color: #4f46e5 !important;
-}
-
 /* Public dark gradients receive a light lavender/blue counterpart. */
 html[data-theme='light'] [class~='from-indigo-950'] {
     --tw-gradient-from: #eef2ff var(--tw-gradient-from-position) !important;
@@ -392,5 +373,224 @@ html[data-theme='light'] .shadow-md {
 @media (forced-colors: active) {
     :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
         outline: 3px solid Highlight;
+    }
+}
+
+/* Instructor theme contract. Dark is the default, matching the existing theme toggle. */
+.teacher-workspace {
+    --teacher-heading: #f1f5f9;
+    --teacher-body: #cbd5e1;
+    --teacher-muted: #94a3b8;
+    --teacher-placeholder: #94a3b8;
+    --teacher-surface: #0f172a;
+    --teacher-muted-surface: #1e293b;
+    --teacher-border: #334155;
+    --teacher-field-border: #64748b;
+    --teacher-hover: #312e81;
+    --teacher-accent-text: #a5b4fc;
+    --teacher-accent-surface: #1e2448;
+    --teacher-accent-border: #454783;
+    --teacher-accent-solid: #4f46e5;
+    --teacher-accent-hover: #5850ec;
+    --teacher-success-text: #6ee7b7;
+    --teacher-success-surface: #102d29;
+    --teacher-success-border: #25624e;
+    --teacher-success-solid: #047857;
+    --teacher-success-hover: #065f46;
+    --teacher-warning-text: #fcd34d;
+    --teacher-warning-surface: #30291d;
+    --teacher-warning-border: #78602c;
+    --teacher-warning-solid: #b45309;
+    --teacher-warning-hover: #92400e;
+    --teacher-danger-text: #fda4af;
+    --teacher-danger-surface: #34202d;
+    --teacher-danger-border: #873a50;
+    --teacher-header: linear-gradient(135deg, #0f172a, #141932);
+    --teacher-header-border: #334155;
+    --teacher-shadow: 0 4px 20px rgb(0 0 0 / 0.12);
+    color: var(--teacher-body);
+}
+
+html[data-theme='light'] .teacher-workspace {
+    --teacher-heading: #0f172a;
+    --teacher-body: #475569;
+    --teacher-muted: #64748b;
+    --teacher-surface: #ffffff;
+    --teacher-muted-surface: #f8fafc;
+    --teacher-border: #e2e8f0;
+    --teacher-field-border: #cbd5e1;
+    --teacher-hover: #f5f3ff;
+    --teacher-accent-text: #4338ca;
+    --teacher-accent-hover: #4338ca;
+    --teacher-accent-surface: #eef2ff;
+    --teacher-accent-border: #c7d2fe;
+    --teacher-success-text: #047857;
+    --teacher-success-surface: #ecfdf5;
+    --teacher-success-border: #a7f3d0;
+    --teacher-warning-text: #92400e;
+    --teacher-warning-surface: #fffbeb;
+    --teacher-warning-border: #fde68a;
+    --teacher-danger-text: #be123c;
+    --teacher-danger-surface: #fff1f2;
+    --teacher-danger-border: #fecdd3;
+    --teacher-header: linear-gradient(135deg, #ffffff, #f5f3ff);
+    --teacher-header-border: #ddd6fe;
+    --teacher-shadow: 0 4px 20px rgb(15 23 42 / 0.05);
+}
+
+.teacher-workspace .teacher-page-header {
+    background: var(--teacher-header);
+    border: 1px solid var(--teacher-header-border);
+    border-radius: 1.5rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: var(--teacher-shadow);
+}
+
+.teacher-workspace .teacher-page-header-flush { padding: 0; }
+.teacher-workspace .teacher-page-title { color: var(--teacher-heading); overflow-wrap: anywhere; }
+.teacher-workspace .teacher-page-header p { color: var(--teacher-body); }
+.teacher-workspace .teacher-page-eyebrow { color: var(--teacher-accent-text); }
+.teacher-workspace .teacher-research-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--teacher-border);
+    border-radius: 999px;
+    background: var(--teacher-surface);
+    color: var(--teacher-muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.teacher-workspace .teacher-card {
+    background: var(--teacher-surface);
+    border-color: var(--teacher-border);
+    box-shadow: var(--teacher-shadow);
+}
+.teacher-workspace .teacher-card-active {
+    background: var(--teacher-accent-surface);
+    border-color: var(--teacher-accent-border);
+}
+.teacher-workspace .teacher-backdrop { background: rgb(2 6 23 / 0.65) !important; }
+
+.teacher-workspace :where(input:not([type='checkbox'], [type='radio'], [type='hidden'], [type='range']), select, textarea),
+.teacher-workspace .ui-field {
+    border-color: #64748b !important;
+    min-height: 44px;
+    font-size: 0.875rem;
+}
+html[data-theme='light'] .teacher-workspace :where(input, select, textarea),
+html[data-theme='light'] .teacher-workspace .ui-field { border-color: #cbd5e1 !important; }
+.teacher-workspace :where(input, textarea)::placeholder,
+html[data-theme='light'] .teacher-workspace .ui-field::placeholder { color: var(--teacher-placeholder) !important; opacity: 1; }
+.teacher-workspace option { background: var(--teacher-surface); color: var(--teacher-heading); }
+.teacher-workspace .ui-label,
+.teacher-workspace .ui-section-description { color: var(--teacher-body); }
+.teacher-workspace .ui-help { color: var(--teacher-muted); }
+.teacher-workspace .ui-section-title { color: var(--teacher-heading); }
+.teacher-workspace .ui-error { color: var(--teacher-danger-text); }
+.teacher-workspace .ui-text-link { color: var(--teacher-accent-text); }
+.teacher-workspace :where(button, summary, a.rounded-xl, a.rounded-lg, .teacher-button) {
+    min-height: 44px;
+    touch-action: manipulation;
+}
+.teacher-workspace .teacher-button,
+.teacher-workspace label { font-size: 0.875rem; }
+.teacher-workspace summary:hover { background-color: var(--teacher-hover); }
+.teacher-workspace :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid #818cf8 !important;
+    outline-offset: 3px;
+}
+.teacher-workspace :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) { box-shadow: var(--teacher-shadow); }
+.teacher-workspace aside nav a { color: var(--teacher-body); }
+.teacher-workspace aside nav a[aria-current='page'] { background: var(--teacher-accent-solid) !important; color: #fff !important; }
+.teacher-workspace aside nav a:hover { background: var(--teacher-hover); color: var(--teacher-accent-text); }
+.teacher-workspace .teacher-step-card { background: var(--teacher-surface); border-color: var(--teacher-border); }
+.teacher-workspace .teacher-step-active { background: var(--teacher-accent-surface); border-color: var(--teacher-accent-border); }
+.teacher-workspace .teacher-step-number { background: var(--teacher-muted-surface); color: var(--teacher-body); }
+.teacher-workspace .teacher-step-active .teacher-step-number { background: var(--teacher-accent-solid); color: #fff; }
+@media (max-width: 640px) {
+    .teacher-workspace .teacher-page-header.flex { flex-wrap: wrap; }
+}
+
+/* Semantic instructor colors; shared legacy utilities remain compatible elsewhere. */
+html .teacher-workspace .theme-accent-border { border-color: var(--teacher-accent-border) !important; }
+html .teacher-workspace .theme-accent-border-hover:hover { border-color: var(--teacher-accent-border) !important; }
+html .teacher-workspace .theme-accent-border-open[open] { border-color: var(--teacher-accent-border) !important; }
+html .teacher-workspace .theme-accent-fill { background-color: var(--teacher-accent-solid) !important; }
+html .teacher-workspace .theme-accent-fill-hover:hover { background-color: var(--teacher-accent-hover) !important; }
+html .teacher-workspace .theme-accent-surface { background-color: var(--teacher-accent-surface) !important; }
+html .teacher-workspace .theme-accent-surface-hover:hover { background-color: var(--teacher-hover) !important; }
+html .teacher-workspace .theme-accent-text { color: var(--teacher-accent-text) !important; }
+html .teacher-workspace .theme-accent-text-hover:hover { color: var(--teacher-accent-text) !important; }
+html .teacher-workspace .theme-body { color: var(--teacher-body) !important; }
+html .teacher-workspace .theme-border { border-color: var(--teacher-border) !important; }
+html .teacher-workspace .theme-border-hover:hover { border-color: var(--teacher-border) !important; }
+html .teacher-workspace .theme-danger-border { border-color: var(--teacher-danger-border) !important; }
+html .teacher-workspace .theme-danger-surface { background-color: var(--teacher-danger-surface) !important; }
+html .teacher-workspace .theme-danger-surface-hover:hover { background-color: var(--teacher-hover) !important; }
+html .teacher-workspace .theme-danger-text { color: var(--teacher-danger-text) !important; }
+html .teacher-workspace .theme-danger-text-hover:hover { color: var(--teacher-accent-text) !important; }
+html .teacher-workspace .theme-focus-border:focus { border-color: #818cf8 !important; }
+html .teacher-workspace .theme-heading { color: var(--teacher-heading) !important; }
+html .teacher-workspace .theme-heading-file::file-selector-button { color: var(--teacher-heading) !important; }
+html .teacher-workspace .theme-heading-hover:hover { color: var(--teacher-accent-text) !important; }
+html .teacher-workspace .theme-muted { color: var(--teacher-muted) !important; }
+html .teacher-workspace .theme-muted-surface { background-color: var(--teacher-muted-surface) !important; }
+html .teacher-workspace .theme-muted-surface-file::file-selector-button { background-color: var(--teacher-muted-surface) !important; }
+html .teacher-workspace .theme-muted-surface-hover:hover { background-color: var(--teacher-hover) !important; }
+html .teacher-workspace .theme-placeholder::placeholder { color: var(--teacher-placeholder) !important; }
+html .teacher-workspace .theme-success-border { border-color: var(--teacher-success-border) !important; }
+html .teacher-workspace .theme-success-fill { background-color: var(--teacher-success-solid) !important; }
+html .teacher-workspace .theme-success-fill-hover:hover { background-color: var(--teacher-success-hover) !important; }
+html .teacher-workspace .theme-success-surface { background-color: var(--teacher-success-surface) !important; }
+html .teacher-workspace .theme-success-text { color: var(--teacher-success-text) !important; }
+html .teacher-workspace .theme-surface { background-color: var(--teacher-surface) !important; }
+html .teacher-workspace .theme-surface-hover:hover { background-color: var(--teacher-hover) !important; }
+html .teacher-workspace .theme-warning-border { border-color: var(--teacher-warning-border) !important; }
+html .teacher-workspace .theme-warning-border-hover:hover { border-color: var(--teacher-warning-border) !important; }
+html .teacher-workspace .theme-warning-fill { background-color: var(--teacher-warning-solid) !important; }
+html .teacher-workspace .theme-warning-fill-hover:hover { background-color: var(--teacher-warning-hover) !important; }
+html .teacher-workspace .theme-warning-surface { background-color: var(--teacher-warning-surface) !important; }
+html .teacher-workspace .theme-warning-surface-hover:hover { background-color: var(--teacher-hover) !important; }
+html .teacher-workspace .theme-warning-text { color: var(--teacher-warning-text) !important; }
+
+/* Solid controls retain their foreground even when combined with legacy utilities. */
+html .teacher-workspace .teacher-on-solid,
+html .teacher-workspace .teacher-on-solid:hover { color: #fff !important; }
+.teacher-workspace .teacher-badge { font-size: 0.75rem; line-height: 1.5; }
+.teacher-workspace .teacher-alert-copy { font-size: 0.875rem; }
+
+.teacher-workspace .teacher-brand-mark { background: var(--teacher-accent-solid); }
+
+/* Forms and secondary actions own their colors across legacy and semantic utilities. */
+html .teacher-workspace :is(input:not([type='checkbox'], [type='radio'], [type='hidden'], [type='range']), select, textarea) {
+    background: var(--teacher-surface) !important;
+    color: var(--teacher-heading) !important;
+    border-color: var(--teacher-field-border) !important;
+}
+html .teacher-workspace :is(input, select, textarea):focus { border-color: #6366f1 !important; }
+html .teacher-workspace :is(input, select, textarea):disabled {
+    background: var(--teacher-muted-surface) !important;
+    color: var(--teacher-muted) !important;
+}
+html .teacher-workspace .teacher-secondary-button {
+    background: var(--teacher-surface) !important;
+    color: var(--teacher-body) !important;
+    border-color: var(--teacher-border) !important;
+}
+html .teacher-workspace .teacher-secondary-button:hover {
+    background: var(--teacher-hover) !important;
+    color: var(--teacher-accent-text) !important;
+}
+html .teacher-workspace .teacher-step-active .theme-muted { color: var(--teacher-body) !important; }
+html[data-theme='light'] .teacher-workspace .teacher-step-number { background: #f1f5f9; color: #334155; }
+html[data-theme='light'] .teacher-workspace .teacher-step-active .teacher-step-number { background: #4f46e5; color: #fff; }
+
+html .teacher-workspace :is(.theme-accent-surface, .teacher-card-active) .theme-muted { color: var(--teacher-body) !important; }
+.teacher-workspace button { min-width: 44px; }
+@media (forced-colors: active) {
+    .teacher-workspace :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline-color: Highlight !important;
     }
 }
