@@ -169,9 +169,8 @@ class Phase3CAssessmentRefinementTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('instructor.quizzes.show', $quiz))
             ->assertOk()
-            ->assertSee('Assessment Quality Gate')
-            ->assertSee('1 perlu review guru')
-            ->assertSee('AI Inferred')
+            ->assertSee('Review & Verifikasi Soal', false)
+            ->assertSee('1 soal masih perlu diverifikasi guru.')
             ->assertSee('Kunci hasil inferensi AI')
             ->assertSee('Source: Slide 1');
     }
