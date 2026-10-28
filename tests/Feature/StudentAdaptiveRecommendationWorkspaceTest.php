@@ -131,11 +131,11 @@ class StudentAdaptiveRecommendationWorkspaceTest extends TestCase
             ->assertDontSee('fuzzy-v2@2.0.0-experimental');
     }
 
-    public function test_non_student_cannot_open_student_recommendation_workspace(): void
+    public function test_non_student_is_redirected_to_their_own_dashboard(): void
     {
         $this->actingAs($this->instructor)
             ->get(route('student.adaptive-recommendations.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('instructor.dashboard'));
     }
 
     private function course(string $title): Course
