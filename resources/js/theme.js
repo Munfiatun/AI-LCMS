@@ -99,9 +99,44 @@ function enhanceEducationMotion() {
     }
 }
 
+async function enhanceSidebarAvatar() {
+    const userCard = document.querySelector('aside nav')?.previousElementSibling;
+    const avatarBox = userCard?.querySelector('div');
+    if (!avatarBox || avatarBox.dataset.profileAvatar === 'true') {
+        return;
+    }
+
+    avatarBox.dataset.profileAvatar = 'true';
+
+    try {
+        const response = await fetch('/profile/avatar', {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        if (!data.avatar_url) {
+            return;
+        }
+
+        const image = document.createElement('img');
+        image.src = data.avatar_url;
+        image.alt = `Foto profil ${data.name || ''}`.trim();
+        image.className = 'h-full w-full rounded-xl object-cover';
+        avatarBox.replaceChildren(image);
+    } catch {
+        // Keep the initials fallback when the avatar endpoint is unavailable.
+    }
+}
+
 export function enhanceThemeExperience() {
     createHeaderControls();
     bindProfileThemeChoices();
     enhanceEducationMotion();
+    enhanceSidebarAvatar();
     updateThemeControls(document.documentElement.dataset.theme || storedTheme());
 }
