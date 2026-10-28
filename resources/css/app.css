@@ -75,7 +75,7 @@
     }
 }
 
-/* Theme layer: keep the existing dark UI as the default and remap only neutral surfaces in light mode. */
+/* Theme layer: dark remains the default. Light mode remaps neutral and public surfaces consistently. */
 html[data-theme='light'] {
     background: #f8fafc;
     color: #0f172a;
@@ -128,16 +128,73 @@ html[data-theme='light'] :where([class~='bg-slate-700'], [class~='bg-slate-700/8
     background-color: #e2e8f0 !important;
 }
 
-/* In light mode, inactive sidebar hover states use a soft lavender instead of dark slate. */
-html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-800']:hover,
-html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-700']:hover {
+/* Public dark gradients receive a light lavender/blue counterpart. */
+html[data-theme='light'] [class~='from-indigo-950'] {
+    --tw-gradient-from: #eef2ff var(--tw-gradient-from-position) !important;
+}
+
+html[data-theme='light'] [class~='via-slate-950'] {
+    --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
+}
+
+html[data-theme='light'] [class~='to-violet-950'] {
+    --tw-gradient-to: #f5f3ff var(--tw-gradient-to-position) !important;
+}
+
+html[data-theme='light'] [class~='from-indigo-900/60'] {
+    --tw-gradient-from: rgb(224 231 255 / 0.92) var(--tw-gradient-from-position) !important;
+}
+
+html[data-theme='light'] [class~='to-violet-900/40'] {
+    --tw-gradient-to: rgb(237 233 254 / 0.9) var(--tw-gradient-to-position) !important;
+}
+
+html[data-theme='light'] [class~='from-slate-900'] {
+    --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+}
+
+html[data-theme='light'] [class~='to-slate-900'] {
+    --tw-gradient-to: #ffffff var(--tw-gradient-to-position) !important;
+}
+
+/* Preserve readable white text on intentional colored controls and gradient avatars/buttons. */
+html[data-theme='light'] [class~='text-white'][class*='from-indigo-'],
+html[data-theme='light'] [class~='text-white'][class*='from-violet-'],
+html[data-theme='light'] [class~='text-white'][class*='from-purple-'],
+html[data-theme='light'] [class~='text-white'][class*='from-emerald-'],
+html[data-theme='light'] [class~='text-white'][class*='from-cyan-'],
+html[data-theme='light'] [class~='text-white'][class*='from-teal-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-indigo-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-violet-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-purple-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-emerald-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-cyan-'],
+html[data-theme='light'] [class~='text-white'][class*='bg-teal-'] {
+    color: #ffffff !important;
+}
+
+/* Light mode hover surfaces must stay light instead of flashing dark slate. */
+html[data-theme='light'] :where(a, button)[class*='hover:bg-slate-950']:hover,
+html[data-theme='light'] :where(a, button)[class*='hover:bg-slate-900']:hover,
+html[data-theme='light'] :where(a, button)[class*='hover:bg-slate-800']:hover,
+html[data-theme='light'] :where(a, button)[class*='hover:bg-slate-700']:hover {
     background-color: #ede9fe !important;
     color: #5b21b6 !important;
 }
 
-html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-800']:hover svg,
-html[data-theme='light'] aside :where(a, button)[class*='hover:bg-slate-700']:hover svg {
-    color: #6d28d9 !important;
+html[data-theme='light'] .group:hover [class*='group-hover:bg-slate-900'],
+html[data-theme='light'] .group:hover [class*='group-hover:bg-slate-950'] {
+    background-color: #f5f3ff !important;
+}
+
+html[data-theme='light'] :where(a, button)[class*='hover:text-white']:hover {
+    color: #4c1d95 !important;
+}
+
+html[data-theme='light'] :where(a, button)[class*='hover:text-white'][class*='bg-indigo-']:hover,
+html[data-theme='light'] :where(a, button)[class*='hover:text-white'][class*='from-indigo-']:hover,
+html[data-theme='light'] :where(a, button)[class*='hover:text-white'][class*='from-emerald-']:hover {
+    color: #ffffff !important;
 }
 
 html[data-theme='light'] :where(
@@ -158,21 +215,42 @@ html[data-theme='light'] [class~='text-slate-400'] { color: #475569 !important; 
 html[data-theme='light'] [class~='text-slate-500'] { color: #64748b !important; }
 html[data-theme='light'] [class~='text-slate-600'] { color: #64748b !important; }
 
-html[data-theme='light'] [class~='text-white']:not([class*='bg-indigo-']):not([class*='bg-emerald-']):not([class*='bg-cyan-']):not([class*='bg-amber-']):not([class*='bg-rose-']):not([class*='bg-violet-']) {
+html[data-theme='light'] [class~='text-white']:not([class*='bg-indigo-']):not([class*='bg-emerald-']):not([class*='bg-cyan-']):not([class*='bg-amber-']):not([class*='bg-rose-']):not([class*='bg-violet-']):not([class*='from-indigo-']):not([class*='from-violet-']):not([class*='from-purple-']):not([class*='from-emerald-']):not([class*='from-cyan-']):not([class*='from-teal-']) {
     color: #0f172a !important;
 }
 
 html[data-theme='light'] [class~='text-indigo-300'] { color: #4338ca !important; }
+html[data-theme='light'] [class~='text-indigo-400'] { color: #4f46e5 !important; }
 html[data-theme='light'] [class~='text-indigo-200'] { color: #4f46e5 !important; }
 html[data-theme='light'] [class~='text-emerald-300'] { color: #047857 !important; }
+html[data-theme='light'] [class~='text-emerald-400'] { color: #059669 !important; }
 html[data-theme='light'] [class~='text-cyan-300'] { color: #0e7490 !important; }
+html[data-theme='light'] [class~='text-cyan-400'] { color: #0891b2 !important; }
 html[data-theme='light'] [class~='text-amber-300'] { color: #b45309 !important; }
 html[data-theme='light'] [class~='text-violet-300'] { color: #6d28d9 !important; }
+html[data-theme='light'] [class~='text-violet-400'] { color: #7c3aed !important; }
+html[data-theme='light'] [class~='text-purple-400'] { color: #7e22ce !important; }
 html[data-theme='light'] [class~='text-rose-300'] { color: #be123c !important; }
 
-html[data-theme='light'] :where([class~='from-slate-900'], [class~='to-slate-900']) {
-    --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
-    --tw-gradient-to: #ffffff var(--tw-gradient-to-position) !important;
+/* Brand and status components need explicit light-theme treatments. */
+html[data-theme='light'] .guest-brand-text {
+    background-image: linear-gradient(90deg, #312e81, #4f46e5, #0891b2) !important;
+}
+
+html[data-theme='light'] .theme-guest-header {
+    background-color: rgb(255 255 255 / 0.92) !important;
+}
+
+html[data-theme='light'] .theme-guest-footer {
+    background-color: #f8fafc !important;
+}
+
+html[data-theme='light'] [class~='bg-emerald-950/60'] {
+    background-color: #ecfdf5 !important;
+}
+
+html[data-theme='light'] [class~='border-emerald-800/40'] {
+    border-color: #a7f3d0 !important;
 }
 
 html[data-theme='light'] .ui-field {
