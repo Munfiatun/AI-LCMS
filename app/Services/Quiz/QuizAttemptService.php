@@ -8,6 +8,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuizAttemptOption;
 use App\Models\QuizAttemptQuestion;
 use App\Models\User;
+use App\Services\Learning\Adaptive\AdaptiveReadaptationService;
 use App\Services\Learning\ConceptMasteryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +17,8 @@ use Illuminate\Validation\ValidationException;
 class QuizAttemptService
 {
     public function __construct(
-        private ConceptMasteryService $conceptMasteryService
+        private ConceptMasteryService $conceptMasteryService,
+        private AdaptiveReadaptationService $adaptiveReadaptation,
     ) {}
 
     public function startAttempt(Quiz $quiz, User $student): QuizAttempt
@@ -196,11 +198,12 @@ class QuizAttemptService
 
             $attempt->save();
 
-            return $attempt->fresh(['quiz.course', 'answers.question.learningConcepts']);
+            return $attempt->fresh(['quiz.course', 'student', 'answers.question.learningConcepts']);
         });
 
         if ($attempt->quiz?->contributesToLearnerMastery()) {
-            $this->conceptMasteryService->updateFromAttempt($attempt);
+            $updatedMasteries = $this->conceptMasteryService->updateFromAttempt($attempt);
+            $this->adaptiveReadaptation->afterMasteryUpdate($attempt, $updatedMasteries);
         }
 
         return $attempt->fresh();
