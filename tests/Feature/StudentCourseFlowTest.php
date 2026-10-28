@@ -52,7 +52,7 @@ class StudentCourseFlowTest extends TestCase
             $this->get(route('student.materials.show', [$course, $material]))->assertOk()->assertSee($material->title)
                 ->assertSee(route('student.materials.show', [$course, $materials[1]]))
                 ->assertSee(route('student.materials.show', [$course, $materials[2]]))
-                ->assertSee(route('courses.show', $course->slug))->assertSee('Tandai Selesai');
+                ->assertSee(route('student.courses.progress', $course))->assertSee('Tandai Selesai');
         }
         $this->get(route('student.slidebooks.show', $slidebook))->assertOk();
         $url = route('student.materials.show', [$course, $materials[1]]);
