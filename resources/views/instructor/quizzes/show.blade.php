@@ -81,7 +81,7 @@
             <div class="flex items-start gap-3">
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $reviewStats['pending'] === 0 && $quiz->quizQuestions->count() > 0 ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950' }} text-sm font-extrabold">2</div>
                 <div>
-                    <h2 class="text-lg font-extrabold text-white">Review</h2>
+                    <h2 class="text-lg font-extrabold text-white">Review & Verifikasi Soal</h2>
                     <p class="mt-1 text-sm leading-6 text-slate-500">{{ $reviewStats['pending'] > 0 ? $reviewStats['pending'].' soal masih perlu diverifikasi guru.' : ($quiz->quizQuestions->count() > 0 ? 'Semua soal sudah terverifikasi.' : 'Pilih soal terlebih dahulu.') }}</p>
                 </div>
             </div>
