@@ -50,6 +50,22 @@ function updateThemeControls(theme) {
     });
 }
 
+function toggleTheme() {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    updateThemeControls(applyTheme(next));
+}
+
+function bindThemeToggles() {
+    document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+        if (button.dataset.themeBound === 'true') {
+            return;
+        }
+
+        button.dataset.themeBound = 'true';
+        button.addEventListener('click', toggleTheme);
+    });
+}
+
 function createHeaderControls() {
     const header = document.querySelector('header');
     if (!header || header.querySelector('[data-theme-toggle]')) {
@@ -68,10 +84,6 @@ function createHeaderControls() {
     themeButton.type = 'button';
     themeButton.dataset.themeToggle = 'true';
     themeButton.className = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700';
-    themeButton.addEventListener('click', () => {
-        const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-        updateThemeControls(applyTheme(next));
-    });
 
     const profileLink = document.createElement('a');
     profileLink.href = '/profile';
@@ -99,44 +111,10 @@ function enhanceEducationMotion() {
     }
 }
 
-async function enhanceSidebarAvatar() {
-    const userCard = document.querySelector('aside nav')?.previousElementSibling;
-    const avatarBox = userCard?.querySelector('div');
-    if (!avatarBox || avatarBox.dataset.profileAvatar === 'true') {
-        return;
-    }
-
-    avatarBox.dataset.profileAvatar = 'true';
-
-    try {
-        const response = await fetch('/profile/avatar', {
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-            return;
-        }
-
-        const data = await response.json();
-        if (!data.avatar_url) {
-            return;
-        }
-
-        const image = document.createElement('img');
-        image.src = data.avatar_url;
-        image.alt = `Foto profil ${data.name || ''}`.trim();
-        image.className = 'h-full w-full rounded-xl object-cover';
-        avatarBox.replaceChildren(image);
-    } catch {
-        // Keep the initials fallback when the avatar endpoint is unavailable.
-    }
-}
-
 export function enhanceThemeExperience() {
     createHeaderControls();
+    bindThemeToggles();
     bindProfileThemeChoices();
     enhanceEducationMotion();
-    enhanceSidebarAvatar();
     updateThemeControls(document.documentElement.dataset.theme || storedTheme());
 }
