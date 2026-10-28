@@ -59,6 +59,16 @@ class Quiz extends Model
         return $this->assessment_type === self::ASSESSMENT_DIAGNOSTIC;
     }
 
+    public function isFormative(): bool
+    {
+        return $this->assessment_type === self::ASSESSMENT_FORMATIVE;
+    }
+
+    public function contributesToLearnerMastery(): bool
+    {
+        return $this->isDiagnostic() || $this->isFormative();
+    }
+
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
