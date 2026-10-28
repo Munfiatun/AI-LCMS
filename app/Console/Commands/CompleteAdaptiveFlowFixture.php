@@ -15,7 +15,6 @@ use App\Services\Learning\Adaptive\AdaptiveLearningResourceResolver;
 use App\Services\Quiz\QuizAttemptService;
 use App\Services\Quiz\QuizService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use RuntimeException;
 
 class CompleteAdaptiveFlowFixture extends Command
@@ -149,7 +148,7 @@ class CompleteAdaptiveFlowFixture extends Command
             'randomize_questions' => false,
             'randomize_options' => false,
             'max_attempts' => 1,
-            'assessment_type' => Quiz::ASSESSMENT_FORMATATIVE ?? Quiz::ASSESSMENT_FORMATIVE,
+            'assessment_type' => Quiz::ASSESSMENT_FORMATIVE,
         ]);
 
         $quizService->syncQuestions(
