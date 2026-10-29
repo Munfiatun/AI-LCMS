@@ -24,10 +24,25 @@ class AIQuestionAuthoringService
     public function __construct(private AIContentService $aiContentService) {}
 
     /**
-     * Generate a prompt-based multiple-choice question draft without persisting questions.
+     * Generate a multiple-choice question draft without persisting questions.
      *
-     * @param  array{topic:string,total_questions:int,difficulty:string,instructions?:string|null,source_material_id?:int|null}  $settings
-     * @return array{questions:list<array<string,mixed>>,provider:string,model:string,source_material:?array{id:int,title:string}}
+     * @param  array{
+     *     topic:string,
+     *     total_questions:int,
+     *     difficulty:string,
+     *     instructions?:string|null,
+     *     source_material_id?:int|null,
+     *     source_document_id?:int|null,
+     *     source_document_name?:string|null,
+     *     source_document_text?:string|null
+     * }  $settings
+     * @return array{
+     *     questions:list<array<string,mixed>>,
+     *     provider:string,
+     *     model:string,
+     *     source_material:?array{id:int,title:string},
+     *     source_document:?array{id:int,name:string}
+     * }
      */
     public function generateDraft(QuestionBank $bank, array $settings, bool $forceRegenerate = false): array
     {
@@ -37,7 +52,18 @@ class AIQuestionAuthoringService
             'difficulty' => ['required', 'in:easy,medium,hard,mixed'],
             'instructions' => ['nullable', 'string', 'max:2000'],
             'source_material_id' => ['nullable', 'integer', 'min:1'],
+            'source_document_id' => ['nullable', 'integer', 'min:1'],
+            'source_document_name' => ['nullable', 'string', 'max:255'],
+            'source_document_text' => ['nullable', 'string', 'max:'.self::MAX_SOURCE_CONTEXT_CHARS],
         ])->validate();
+
+        $hasMaterialSource = ! empty($settings['source_material_id']);
+        $hasDocumentSource = ! empty($settings['source_document_id']) || trim((string) ($settings['source_document_text'] ?? '')) !== '';
+        if ($hasMaterialSource && $hasDocumentSource) {
+            throw ValidationException::withMessages([
+                'source' => 'Pilih satu sumber grounding saja: materi dalam sistem atau dokumen PDF/Word.',
+            ]);
+        }
 
         $questionCount = (int) $settings['total_questions'];
         $difficultyRule = match ($settings['difficulty']) {
@@ -48,15 +74,35 @@ class AIQuestionAuthoringService
         };
 
         $sourceMaterial = $this->resolveSourceMaterial($bank, $settings['source_material_id'] ?? null);
-        $sourceContext = $sourceMaterial ? $this->buildSourceMaterialContext($sourceMaterial) : null;
+        $sourceContext = null;
+        $sourceLabel = null;
+
+        if ($sourceMaterial) {
+            $sourceContext = $this->buildSourceMaterialContext($sourceMaterial);
+            $sourceLabel = 'Materi: '.$sourceMaterial->title;
+        } elseif ($hasDocumentSource) {
+            $documentText = trim((string) ($settings['source_document_text'] ?? ''));
+            if ($documentText === '') {
+                throw ValidationException::withMessages([
+                    'source_document' => 'Dokumen sumber belum menghasilkan teks yang dapat digunakan AI.',
+                ]);
+            }
+
+            $sourceContext = [
+                'id' => (int) ($settings['source_document_id'] ?? 0),
+                'title' => trim((string) ($settings['source_document_name'] ?? 'Dokumen sumber')) ?: 'Dokumen sumber',
+                'content' => $this->limitSourceContext($documentText),
+            ];
+            $sourceLabel = 'Dokumen: '.$sourceContext['title'];
+        }
 
         $courseContext = $bank->course?->title
             ? "Konteks kursus: {$bank->course->title}."
             : 'Bank soal bersifat global dan tidak terikat pada satu kursus.';
 
         $groundingRule = $sourceContext !== null
-            ? "Sumber materi dipilih guru: {$sourceMaterial->title}. Semua fakta, konsep, contoh, dan kunci jawaban WAJIB didukung oleh sumber materi yang diberikan pada user content. Jangan menambahkan konsep baru dari pengetahuan umum model. Prompt guru hanya boleh mengatur fokus, jumlah, tingkat kesulitan, atau bentuk soal. Jika sumber tidak cukup untuk variasi yang diminta, buat variasi pertanyaan dari informasi yang memang tersedia; jangan mengarang fakta tambahan."
-            : 'Tidak ada sumber materi khusus yang dipilih. Gunakan topik, instruksi guru, dan pengetahuan model secara hati-hati; guru tetap wajib mereview ketepatan konsep dan kunci.';
+            ? "Sumber grounding dipilih guru: {$sourceLabel}. Semua fakta, konsep, contoh, dan kunci jawaban WAJIB didukung oleh isi sumber pada user content. Jangan menambahkan konsep baru dari pengetahuan umum model. Prompt guru hanya boleh mengatur fokus, jumlah, tingkat kesulitan, atau bentuk soal. Jika sumber tidak cukup untuk variasi yang diminta, buat variasi pertanyaan dari informasi yang memang tersedia; jangan mengarang fakta tambahan."
+            : 'Tidak ada sumber grounding khusus yang dipilih. Gunakan topik, instruksi guru, dan pengetahuan model secara hati-hati; guru tetap wajib mereview ketepatan konsep dan kunci.';
 
         $systemPrompt = <<<PROMPT
 Anda adalah AI Authoring Assistant untuk guru SMK/SMA. Buat draft soal pilihan ganda yang siap direview guru.
@@ -73,7 +119,7 @@ Aturan wajib:
 9. Distraktor harus masuk akal, homogen, dan tidak memberi petunjuk ke jawaban benar.
 10. Hindari "semua jawaban di atas" dan "tidak ada jawaban di atas".
 11. Hindari pertanyaan ambigu atau lebih dari satu jawaban yang dapat dibenarkan.
-12. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar berdasarkan informasi yang tersedia pada soal dan, jika dipilih, sumber materi.
+12. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar berdasarkan informasi yang tersedia pada soal dan, jika dipilih, sumber grounding.
 13. points gunakan 10 untuk setiap soal.
 14. topic harus ringkas, maksimal sekitar 100 karakter.
 15. Sebelum mengembalikan JSON, periksa setiap soal dengan pertanyaan: "Apakah siswa dapat menjawab soal ini hanya dari question_text dan opsi yang tersedia?" Jika tidak, lengkapi atau tulis ulang soal tersebut.
@@ -133,7 +179,7 @@ PROMPT;
             'jumlah_soal' => $questionCount,
             'kesulitan' => $settings['difficulty'],
             'instruksi_guru' => trim((string) ($settings['instructions'] ?? '')),
-            'sumber_materi' => $sourceContext,
+            'sumber_grounding' => $sourceContext,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 
         $output = $this->aiContentService->process(
@@ -159,6 +205,10 @@ PROMPT;
             'source_material' => $sourceMaterial ? [
                 'id' => (int) $sourceMaterial->getKey(),
                 'title' => (string) $sourceMaterial->title,
+            ] : null,
+            'source_document' => $hasDocumentSource ? [
+                'id' => (int) ($settings['source_document_id'] ?? 0),
+                'name' => (string) ($settings['source_document_name'] ?? 'Dokumen sumber'),
             ] : null,
         ];
     }
@@ -259,16 +309,22 @@ PROMPT;
             ]);
         }
 
-        if (mb_strlen($combined) > self::MAX_SOURCE_CONTEXT_CHARS) {
-            $combined = mb_substr($combined, 0, self::MAX_SOURCE_CONTEXT_CHARS)
-                ."\n\n[Konten sumber dipotong oleh sistem karena melebihi batas konteks.]";
-        }
-
         return [
             'id' => (int) $material->getKey(),
             'title' => (string) $material->title,
-            'content' => $combined,
+            'content' => $this->limitSourceContext($combined),
         ];
+    }
+
+    private function limitSourceContext(string $content): string
+    {
+        $content = trim($content);
+        if (mb_strlen($content) <= self::MAX_SOURCE_CONTEXT_CHARS) {
+            return $content;
+        }
+
+        return mb_substr($content, 0, self::MAX_SOURCE_CONTEXT_CHARS)
+            ."\n\n[Konten sumber dipotong oleh sistem karena melebihi batas konteks.]";
     }
 
     private function htmlToPlainText(string $html): string
