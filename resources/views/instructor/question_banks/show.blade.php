@@ -29,7 +29,7 @@
                     <span class="rounded-full border px-3 py-1 text-sm font-semibold {{ $questionBank->status === 'active' ? 'theme-success-border theme-success-surface theme-success-text' : 'theme-border theme-muted-surface theme-body' }}">{{ $questionBank->status === 'active' ? 'Aktif' : 'Arsip' }}</span>
                 </div>
                 <h1 class="teacher-page-title mt-3 text-2xl font-extrabold tracking-tight theme-heading sm:text-3xl">{{ $questionBank->title }}</h1>
-                <p class="mt-2 text-base leading-7 theme-body">{{ $questionBank->description ?? 'Tambahkan soal, review hasil ekstraksi, lalu gunakan bank ini untuk membuat formative atau kuis.' }}</p>
+                <p class="mt-2 text-base leading-7 theme-body">{{ $questionBank->description ?? 'Buat soal dengan AI atau tambahkan manual, review hasilnya, lalu gunakan bank ini untuk formative atau kuis.' }}</p>
 
                 <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm theme-body">
                     <span><strong class="theme-heading">{{ $questions->count() }}</strong> soal</span>
@@ -53,7 +53,7 @@
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl theme-accent-fill text-sm font-extrabold teacher-on-solid">1</div>
                 <div>
                     <h2 class="text-lg font-extrabold theme-heading">Tambah Soal</h2>
-                    <p class="mt-1 text-sm leading-6 theme-muted">Buat draft dari prompt AI, tambah manual, atau ekstrak banyak soal dari dokumen.</p>
+                    <p class="mt-1 text-sm leading-6 theme-muted">Gunakan AI untuk prompt, materi, atau PDF/Word. Untuk satu-dua soal, Anda juga bisa menambahkannya secara manual.</p>
                 </div>
             </div>
 
@@ -64,37 +64,9 @@
 
             <button type="button" @click="showAddModal = true" class="mt-3 w-full rounded-xl border theme-accent-border theme-accent-surface px-4 py-2.5 text-sm font-bold theme-accent-text transition theme-accent-surface-hover">+ Tambah Soal Manual</button>
 
-            <details class="mt-3 rounded-xl border teacher-card">
-                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold theme-body">Unggah dokumen & ekstrak AI</summary>
-                <div class="space-y-4 border-t theme-border p-4">
-                    <form action="{{ route('instructor.question-banks.upload-document', $questionBank) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
-                        @csrf
-                        <label class="block text-sm font-semibold theme-body">PDF / DOCX
-                            <input type="file" name="document" accept=".pdf,.doc,.docx" required class="mt-2 block w-full rounded-xl border theme-border theme-surface px-3 py-2 text-sm theme-body file:mr-3 file:rounded-lg file:border-0 theme-muted-surface-file file:px-3 file:py-1.5 file:text-xs file:font-semibold theme-heading-file">
-                        </label>
-                        <button type="submit" class="w-full rounded-xl border theme-accent-border theme-accent-surface px-4 py-2.5 text-sm font-bold theme-accent-text transition theme-accent-surface-hover">Unggah Dokumen</button>
-                    </form>
-
-                    @if($documents->count() > 0)
-                        <div class="space-y-2 border-t theme-border pt-4">
-                            <p class="text-sm font-semibold theme-muted">Dokumen yang dapat diekstrak</p>
-                            @foreach($documents as $doc)
-                                <div class="flex items-center justify-between gap-3 rounded-xl border teacher-card p-3">
-                                    <div class="min-w-0">
-                                        <p class="truncate text-sm font-semibold theme-body">{{ $doc->original_name }}</p>
-                                        <p class="mt-0.5 text-sm theme-muted">{{ number_format($doc->size / 1024, 1) }} KB</p>
-                                    </div>
-                                    <form action="{{ route('instructor.question-banks.extract', $questionBank) }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="document_id" value="{{ $doc->id }}">
-                                        <button type="submit" class="rounded-lg theme-accent-fill px-3 py-2 text-sm font-bold teacher-on-solid theme-accent-fill-hover">Ekstrak AI</button>
-                                    </form>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            </details>
+            <div class="mt-3 rounded-xl border theme-border theme-muted-surface p-3 text-sm leading-5 theme-muted">
+                PDF/DOCX sekarang diproses dari <strong class="theme-body">Buat Soal dengan AI → Sumber AI → PDF/Word</strong> agar alurnya lebih sederhana dan tetap melalui review guru.
+            </div>
         </article>
 
         <article class="rounded-3xl border teacher-step-card p-5">
@@ -226,7 +198,7 @@
             @empty
                 <div class="rounded-3xl border border-dashed teacher-card p-10 text-center">
                     <h3 class="text-lg font-bold theme-heading">Belum ada soal</h3>
-                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Mulai dengan prompt AI untuk membuat draft soal, atau gunakan cara manual dan unggah dokumen.</p>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Mulai dengan AI untuk membuat draft dari prompt, materi, atau PDF/Word. Anda juga bisa menambahkan soal secara manual.</p>
                     <div class="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <a href="{{ route('instructor.question-banks.ai-authoring.create', $questionBank) }}" class="rounded-xl theme-accent-fill px-5 py-2.5 text-sm font-extrabold teacher-on-solid theme-accent-fill-hover">✨ Buat Soal dengan AI</a>
                         <button type="button" @click="showAddModal = true" class="rounded-xl border theme-accent-border theme-accent-surface px-5 py-2.5 text-sm font-bold theme-accent-text theme-accent-surface-hover">+ Tambah Manual</button>
@@ -265,7 +237,7 @@
                             </select>
                         </label>
                         <label class="block text-sm font-semibold theme-body">Status
-                            <select name="status" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-2.5 text-sm theme-heading theme-focus-border">
+                            <select name="status" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-2.5 text-sm theme-heading">
                                 <option value="active" @selected(old('status', $questionBank->status) === 'active')>Aktif</option>
                                 <option value="archived" @selected(old('status', $questionBank->status) === 'archived')>Arsip</option>
                             </select>
