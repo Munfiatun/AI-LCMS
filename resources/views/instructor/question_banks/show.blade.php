@@ -53,11 +53,16 @@
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl theme-accent-fill text-sm font-extrabold teacher-on-solid">1</div>
                 <div>
                     <h2 class="text-lg font-extrabold theme-heading">Tambah Soal</h2>
-                    <p class="mt-1 text-sm leading-6 theme-muted">Pilih cara yang paling nyaman. Manual untuk satu-dua soal, dokumen untuk jumlah banyak.</p>
+                    <p class="mt-1 text-sm leading-6 theme-muted">Buat draft dari prompt AI, tambah manual, atau ekstrak banyak soal dari dokumen.</p>
                 </div>
             </div>
 
-            <button type="button" @click="showAddModal = true" class="mt-5 w-full rounded-xl theme-accent-fill px-4 py-2.5 text-sm font-bold teacher-on-solid transition theme-accent-fill-hover">+ Tambah Soal Manual</button>
+            <a href="{{ route('instructor.question-banks.ai-authoring.create', $questionBank) }}" class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl theme-accent-fill px-4 py-2.5 text-sm font-extrabold teacher-on-solid transition theme-accent-fill-hover">
+                <span aria-hidden="true">✨</span>
+                <span>Buat Soal dengan AI</span>
+            </a>
+
+            <button type="button" @click="showAddModal = true" class="mt-3 w-full rounded-xl border theme-accent-border theme-accent-surface px-4 py-2.5 text-sm font-bold theme-accent-text transition theme-accent-surface-hover">+ Tambah Soal Manual</button>
 
             <details class="mt-3 rounded-xl border teacher-card">
                 <summary class="cursor-pointer px-4 py-3 text-sm font-semibold theme-body">Unggah dokumen & ekstrak AI</summary>
@@ -221,8 +226,11 @@
             @empty
                 <div class="rounded-3xl border border-dashed teacher-card p-10 text-center">
                     <h3 class="text-lg font-bold theme-heading">Belum ada soal</h3>
-                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Gunakan tombol Tambah Soal Manual atau unggah dokumen pada langkah pertama.</p>
-                    <button type="button" @click="showAddModal = true" class="mt-5 rounded-xl theme-accent-fill px-5 py-2.5 text-sm font-bold teacher-on-solid theme-accent-fill-hover">+ Tambah Soal</button>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 theme-muted">Mulai dengan prompt AI untuk membuat draft soal, atau gunakan cara manual dan unggah dokumen.</p>
+                    <div class="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                        <a href="{{ route('instructor.question-banks.ai-authoring.create', $questionBank) }}" class="rounded-xl theme-accent-fill px-5 py-2.5 text-sm font-extrabold teacher-on-solid theme-accent-fill-hover">✨ Buat Soal dengan AI</a>
+                        <button type="button" @click="showAddModal = true" class="rounded-xl border theme-accent-border theme-accent-surface px-5 py-2.5 text-sm font-bold theme-accent-text theme-accent-surface-hover">+ Tambah Manual</button>
+                    </div>
                 </div>
             @endforelse
         </div>
