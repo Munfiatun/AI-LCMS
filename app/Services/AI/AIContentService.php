@@ -20,7 +20,7 @@ use Throwable;
 class AIContentService
 {
     /**
-     * Resolve the active AI provider instance based on configuration.
+     * Resolve an AI provider instance by name.
      */
     public function getProvider(?string $providerName = null): AIProviderInterface
     {
@@ -37,7 +37,7 @@ class AIContentService
 
     /**
      * Process content with AI, enforcing idempotency tracking, audit logging,
-     * bounded transient retry, and source fidelity.
+     * bounded transient retry, provider fallback, and source fidelity.
      *
      * @param  array<string, mixed>  $schemaDefinition
      * @return array{
@@ -56,12 +56,79 @@ class AIContentService
         ?int $maxOutputTokens = null,
         bool $forceRegenerate = false
     ): array {
-        $provider = $this->getProvider($providerOverride);
+        $providerNames = $this->providerChain($providerOverride);
+        $lastProviderFailure = null;
+
+        foreach ($providerNames as $index => $providerName) {
+            try {
+                $provider = $this->getProvider($providerName);
+
+                return $this->processWithProvider(
+                    processType: $processType,
+                    sourceModel: $sourceModel,
+                    systemPrompt: $systemPrompt,
+                    userContent: $userContent,
+                    schemaDefinition: $schemaDefinition,
+                    provider: $provider,
+                    maxOutputTokens: $maxOutputTokens,
+                    forceRegenerate: $forceRegenerate,
+                );
+            } catch (ConnectionException|AIProviderException $exception) {
+                $lastProviderFailure = $exception;
+                $hasFallback = $index < count($providerNames) - 1;
+
+                if ($hasFallback) {
+                    Log::warning('AI provider exhausted; switching to configured fallback', [
+                        'process_type' => $processType,
+                        'failed_provider' => $providerName,
+                        'fallback_provider' => $providerNames[$index + 1],
+                        'exception_type' => $exception::class,
+                    ]);
+
+                    continue;
+                }
+
+                break;
+            } catch (Throwable $exception) {
+                // Unknown application/runtime errors must not trigger a paid fallback
+                // because they may represent a deterministic bug rather than provider
+                // availability. Keep the external error message safe.
+                Log::error('AI processing failed outside provider recovery boundary', [
+                    'process_type' => $processType,
+                    'provider' => $providerName,
+                    'exception_type' => $exception::class,
+                ]);
+
+                throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+            }
+        }
+
+        if ($lastProviderFailure instanceof ConnectionException) {
+            throw new ConnectionException('Proses AI gagal. Silakan coba kembali.');
+        }
+
+        throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $schemaDefinition
+     * @return array{log:AIProcessingLog,result:AIProcessingResult,parsed_data:array<string,mixed>}
+     */
+    private function processWithProvider(
+        string $processType,
+        Model $sourceModel,
+        string $systemPrompt,
+        string $userContent,
+        array $schemaDefinition,
+        AIProviderInterface $provider,
+        ?int $maxOutputTokens,
+        bool $forceRegenerate,
+    ): array {
         $promptVersion = (string) config('ai.prompt_version', 'v1.0');
 
-        // Cache identity must represent the full generation contract, not only the
-        // teacher's user prompt. Otherwise an older completed result can be reused
-        // after the system prompt, JSON schema, provider, or model changes.
+        // Cache identity represents the complete generation contract, including
+        // the provider/model. A fallback provider therefore has its own cache and
+        // audit trail rather than impersonating the primary provider.
         $schemaJson = json_encode(
             $schemaDefinition,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
@@ -139,7 +206,7 @@ class AIContentService
                 $retryable = $this->isRetryable($exception);
 
                 if ($retryable && $attempt < $maxAttempts) {
-                    Log::warning('AI provider transient failure; retrying', [
+                    Log::warning('AI provider transient failure; retrying same provider', [
                         'processing_log_id' => $log->id,
                         'provider' => $provider->getProviderName(),
                         'attempt' => $attempt,
@@ -156,29 +223,62 @@ class AIContentService
                     'status' => AIProcessingLog::STATUS_FAILED,
                     'error_code' => $this->safeErrorCode($exception),
                     'error_message' => $retryable && $maxAttempts > 1
-                        ? 'Proses AI gagal setelah percobaan ulang. Silakan coba kembali.'
-                        : 'Proses AI gagal. Silakan coba kembali.',
+                        ? 'Proses AI gagal setelah percobaan ulang. Sistem dapat mencoba provider cadangan bila dikonfigurasi.'
+                        : 'Proses AI gagal pada provider ini. Sistem dapat mencoba provider cadangan bila dikonfigurasi.',
                     'processing_completed_at' => now(),
                 ]);
 
-                // Keep final failure logs intentionally minimal. Recovery metadata is
-                // recorded in the processing log, while private provider context and
-                // exception messages must never be copied into security-facing logs.
                 Log::error('AI provider processing failed', [
                     'exception_type' => $exception::class,
                     'processing_log_id' => $log->id,
+                    'provider' => $provider->getProviderName(),
                 ]);
 
-                if ($exception instanceof ConnectionException) {
-                    throw new ConnectionException('Proses AI gagal. Silakan coba kembali.');
+                // Preserve only provider/network failures for the fallback
+                // orchestrator. Unknown deterministic bugs are handled safely by
+                // the outer process() boundary and never fan out to another API.
+                if ($exception instanceof ConnectionException || $exception instanceof AIProviderException) {
+                    throw $exception;
                 }
 
                 throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
             }
         }
 
-        // Defensive fallback; every path in the loop either returns or throws.
         throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+    }
+
+    /** @return list<string> */
+    private function providerChain(?string $providerOverride): array
+    {
+        $primary = $providerOverride ?? (string) config('ai.provider', 'mock');
+
+        // Explicit provider overrides are used by tests/research controls and must
+        // remain deterministic. Mock also never fans out to a paid provider.
+        if ($providerOverride !== null || $primary === 'mock' || ! (bool) config('ai.reliability.fallback_enabled', false)) {
+            return [$primary];
+        }
+
+        $fallbacks = config('ai.reliability.fallback_providers', []);
+        if (is_string($fallbacks)) {
+            $fallbacks = array_map('trim', explode(',', $fallbacks));
+        }
+
+        $supportedRealProviders = ['groq', 'gemini', 'openai'];
+        $chain = [$primary];
+
+        foreach ((array) $fallbacks as $provider) {
+            $provider = trim((string) $provider);
+            if ($provider === '' || $provider === 'mock' || ! in_array($provider, $supportedRealProviders, true)) {
+                continue;
+            }
+
+            if (! in_array($provider, $chain, true)) {
+                $chain[] = $provider;
+            }
+        }
+
+        return $chain;
     }
 
     private function isRetryable(Throwable $exception): bool
