@@ -58,7 +58,24 @@ class AIContentService
     ): array {
         $provider = $this->getProvider($providerOverride);
         $promptVersion = (string) config('ai.prompt_version', 'v1.0');
-        $inputHash = hash('sha256', $promptVersion.':'.$userContent);
+
+        // Cache identity must represent the full generation contract, not only the
+        // teacher's user prompt. Otherwise an older completed result can be reused
+        // after the system prompt, JSON schema, provider, or model changes.
+        $schemaJson = json_encode(
+            $schemaDefinition,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+        $inputHash = hash('sha256', implode("\n---\n", [
+            $promptVersion,
+            $processType,
+            $provider->getProviderName(),
+            $provider->getModelName(),
+            $systemPrompt,
+            $userContent,
+            $schemaJson,
+            (string) ($maxOutputTokens ?? ''),
+        ]));
 
         $existingLog = AIProcessingLog::where('input_hash', $inputHash)
             ->where('prompt_version', $promptVersion)
