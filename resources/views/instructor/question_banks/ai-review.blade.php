@@ -7,6 +7,7 @@
     $settings = $draft['settings'] ?? [];
     $sourceMaterial = $draft['source_material'] ?? null;
     $sourceDocument = $draft['source_document'] ?? null;
+    $revisionCount = (int) ($draft['revision_count'] ?? 0);
 @endphp
 
 @section('content')
@@ -28,11 +29,14 @@
                 <a href="{{ route('instructor.question-banks.ai-authoring.create', $questionBank) }}" class="text-sm font-semibold theme-muted transition theme-accent-text-hover">← Ubah Prompt</a>
                 <p class="mt-4 text-sm font-semibold theme-accent-text">AI Draft · Belum tersimpan</p>
                 <h1 class="teacher-page-title mt-1 text-2xl font-extrabold tracking-tight theme-heading sm:text-3xl">Review Draft Soal AI</h1>
-                <p class="mt-2 text-base leading-7 theme-body">Periksa pertanyaan, opsi, kunci, dan pembahasan. Saat Anda menekan simpan, draft dianggap telah direview guru dan baru dimasukkan ke bank soal.</p>
+                <p class="mt-2 text-base leading-7 theme-body">Periksa pertanyaan, opsi, kunci, dan pembahasan. Anda dapat mengedit manual atau meminta AI merevisi draft sebelum menyimpannya.</p>
             </div>
             <div class="rounded-2xl border teacher-card px-4 py-3 text-sm">
                 <p class="font-semibold theme-heading">{{ count($questions) }} soal</p>
                 <p class="mt-1 theme-muted">{{ strtoupper($draft['provider'] ?? 'AI') }}{{ !empty($draft['model']) ? ' · '.$draft['model'] : '' }}</p>
+                @if($revisionCount > 0)
+                    <p class="mt-1 font-semibold theme-accent-text">{{ $revisionCount }}× revisi AI</p>
+                @endif
             </div>
         </div>
     </section>
@@ -51,6 +55,9 @@
                 @endif
                 @if(!empty($settings['instructions']))
                     <p class="mt-1 text-sm leading-6 theme-muted">{{ $settings['instructions'] }}</p>
+                @endif
+                @if(!empty($draft['last_revision']))
+                    <p class="mt-2 text-sm leading-6 theme-accent-text"><strong>Revisi terakhir:</strong> {{ $draft['last_revision'] }}</p>
                 @endif
             </div>
             <form action="{{ route('instructor.question-banks.ai-authoring.generate', $questionBank) }}" method="POST">
@@ -129,6 +136,16 @@
                 </div>
             </article>
         @endforeach
+
+        <section class="rounded-3xl border theme-accent-border theme-accent-surface p-5 sm:p-6">
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <label class="block text-sm font-semibold theme-accent-text">Minta AI Revisi Draft
+                    <textarea name="revision_instruction" rows="3" maxlength="1500" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-3 text-sm leading-6 theme-heading theme-focus-border" placeholder="Contoh: Buat Soal 2 lebih mudah, perbaiki distraktor Soal 4, dan pertahankan soal lainnya.">{{ old('revision_instruction') }}</textarea>
+                    <span class="mt-2 block text-sm font-normal leading-5 theme-muted">AI menerima versi draft yang sedang terlihat, termasuk edit manual Anda. Revisi tidak langsung disimpan ke Bank Soal.</span>
+                </label>
+                <button type="submit" formaction="{{ route('instructor.question-banks.ai-authoring.revise', $questionBank) }}" formmethod="POST" class="rounded-xl theme-accent-fill px-5 py-3 text-sm font-extrabold teacher-on-solid transition theme-accent-fill-hover">✨ Revisi dengan AI</button>
+            </div>
+        </section>
 
         <div class="sticky bottom-4 rounded-2xl border teacher-card p-4 shadow-2xl">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
