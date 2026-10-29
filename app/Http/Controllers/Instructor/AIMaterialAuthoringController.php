@@ -48,6 +48,16 @@ class AIMaterialAuthoringController extends Controller
                 $validated,
                 (bool) ($validated['force_regenerate'] ?? false),
             );
+        } catch (ValidationException $exception) {
+            report($exception);
+            $message = collect($exception->errors())->flatten()->first();
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'ai' => 'AI sudah menghasilkan draft, tetapi formatnya belum lolos pemeriksaan sistem.'
+                        .($message ? ' '.$message : ' Silakan generate ulang.'),
+                ]);
         } catch (Throwable $exception) {
             report($exception);
 
