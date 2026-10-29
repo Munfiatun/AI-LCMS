@@ -111,7 +111,7 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                <h3 class="text-sm font-semibold leading-6 text-slate-100">{{ $question->question_text }}</h3>
+                                <h3 class="whitespace-pre-wrap break-words text-sm font-semibold leading-6 text-slate-100">{{ $question->question_text }}</h3>
                                 <span class="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide {{ $answer?->is_correct ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/20 bg-rose-500/10 text-rose-300' }}">
                                     {{ $answer?->is_correct ? 'Benar' : 'Perlu Ditinjau' }}
                                 </span>
@@ -120,12 +120,12 @@
                             <div class="mt-4 grid gap-3 {{ $revealSolutions ? 'md:grid-cols-2' : '' }}">
                                 <div class="rounded-xl border border-slate-800 bg-slate-950/45 p-4">
                                     <p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Jawaban Anda</p>
-                                    <p class="mt-1 text-sm {{ $answer?->is_correct ? 'text-emerald-200' : 'text-slate-300' }}">{{ $selected?->option_text ?? 'Tidak dijawab' }}</p>
+                                    <p class="mt-1 whitespace-pre-wrap break-words text-sm {{ $answer?->is_correct ? 'text-emerald-200' : 'text-slate-300' }}">{{ $selected?->option_text ?? 'Tidak dijawab' }}</p>
                                 </div>
                                 @if($revealSolutions)
                                     <div class="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
                                         <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-400">Kunci Jawaban</p>
-                                        <p class="mt-1 text-sm text-emerald-100">{{ $correct?->option_text ?? '-' }}</p>
+                                        <p class="mt-1 whitespace-pre-wrap break-words text-sm text-emerald-100">{{ $correct?->option_text ?? '-' }}</p>
                                     </div>
                                 @endif
                             </div>
@@ -133,7 +133,7 @@
                             @if($revealSolutions && filled($question->explanation))
                                 <div class="mt-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
                                     <p class="text-[11px] font-bold uppercase tracking-wide text-indigo-300">Pembahasan</p>
-                                    <p class="mt-1 text-sm leading-6 text-slate-300">{{ $question->explanation }}</p>
+                                    <p class="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{{ $question->explanation }}</p>
                                 </div>
                             @elseif(! $revealSolutions && $question->source_slide_number)
                                 <div class="mt-3 rounded-xl border border-cyan-500/15 bg-cyan-500/[0.04] px-4 py-3 text-xs leading-5 text-cyan-100/90">
