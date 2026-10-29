@@ -15,6 +15,7 @@
                 <span>{{ $section->title }}</span>
             </div>
             <h1 class="teacher-page-title text-2xl font-extrabold theme-heading tracking-tight">Tambah Materi Baru</h1>
+            <p class="mt-2 text-sm leading-6 theme-body">Mulai manual atau gunakan AI untuk menyiapkan draft materi yang tetap direview guru sebelum disimpan.</p>
         </div>
     </div>
 
@@ -26,7 +27,20 @@
         </div>
     @endif
 
+    <a href="{{ route('instructor.materials.ai-authoring.create', $section) }}" class="flex items-center justify-between gap-4 rounded-2xl border theme-accent-border theme-accent-surface p-5 transition theme-accent-surface-hover">
+        <div>
+            <p class="text-sm font-bold theme-accent-text">✨ Buat dengan AI</p>
+            <p class="mt-1 text-sm leading-6 theme-body">Tulis topik dan instruksi, lalu review draft terstruktur sebelum menjadi materi.</p>
+        </div>
+        <span class="shrink-0 text-lg font-bold theme-accent-text">→</span>
+    </a>
+
     <div class="p-6 rounded-2xl theme-surface border theme-border shadow">
+        <div class="mb-5 border-b theme-border pb-4">
+            <p class="text-sm font-bold theme-heading">Atau tulis manual</p>
+            <p class="mt-1 text-sm theme-muted">Isi judul dan konten sendiri, lalu unggah dokumen jika diperlukan.</p>
+        </div>
+
         <form action="{{ route('instructor.materials.store', $section) }}" method="POST" class="space-y-5">
             @csrf
 
