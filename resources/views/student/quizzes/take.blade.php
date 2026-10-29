@@ -48,9 +48,7 @@
                         </div>
 
                         <div class="p-5 sm:p-6 lg:p-8">
-                            <div class="prose prose-invert max-w-none text-base leading-7 text-slate-100 sm:text-lg">
-                                {!! $attemptQuestion->question->question_text !!}
-                            </div>
+                            <div class="max-w-none whitespace-pre-wrap break-words font-sans text-base leading-7 text-slate-100 sm:text-lg">{{ $attemptQuestion->question->question_text }}</div>
 
                             <div class="mt-7 space-y-3">
                                 @foreach($attemptQuestion->attemptOptions as $attemptOption)
@@ -61,7 +59,7 @@
                                             value="{{ $attemptOption->option_id }}"
                                             x-model="answers[{{ $attemptQuestion->question_id }}]"
                                             class="mt-1 h-5 w-5 border-slate-600 bg-slate-950 text-indigo-600 focus:ring-indigo-500">
-                                        <span class="min-w-0 flex-1 text-sm leading-6 text-slate-200 sm:text-base">{!! $attemptOption->option->option_text !!}</span>
+                                        <span class="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-200 sm:text-base">{{ $attemptOption->option->option_text }}</span>
                                     </label>
                                 @endforeach
                             </div>
