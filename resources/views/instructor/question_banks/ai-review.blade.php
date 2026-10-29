@@ -66,7 +66,7 @@
                         <span class="flex h-9 w-9 items-center justify-center rounded-xl theme-accent-surface text-sm font-extrabold theme-accent-text">{{ $loop->iteration }}</span>
                         <div>
                             <h2 class="font-extrabold theme-heading">Soal {{ $loop->iteration }}</h2>
-                            <p class="text-sm theme-muted">Edit jika ada redaksi atau kunci yang belum tepat.</p>
+                            <p class="text-sm theme-muted">Edit jika ada redaksi, konteks, kode, atau kunci yang belum tepat.</p>
                         </div>
                     </div>
                     <span class="rounded-full border theme-warning-border theme-warning-surface px-3 py-1 text-sm font-semibold theme-warning-text">AI Draft</span>
@@ -74,7 +74,8 @@
 
                 <div class="space-y-5 p-5 sm:p-6">
                     <label class="block text-sm font-semibold theme-body">Pertanyaan
-                        <textarea name="questions[{{ $questionIndex }}][question_text]" rows="3" required maxlength="500" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-3 text-sm leading-6 theme-heading theme-focus-border">{{ $question['question_text'] ?? '' }}</textarea>
+                        <textarea name="questions[{{ $questionIndex }}][question_text]" rows="6" required maxlength="1200" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-3 text-sm leading-6 theme-heading theme-focus-border">{{ $question['question_text'] ?? '' }}</textarea>
+                        <span class="mt-1.5 block text-sm font-normal leading-5 theme-muted">Jika soal mengacu pada program, kode, tabel, atau kasus tertentu, objek tersebut harus tertulis lengkap di dalam pertanyaan.</span>
                     </label>
 
                     <fieldset>
