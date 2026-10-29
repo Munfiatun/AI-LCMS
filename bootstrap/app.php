@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function (): void {
             require base_path('routes/profile.php');
+            require base_path('routes/ai_authoring.php');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
