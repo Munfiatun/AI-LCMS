@@ -54,7 +54,8 @@ class AIQuestionAuthoringSourceMaterialTest extends TestCase
         $this->actingAs($this->instructor)
             ->get(route('instructor.question-banks.ai-authoring.create', $bank))
             ->assertOk()
-            ->assertSee('Sumber materi')
+            ->assertSee('Sumber AI')
+            ->assertSee('Materi sistem')
             ->assertSee($material->title)
             ->assertDontSee('Materi Kursus Lain');
     }
@@ -76,6 +77,7 @@ class AIQuestionAuthoringSourceMaterialTest extends TestCase
                 'total_questions' => 3,
                 'difficulty' => 'medium',
                 'instructions' => 'Buat soal penerapan berdasarkan materi sumber.',
+                'source_mode' => 'material',
                 'source_material_id' => $material->id,
             ]);
 
@@ -102,6 +104,7 @@ class AIQuestionAuthoringSourceMaterialTest extends TestCase
                 'topic' => 'Percabangan Java',
                 'total_questions' => 3,
                 'difficulty' => 'medium',
+                'source_mode' => 'material',
                 'source_material_id' => $otherMaterial->id,
             ]);
 
