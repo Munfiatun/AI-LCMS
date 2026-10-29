@@ -19,7 +19,7 @@ class GeminiProvider implements AIProviderInterface
     public function __construct()
     {
         $this->apiKey = (string) config('ai.providers.gemini.api_key');
-        $this->model = (string) config('ai.providers.gemini.model', 'gemini-1.5-flash');
+        $this->model = (string) config('ai.providers.gemini.model', 'gemini-3.5-flash-lite');
         $this->timeout = (int) config('ai.providers.gemini.timeout', 60);
         $this->baseUrl = rtrim((string) config('ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
     }
@@ -33,19 +33,27 @@ class GeminiProvider implements AIProviderInterface
         $url = "{$this->baseUrl}/models/{$this->model}:generateContent";
         $combinedPrompt = $systemPrompt."\n\n=== SOURCE DOCUMENT CONTENT ===\n".$userContent;
 
-        $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($this->timeout)->post($url, [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $combinedPrompt],
+        $generationConfig = [
+            'responseMimeType' => 'application/json',
+            'responseJsonSchema' => $schemaDefinition,
+        ];
+
+        if ($maxOutputTokens !== null) {
+            $generationConfig['maxOutputTokens'] = max(256, $maxOutputTokens);
+        }
+
+        $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
+            ->timeout($this->timeout)
+            ->post($url, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $combinedPrompt],
+                        ],
                     ],
                 ],
-            ],
-            'generationConfig' => [
-                'responseMimeType' => 'application/json',
-                ...(($schemaDefinition['title'] ?? null) === 'quiz_generation' ? ['responseJsonSchema' => $schemaDefinition] : []),
-            ],
-        ]);
+                'generationConfig' => $generationConfig,
+            ]);
 
         if (! $response->successful()) {
             throw AIProviderException::fromHttp('Gemini', $response->status());
