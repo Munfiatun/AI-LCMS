@@ -113,7 +113,7 @@ Aturan wajib:
 3. DILARANG menulis rujukan menggantung seperti "program berikut", "kode berikut", "potongan kode berikut", "tabel berikut", "diagram berikut", "kasus berikut", "berdasarkan kode di atas", "menurut materi", "berdasarkan slide", atau "dokumen di atas" jika objek yang dirujuk tidak langsung disertakan di dalam question_text.
 4. Untuk soal pemrograman yang menanyakan output, error, kondisi, atau alur program: sertakan potongan kode yang LENGKAP dan relevan langsung di question_text. Pertanyaan harus tetap jelas bila dibaca sendirian.
 5. Jika tidak perlu potongan kode, tulis ulang soal menjadi kalimat mandiri. Contoh: jangan menulis "Apa hasil program berikut jika a = 5?" tanpa kode. Lebih baik tulis "Jika a = 5 dan program mengevaluasi kondisi if (a > 3), kondisi tersebut bernilai apa?" atau sertakan kode lengkapnya.
-6. Jika question_text berisi kode, pertahankan line break agar struktur kode mudah dibaca siswa. Jangan menghilangkan bagian kode yang diperlukan untuk menentukan jawaban.
+6. Jika question_text berisi program/kode, WAJIB gunakan blok multi-baris: satu baris pengantar, lalu kode pada baris-baris terpisah dengan line break yang mempertahankan struktur, lalu baris pertanyaan setelah kode. Jangan menulis seluruh program pada satu baris.
 7. Setiap soal memiliki tepat 4 opsi unik dan hanya 1 jawaban benar.
 8. Opsi harus benar-benar menjawab pertanyaan. Jika soal menanyakan OUTPUT program, opsi harus berupa kemungkinan output, bukan potongan kondisi yang tidak menjawab pertanyaan.
 9. Distraktor harus masuk akal, homogen, dan tidak memberi petunjuk ke jawaban benar.
@@ -365,6 +365,7 @@ PROMPT;
 
         foreach ($questions as $index => $question) {
             $stem = $this->normalizeQuestionText((string) $question['question_text']);
+            $stem = $this->formatInlineCodeQuestion($stem);
             $stemKey = mb_strtolower(preg_replace('/\s+/u', ' ', $stem) ?? $stem);
             if ($stem === '' || isset($seenQuestions[$stemKey])) {
                 throw new RuntimeException('AI menghasilkan pertanyaan kosong atau duplikat.');
@@ -411,6 +412,48 @@ PROMPT;
         return trim($normalized);
     }
 
+    private function formatInlineCodeQuestion(string $stem): string
+    {
+        if (str_contains($stem, "\n")) {
+            return $stem;
+        }
+
+        if (preg_match('/\b(program|kode|potongan\s+kode|script)\s+(?:program\s+)?(?:Java\s+)?berikut\s*:/ui', $stem, $reference, PREG_OFFSET_CAPTURE) !== 1) {
+            return $stem;
+        }
+
+        $colonPosition = strpos($stem, ':', $reference[0][1]);
+        if ($colonPosition === false) {
+            return $stem;
+        }
+
+        $intro = trim(substr($stem, 0, $colonPosition + 1));
+        $remainder = trim(substr($stem, $colonPosition + 1));
+
+        if (preg_match('/^(.*?)(\b(?:Apakah|Apa|Manakah|Tentukan|Berapa|Bagaimana)\b.*)$/ui', $remainder, $parts) !== 1) {
+            return $stem;
+        }
+
+        $code = trim($parts[1]);
+        $question = trim($parts[2]);
+        $looksLikeCode = preg_match(
+            '/(;|\{|\}|\bif\s*\(|\belse\b|\bswitch\s*\(|\bfor\s*\(|\bwhile\s*\(|System\.out|print\s*\(|printf\s*\()/ui',
+            $code
+        ) === 1;
+
+        if (! $looksLikeCode || $code === '' || $question === '') {
+            return $stem;
+        }
+
+        $code = preg_replace('/\}\s*else\s*\{/ui', "}\nelse {\n", $code) ?? $code;
+        $code = preg_replace('/\{\s*/u', "{\n", $code) ?? $code;
+        $code = preg_replace('/;\s*/u', ";\n", $code) ?? $code;
+        $code = preg_replace('/\}\s*/u', "}\n", $code) ?? $code;
+        $code = preg_replace('/\n{2,}/u', "\n", $code) ?? $code;
+
+        return trim($intro)."\n\n".trim($code)."\n\n".$question;
+    }
+
     private function assertSelfContainedQuestion(string $stem, int $index): void
     {
         $referencesExternalArtifact = preg_match(
@@ -422,12 +465,22 @@ PROMPT;
             return;
         }
 
+        $referencesCodeArtifact = preg_match(
+            '/\b(program|kode|potongan\s+kode|script|algoritma)\s+(?:program\s+)?(?:Java\s+)?berikut\b/ui',
+            $stem
+        ) === 1;
         $hasMultilineArtifact = str_contains($stem, "\n");
         $hasCodeFence = str_contains($stem, '```');
         $hasProgrammingSyntax = preg_match(
             '/(;|\{|\}|\bif\s*\(|\belse\b|\bswitch\s*\(|\bfor\s*\(|\bwhile\s*\(|System\.out|print\s*\(|printf\s*\()/ui',
             $stem
         ) === 1;
+
+        if ($referencesCodeArtifact && ! $hasMultilineArtifact && ! $hasCodeFence) {
+            throw new RuntimeException(
+                'AI menghasilkan Soal '.($index + 1).' dengan program/kode satu baris. Kode harus ditulis sebagai blok multi-baris agar mudah dibaca siswa. Silakan generate ulang.'
+            );
+        }
 
         if (! $hasMultilineArtifact && ! $hasCodeFence && ! $hasProgrammingSyntax) {
             throw new RuntimeException(
