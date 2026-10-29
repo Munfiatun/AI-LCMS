@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionDocument;
 use App\Services\AI\AIQuestionAuthoringService;
+use App\Services\AI\AIQuestionRevisionService;
 use App\Services\Document\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class AIQuestionAuthoringController extends Controller
 {
     public function __construct(
         private AIQuestionAuthoringService $authoringService,
+        private AIQuestionRevisionService $revisionService,
         private DocumentService $documentService,
     ) {}
 
@@ -161,6 +163,7 @@ class AIQuestionAuthoringController extends Controller
             'source_document' => $draft['source_document'] ?? null,
             'provider' => $draft['provider'],
             'model' => $draft['model'],
+            'revision_count' => 0,
             'generated_at' => now()->toIso8601String(),
         ]);
 
@@ -182,6 +185,65 @@ class AIQuestionAuthoringController extends Controller
             'questionBank' => $questionBank,
             'draft' => $draft,
         ]);
+    }
+
+    public function revise(Request $request, QuestionBank $questionBank): RedirectResponse
+    {
+        Gate::authorize('create', [Question::class, $questionBank]);
+
+        if (! $request->session()->has($this->draftKey($questionBank))) {
+            throw ValidationException::withMessages([
+                'revision_instruction' => 'Draft AI sudah tidak tersedia. Buat ulang draft sebelum meminta revisi.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'revision_instruction' => ['required', 'string', 'min:3', 'max:1500'],
+            'questions' => ['required', 'array', 'list', 'min:1', 'max:'.AIQuestionAuthoringService::MAX_QUESTIONS],
+            'questions.*.question_text' => ['required', 'string', 'max:1200'],
+            'questions.*.topic' => ['nullable', 'string', 'max:100'],
+            'questions.*.difficulty' => ['required', 'in:easy,medium,hard'],
+            'questions.*.explanation' => ['nullable', 'string', 'max:1000'],
+            'questions.*.points' => ['required', 'integer', 'min:1', 'max:100'],
+            'questions.*.options' => ['required', 'array', 'list', 'size:4'],
+            'questions.*.options.*' => ['required', 'string', 'max:255'],
+            'questions.*.correct_option' => ['required', 'integer', 'min:0', 'max:3'],
+        ]);
+
+        try {
+            $result = $this->revisionService->reviseDraft(
+                $questionBank,
+                $validated['questions'],
+                $validated['revision_instruction'],
+            );
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            return back()->withInput()->withErrors([
+                'revision_instruction' => $this->safeRevisionErrorMessage($exception),
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->withInput()->withErrors([
+                'revision_instruction' => 'AI belum berhasil merevisi draft. Draft lama tetap aman dan belum berubah.',
+            ]);
+        }
+
+        $draft = $request->session()->get($this->draftKey($questionBank), []);
+        $draft['questions'] = $result['questions'];
+        $draft['provider'] = $result['provider'];
+        $draft['model'] = $result['model'];
+        $draft['revision_count'] = ((int) ($draft['revision_count'] ?? 0)) + 1;
+        $draft['last_revision'] = $validated['revision_instruction'];
+        $draft['revised_at'] = now()->toIso8601String();
+        $request->session()->put($this->draftKey($questionBank), $draft);
+
+        return redirect()
+            ->route('instructor.question-banks.ai-authoring.review', $questionBank)
+            ->with('success', 'Draft soal berhasil direvisi AI. Periksa kembali perubahan sebelum menyimpan.');
     }
 
     public function store(Request $request, QuestionBank $questionBank): RedirectResponse
@@ -251,6 +313,17 @@ class AIQuestionAuthoringController extends Controller
         }
 
         return 'AI belum berhasil membuat draft soal yang lengkap dan konsisten. Silakan generate ulang atau sederhanakan instruksi.';
+    }
+
+    private function safeRevisionErrorMessage(RuntimeException $exception): string
+    {
+        $message = trim($exception->getMessage());
+
+        if (str_starts_with($message, 'AI menghasilkan')) {
+            return $message.' Draft lama tetap dipertahankan.';
+        }
+
+        return 'AI belum berhasil merevisi draft. Draft lama tetap dipertahankan.';
     }
 
     private function draftKey(QuestionBank $questionBank): string
