@@ -5,6 +5,7 @@
     $breadcrumb = 'Bank Soal';
     $questions = old('questions', $draft['questions']);
     $settings = $draft['settings'] ?? [];
+    $sourceMaterial = $draft['source_material'] ?? null;
 @endphp
 
 @section('content')
@@ -40,6 +41,11 @@
             <div>
                 <p class="text-sm font-bold theme-accent-text">Prompt aktif</p>
                 <p class="mt-1 text-sm leading-6 theme-body"><strong>{{ $settings['topic'] ?? '-' }}</strong> · {{ ucfirst($settings['difficulty'] ?? 'medium') }} · {{ $settings['total_questions'] ?? count($questions) }} soal</p>
+                @if($sourceMaterial)
+                    <p class="mt-1 text-sm leading-6 theme-body"><strong>Sumber:</strong> {{ $sourceMaterial['title'] ?? 'Materi kursus' }} <span class="theme-muted">· grounded pada materi</span></p>
+                @else
+                    <p class="mt-1 text-sm leading-6 theme-muted">Sumber: Prompt saja · pengetahuan model</p>
+                @endif
                 @if(!empty($settings['instructions']))
                     <p class="mt-1 text-sm leading-6 theme-muted">{{ $settings['instructions'] }}</p>
                 @endif
@@ -50,6 +56,9 @@
                 <input type="hidden" name="total_questions" value="{{ $settings['total_questions'] ?? count($questions) }}">
                 <input type="hidden" name="difficulty" value="{{ $settings['difficulty'] ?? 'medium' }}">
                 <input type="hidden" name="instructions" value="{{ $settings['instructions'] ?? '' }}">
+                @if(!empty($settings['source_material_id']))
+                    <input type="hidden" name="source_material_id" value="{{ $settings['source_material_id'] }}">
+                @endif
                 <input type="hidden" name="force_regenerate" value="1">
                 <button type="submit" class="teacher-secondary-button whitespace-nowrap rounded-xl border theme-accent-border px-4 py-2.5 text-sm font-bold theme-accent-text theme-accent-surface-hover">↻ Generate Ulang</button>
             </form>
