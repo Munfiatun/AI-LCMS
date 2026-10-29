@@ -42,7 +42,7 @@ return [
 
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY'),
-            'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
+            'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
             'timeout' => (int) env('GEMINI_TIMEOUT', 60),
             'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         ],
@@ -53,14 +53,22 @@ return [
     | Reliability & Recovery
     |--------------------------------------------------------------------------
     |
-    | Only transient provider failures are retried. The service clamps attempts
-    | to a small bounded range so a single teacher action cannot fan out into an
-    | uncontrolled number of paid provider calls.
+    | A provider gets a small bounded retry budget first. When fallback is
+    | enabled and the primary provider still fails at the provider/network layer,
+    | AIContentService can continue through the configured provider chain.
+    |
+    | Mock is intentionally never used as an automatic fallback for real AI
+    | requests: synthetic output must not silently enter production content.
     |
     */
     'reliability' => [
         'max_attempts' => (int) env('AI_MAX_ATTEMPTS', 2),
         'retry_backoff_ms' => (int) env('AI_RETRY_BACKOFF_MS', 250),
+        'fallback_enabled' => filter_var(env('AI_FALLBACK_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'fallback_providers' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('AI_FALLBACK_PROVIDERS', 'gemini'))
+        ))),
     ],
 
     /*
