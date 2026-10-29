@@ -223,8 +223,8 @@ class AIContentService
                     'status' => AIProcessingLog::STATUS_FAILED,
                     'error_code' => $this->safeErrorCode($exception),
                     'error_message' => $retryable && $maxAttempts > 1
-                        ? 'Proses AI gagal setelah percobaan ulang. Sistem dapat mencoba provider cadangan bila dikonfigurasi.'
-                        : 'Proses AI gagal pada provider ini. Sistem dapat mencoba provider cadangan bila dikonfigurasi.',
+                        ? 'Proses AI gagal setelah percobaan ulang. Silakan coba kembali.'
+                        : 'Proses AI gagal. Silakan coba kembali.',
                     'processing_completed_at' => now(),
                 ]);
 
