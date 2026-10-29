@@ -3,7 +3,7 @@
 @php
     $title = 'Buat Soal dengan AI';
     $breadcrumb = 'Bank Soal';
-    $initialSourceMode = old('source_material_id') ? 'material' : (old('source_document_id') ? 'document' : 'prompt');
+    $initialSourceMode = old('source_mode') ?: (old('source_material_id') ? 'material' : (old('source_document_id') ? 'document' : 'prompt'));
 @endphp
 
 @section('content')
@@ -43,6 +43,7 @@
 
             <form action="{{ route('instructor.question-banks.ai-authoring.generate', $questionBank) }}" method="POST" enctype="multipart/form-data" class="space-y-5" x-data="{ sourceMode: @js($initialSourceMode) }">
                 @csrf
+                <input type="hidden" name="source_mode" :value="sourceMode">
 
                 <label class="block text-sm font-semibold theme-body">Topik utama
                     <input type="text" name="topic" value="{{ old('topic') }}" required maxlength="255" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-3 text-sm theme-heading theme-focus-border" placeholder="Contoh: Percabangan Java">
