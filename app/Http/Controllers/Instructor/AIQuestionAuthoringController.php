@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use RuntimeException;
 use Throwable;
 
 class AIQuestionAuthoringController extends Controller
@@ -124,13 +125,19 @@ class AIQuestionAuthoringController extends Controller
                 $validated['source_material_id'] = null;
             }
 
-            $draft = $this->authoringService->generateDraft(
+            $draft = $this->generateWithQualityRecovery(
                 $questionBank,
                 $validated,
                 (bool) ($validated['force_regenerate'] ?? false),
             );
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['ai' => $this->safeDraftErrorMessage($exception)]);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -215,6 +222,35 @@ class AIQuestionAuthoringController extends Controller
         return redirect()
             ->route('instructor.question-banks.show', $questionBank)
             ->with('info', 'Draft soal AI dibatalkan. Tidak ada soal yang disimpan.');
+    }
+
+    /**
+     * Retry once only when the provider returned a structurally valid response
+     * that was rejected by our local question-quality gate. Provider/network
+     * failures already have their own bounded retry inside AIContentService.
+     */
+    private function generateWithQualityRecovery(QuestionBank $questionBank, array $validated, bool $forceRegenerate): array
+    {
+        try {
+            return $this->authoringService->generateDraft($questionBank, $validated, $forceRegenerate);
+        } catch (RuntimeException $exception) {
+            if ($forceRegenerate || ! str_starts_with($exception->getMessage(), 'AI menghasilkan')) {
+                throw $exception;
+            }
+
+            return $this->authoringService->generateDraft($questionBank, $validated, true);
+        }
+    }
+
+    private function safeDraftErrorMessage(RuntimeException $exception): string
+    {
+        $message = trim($exception->getMessage());
+
+        if (str_starts_with($message, 'AI menghasilkan')) {
+            return $message.' Draft belum disimpan. Silakan generate ulang atau ubah instruksi.';
+        }
+
+        return 'AI belum berhasil membuat draft soal yang lengkap dan konsisten. Silakan generate ulang atau sederhanakan instruksi.';
     }
 
     private function draftKey(QuestionBank $questionBank): string
