@@ -53,7 +53,7 @@ class AIQuestionAuthoringController extends Controller
 
             return back()
                 ->withInput()
-                ->withErrors(['ai' => 'AI belum berhasil membuat draft soal. Silakan coba lagi atau sederhanakan instruksi.']);
+                ->withErrors(['ai' => 'AI belum berhasil membuat draft soal yang lengkap dan konsisten. Silakan generate ulang atau sederhanakan instruksi.']);
         }
 
         $request->session()->put($this->draftKey($questionBank), [
@@ -101,7 +101,7 @@ class AIQuestionAuthoringController extends Controller
 
         $validated = $request->validate([
             'questions' => ['required', 'array', 'list', 'min:1', 'max:'.AIQuestionAuthoringService::MAX_QUESTIONS],
-            'questions.*.question_text' => ['required', 'string', 'max:500'],
+            'questions.*.question_text' => ['required', 'string', 'max:1200'],
             'questions.*.topic' => ['nullable', 'string', 'max:100'],
             'questions.*.difficulty' => ['required', 'in:easy,medium,hard'],
             'questions.*.explanation' => ['nullable', 'string', 'max:1000'],
