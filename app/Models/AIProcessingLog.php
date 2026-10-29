@@ -22,6 +22,10 @@ class AIProcessingLog extends Model
 
     public const PROCESS_MATERIAL_AUTHORING = 'material_authoring';
 
+    public const PROCESS_QUESTION_REVISION = 'question_revision';
+
+    public const PROCESS_MATERIAL_REVISION = 'material_revision';
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_PROCESSING = 'processing';
