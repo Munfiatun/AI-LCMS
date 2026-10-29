@@ -3,6 +3,7 @@
 namespace App\Services\AI;
 
 use App\Models\AIProcessingLog;
+use App\Models\LearningMaterial;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionOption;
@@ -18,13 +19,15 @@ class AIQuestionAuthoringService
 
     public const MAX_QUESTIONS = 20;
 
+    private const MAX_SOURCE_CONTEXT_CHARS = 28000;
+
     public function __construct(private AIContentService $aiContentService) {}
 
     /**
      * Generate a prompt-based multiple-choice question draft without persisting questions.
      *
-     * @param  array{topic:string,total_questions:int,difficulty:string,instructions?:string|null}  $settings
-     * @return array{questions:list<array<string,mixed>>,provider:string,model:string}
+     * @param  array{topic:string,total_questions:int,difficulty:string,instructions?:string|null,source_material_id?:int|null}  $settings
+     * @return array{questions:list<array<string,mixed>>,provider:string,model:string,source_material:?array{id:int,title:string}}
      */
     public function generateDraft(QuestionBank $bank, array $settings, bool $forceRegenerate = false): array
     {
@@ -33,6 +36,7 @@ class AIQuestionAuthoringService
             'total_questions' => ['required', 'integer', 'min:'.self::MIN_QUESTIONS, 'max:'.self::MAX_QUESTIONS],
             'difficulty' => ['required', 'in:easy,medium,hard,mixed'],
             'instructions' => ['nullable', 'string', 'max:2000'],
+            'source_material_id' => ['nullable', 'integer', 'min:1'],
         ])->validate();
 
         $questionCount = (int) $settings['total_questions'];
@@ -43,9 +47,16 @@ class AIQuestionAuthoringService
             default => 'Gunakan campuran tingkat mudah, sedang, dan sulit secara wajar.',
         };
 
+        $sourceMaterial = $this->resolveSourceMaterial($bank, $settings['source_material_id'] ?? null);
+        $sourceContext = $sourceMaterial ? $this->buildSourceMaterialContext($sourceMaterial) : null;
+
         $courseContext = $bank->course?->title
             ? "Konteks kursus: {$bank->course->title}."
             : 'Bank soal bersifat global dan tidak terikat pada satu kursus.';
+
+        $groundingRule = $sourceContext !== null
+            ? "Sumber materi dipilih guru: {$sourceMaterial->title}. Semua fakta, konsep, contoh, dan kunci jawaban WAJIB didukung oleh sumber materi yang diberikan pada user content. Jangan menambahkan konsep baru dari pengetahuan umum model. Prompt guru hanya boleh mengatur fokus, jumlah, tingkat kesulitan, atau bentuk soal. Jika sumber tidak cukup untuk variasi yang diminta, buat variasi pertanyaan dari informasi yang memang tersedia; jangan mengarang fakta tambahan."
+            : 'Tidak ada sumber materi khusus yang dipilih. Gunakan topik, instruksi guru, dan pengetahuan model secara hati-hati; guru tetap wajib mereview ketepatan konsep dan kunci.';
 
         $systemPrompt = <<<PROMPT
 Anda adalah AI Authoring Assistant untuk guru SMK/SMA. Buat draft soal pilihan ganda yang siap direview guru.
@@ -62,14 +73,15 @@ Aturan wajib:
 9. Distraktor harus masuk akal, homogen, dan tidak memberi petunjuk ke jawaban benar.
 10. Hindari "semua jawaban di atas" dan "tidak ada jawaban di atas".
 11. Hindari pertanyaan ambigu atau lebih dari satu jawaban yang dapat dibenarkan.
-12. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar berdasarkan informasi yang tersedia pada soal.
+12. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar berdasarkan informasi yang tersedia pada soal dan, jika dipilih, sumber materi.
 13. points gunakan 10 untuk setiap soal.
 14. topic harus ringkas, maksimal sekitar 100 karakter.
 15. Sebelum mengembalikan JSON, periksa setiap soal dengan pertanyaan: "Apakah siswa dapat menjawab soal ini hanya dari question_text dan opsi yang tersedia?" Jika tidak, lengkapi atau tulis ulang soal tersebut.
-16. Draft ini akan ditinjau guru sebelum disimpan. Gunakan pengetahuan model secara hati-hati dan jangan mengarang referensi, kutipan, sumber, atau standar yang tidak diberikan guru.
+16. Draft ini akan ditinjau guru sebelum disimpan. Jangan mengarang referensi, kutipan, sumber, atau standar yang tidak diberikan guru.
 
 {$difficultyRule}
 {$courseContext}
+{$groundingRule}
 PROMPT;
 
         $optionProperties = [
@@ -121,6 +133,7 @@ PROMPT;
             'jumlah_soal' => $questionCount,
             'kesulitan' => $settings['difficulty'],
             'instruksi_guru' => trim((string) ($settings['instructions'] ?? '')),
+            'sumber_materi' => $sourceContext,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 
         $output = $this->aiContentService->process(
@@ -143,6 +156,10 @@ PROMPT;
             'questions' => $questions,
             'provider' => (string) $output['log']->provider,
             'model' => (string) $output['log']->model,
+            'source_material' => $sourceMaterial ? [
+                'id' => (int) $sourceMaterial->getKey(),
+                'title' => (string) $sourceMaterial->title,
+            ] : null,
         ];
     }
 
@@ -190,6 +207,83 @@ PROMPT;
 
             return $created;
         });
+    }
+
+    private function resolveSourceMaterial(QuestionBank $bank, mixed $sourceMaterialId): ?LearningMaterial
+    {
+        if ($sourceMaterialId === null || $sourceMaterialId === '') {
+            return null;
+        }
+
+        if (! $bank->course_id) {
+            throw ValidationException::withMessages([
+                'source_material_id' => 'Bank soal global belum dapat menggunakan materi kursus sebagai sumber. Hubungkan bank soal ke kursus terlebih dahulu.',
+            ]);
+        }
+
+        $material = LearningMaterial::with(['section.course', 'documents.extraction'])->find((int) $sourceMaterialId);
+        if (! $material || (int) $material->section?->course_id !== (int) $bank->course_id) {
+            throw ValidationException::withMessages([
+                'source_material_id' => 'Materi sumber harus berasal dari kursus yang sama dengan bank soal.',
+            ]);
+        }
+
+        return $material;
+    }
+
+    /** @return array{id:int,title:string,content:string} */
+    private function buildSourceMaterialContext(LearningMaterial $material): array
+    {
+        $parts = [];
+
+        if (trim((string) $material->description) !== '') {
+            $parts[] = "Ringkasan:\n".trim((string) $material->description);
+        }
+
+        $materialText = $this->htmlToPlainText((string) $material->content);
+        if ($materialText !== '') {
+            $parts[] = "Konten materi:\n{$materialText}";
+        }
+
+        foreach ($material->documents as $document) {
+            $extraction = $document->extraction;
+            if ($extraction?->status === 'completed' && trim((string) $extraction->content) !== '') {
+                $parts[] = "Dokumen {$document->original_name}:\n".trim((string) $extraction->content);
+            }
+        }
+
+        $combined = trim(implode("\n\n", $parts));
+        if ($combined === '') {
+            throw ValidationException::withMessages([
+                'source_material_id' => 'Materi yang dipilih belum memiliki konten atau hasil ekstraksi dokumen yang dapat digunakan sebagai sumber AI.',
+            ]);
+        }
+
+        if (mb_strlen($combined) > self::MAX_SOURCE_CONTEXT_CHARS) {
+            $combined = mb_substr($combined, 0, self::MAX_SOURCE_CONTEXT_CHARS)
+                ."\n\n[Konten sumber dipotong oleh sistem karena melebihi batas konteks.]";
+        }
+
+        return [
+            'id' => (int) $material->getKey(),
+            'title' => (string) $material->title,
+            'content' => $combined,
+        ];
+    }
+
+    private function htmlToPlainText(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        $withBreaks = preg_replace('/<\/(p|div|section|h[1-6]|li|pre|blockquote)>/i', "$0\n", $html) ?? $html;
+        $text = html_entity_decode(strip_tags($withBreaks), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $text = preg_replace('/[ \t]+/u', ' ', $text) ?? $text;
+        $text = preg_replace('/\n{3,}/u', "\n\n", $text) ?? $text;
+
+        return trim($text);
     }
 
     /**
