@@ -5,6 +5,7 @@
     $breadcrumb = 'Materi';
     $material = old('material', $draft['material']);
     $settings = $draft['settings'] ?? [];
+    $revisionCount = (int) ($draft['revision_count'] ?? 0);
 @endphp
 
 @section('content')
@@ -26,11 +27,14 @@
                 <a href="{{ route('instructor.materials.ai-authoring.create', $section) }}" class="text-sm font-semibold theme-muted transition theme-accent-text-hover">← Ubah Prompt</a>
                 <p class="mt-4 text-sm font-semibold theme-accent-text">AI Draft · Belum tersimpan</p>
                 <h1 class="teacher-page-title mt-1 text-2xl font-extrabold tracking-tight theme-heading sm:text-3xl">Review Draft Materi AI</h1>
-                <p class="mt-2 text-base leading-7 theme-body">Periksa isi materi sebelum disimpan. Setelah disimpan, materi tetap berstatus draft dan belum terlihat oleh siswa.</p>
+                <p class="mt-2 text-base leading-7 theme-body">Periksa isi materi sebelum disimpan. Anda dapat mengedit manual atau meminta AI merevisi draft; materi tetap belum terlihat oleh siswa.</p>
             </div>
             <div class="rounded-2xl border teacher-card px-4 py-3 text-sm">
                 <p class="font-semibold theme-heading">{{ count($material['sections'] ?? []) }} bagian</p>
                 <p class="mt-1 theme-muted">{{ strtoupper($draft['provider'] ?? 'AI') }}{{ !empty($draft['model']) ? ' · '.$draft['model'] : '' }}</p>
+                @if($revisionCount > 0)
+                    <p class="mt-1 font-semibold theme-accent-text">{{ $revisionCount }}× revisi AI</p>
+                @endif
             </div>
         </div>
     </section>
@@ -40,6 +44,9 @@
             <div>
                 <p class="text-sm font-bold theme-accent-text">Prompt aktif</p>
                 <p class="mt-1 text-sm leading-6 theme-body"><strong>{{ $settings['topic'] ?? '-' }}</strong> · {{ $settings['audience'] ?? '-' }} · {{ ucfirst($settings['depth'] ?? 'standard') }}</p>
+                @if(!empty($draft['last_revision']))
+                    <p class="mt-2 text-sm leading-6 theme-accent-text"><strong>Revisi terakhir:</strong> {{ $draft['last_revision'] }}</p>
+                @endif
             </div>
             <form action="{{ route('instructor.materials.ai-authoring.generate', $section) }}" method="POST">
                 @csrf
@@ -116,6 +123,16 @@
                         </div>
                     @endforeach
                 </div>
+            </div>
+        </section>
+
+        <section class="rounded-3xl border theme-accent-border theme-accent-surface p-5 sm:p-6">
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <label class="block text-sm font-semibold theme-accent-text">Minta AI Revisi Draft
+                    <textarea name="revision_instruction" rows="3" maxlength="1500" class="mt-2 w-full rounded-xl border theme-border theme-surface px-4 py-3 text-sm leading-6 theme-heading theme-focus-border" placeholder="Contoh: Ringkas Bagian 2, tambahkan contoh kode sederhana pada Bagian 3, dan pertahankan bagian lainnya.">{{ old('revision_instruction') }}</textarea>
+                    <span class="mt-2 block text-sm font-normal leading-5 theme-muted">AI menerima draft yang sedang terlihat, termasuk edit manual Anda. Hasil revisi tetap draft dan belum dipublikasikan.</span>
+                </label>
+                <button type="submit" formaction="{{ route('instructor.materials.ai-authoring.revise', $section) }}" formmethod="POST" class="rounded-xl theme-accent-fill px-5 py-3 text-sm font-extrabold teacher-on-solid transition theme-accent-fill-hover">✨ Revisi dengan AI</button>
             </div>
         </section>
 
