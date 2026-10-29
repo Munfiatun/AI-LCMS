@@ -37,16 +37,43 @@ class GroqProvider implements AIProviderInterface
             throw AIProviderException::configuration('Groq');
         }
 
-        $schemaJson = json_encode($schemaDefinition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $payload = [
-            'model' => $this->model,
-            'messages' => [
-                ['role' => 'system', 'content' => $systemPrompt."\n\nReturn ONLY one valid JSON object matching this JSON Schema. No markdown, no code fences, no text before or after the JSON.\n".$schemaJson],
-                ['role' => 'user', 'content' => $userContent],
-            ],
-            'response_format' => ['type' => 'json_object'],
-            'max_completion_tokens' => $maxOutputTokens !== null ? min($maxOutputTokens, $this->maxCompletionTokens) : $this->maxCompletionTokens,
-        ];
+        $strictSchemaSupported = str_starts_with($this->model, 'openai/gpt-oss')
+            && $this->isStrictSchemaCompatible($schemaDefinition);
+
+        if ($strictSchemaSupported) {
+            $payload = [
+                'model' => $this->model,
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userContent],
+                ],
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
+                        'name' => 'ai_lcms_structured_response',
+                        'strict' => true,
+                        'schema' => $this->sanitizeStrictSchema($schemaDefinition),
+                    ],
+                ],
+                'max_completion_tokens' => $maxOutputTokens !== null
+                    ? min($maxOutputTokens, $this->maxCompletionTokens)
+                    : $this->maxCompletionTokens,
+            ];
+        } else {
+            $schemaJson = json_encode($schemaDefinition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $payload = [
+                'model' => $this->model,
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt."\n\nReturn ONLY one valid JSON object matching this JSON Schema. No markdown, no code fences, no text before or after the JSON.\n".$schemaJson],
+                    ['role' => 'user', 'content' => $userContent],
+                ],
+                'response_format' => ['type' => 'json_object'],
+                'max_completion_tokens' => $maxOutputTokens !== null
+                    ? min($maxOutputTokens, $this->maxCompletionTokens)
+                    : $this->maxCompletionTokens,
+            ];
+        }
+
         if ($this->reasoningEffort !== null && str_starts_with($this->model, 'openai/gpt-oss')) {
             $payload['reasoning_effort'] = $this->reasoningEffort;
         }
@@ -59,6 +86,7 @@ class GroqProvider implements AIProviderInterface
             Log::warning('Groq API request failed', [
                 'provider' => 'groq',
                 'status' => $response->status(),
+                'structured_output' => $strictSchemaSupported ? 'strict' : 'json_object',
             ]);
 
             throw AIProviderException::fromHttp('Groq', $response->status());
@@ -82,6 +110,67 @@ class GroqProvider implements AIProviderInterface
             'parsed_data' => $parsed,
             'tokens_used' => $tokensUsed,
         ];
+    }
+
+    /**
+     * Groq strict structured output requires every object property to be required
+     * and every object to be closed with additionalProperties=false.
+     *
+     * @param array<string, mixed> $schema
+     */
+    private function isStrictSchemaCompatible(array $schema): bool
+    {
+        $type = $schema['type'] ?? null;
+
+        if ($type === 'object') {
+            $properties = $schema['properties'] ?? null;
+            $required = $schema['required'] ?? null;
+
+            if (! is_array($properties)
+                || ! is_array($required)
+                || ($schema['additionalProperties'] ?? null) !== false
+                || array_values(array_keys($properties)) !== array_values($required)) {
+                return false;
+            }
+
+            foreach ($properties as $property) {
+                if (is_array($property) && ! $this->isStrictSchemaCompatible($property)) {
+                    return false;
+                }
+            }
+        }
+
+        if ($type === 'array' && isset($schema['items']) && is_array($schema['items'])) {
+            return $this->isStrictSchemaCompatible($schema['items']);
+        }
+
+        return true;
+    }
+
+    /**
+     * Keep the strict schema to Groq's supported structural subset. Application
+     * validation still enforces collection sizes after generation.
+     *
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
+     */
+    private function sanitizeStrictSchema(array $schema): array
+    {
+        unset($schema['minItems'], $schema['maxItems'], $schema['minLength'], $schema['maxLength']);
+
+        if (isset($schema['properties']) && is_array($schema['properties'])) {
+            foreach ($schema['properties'] as $key => $property) {
+                if (is_array($property)) {
+                    $schema['properties'][$key] = $this->sanitizeStrictSchema($property);
+                }
+            }
+        }
+
+        if (isset($schema['items']) && is_array($schema['items'])) {
+            $schema['items'] = $this->sanitizeStrictSchema($schema['items']);
+        }
+
+        return $schema;
     }
 
     public function getProviderName(): string
