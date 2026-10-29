@@ -22,8 +22,13 @@ class AIQuestionAuthoringController extends Controller
         Gate::authorize('create', [Question::class, $questionBank]);
         $questionBank->loadMissing('course');
 
+        $sourceMaterials = $questionBank->course
+            ? $questionBank->course->materials()->with('section')->orderBy('learning_materials.order')->get()
+            : collect();
+
         return view('instructor.question_banks.ai-create', [
             'questionBank' => $questionBank,
+            'sourceMaterials' => $sourceMaterials,
             'provider' => (string) config('ai.provider', 'mock'),
             'model' => (string) config('ai.providers.'.config('ai.provider', 'mock').'.model', ''),
         ]);
@@ -39,6 +44,7 @@ class AIQuestionAuthoringController extends Controller
             'total_questions' => ['required', 'integer', 'min:'.AIQuestionAuthoringService::MIN_QUESTIONS, 'max:'.AIQuestionAuthoringService::MAX_QUESTIONS],
             'difficulty' => ['required', 'in:easy,medium,hard,mixed'],
             'instructions' => ['nullable', 'string', 'max:2000'],
+            'source_material_id' => ['nullable', 'integer', 'min:1'],
             'force_regenerate' => ['nullable', 'boolean'],
         ]);
 
@@ -48,6 +54,8 @@ class AIQuestionAuthoringController extends Controller
                 $validated,
                 (bool) ($validated['force_regenerate'] ?? false),
             );
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
         } catch (Throwable $exception) {
             report($exception);
 
@@ -63,7 +71,9 @@ class AIQuestionAuthoringController extends Controller
                 'total_questions' => (int) $validated['total_questions'],
                 'difficulty' => $validated['difficulty'],
                 'instructions' => $validated['instructions'] ?? '',
+                'source_material_id' => $validated['source_material_id'] ?? null,
             ],
+            'source_material' => $draft['source_material'] ?? null,
             'provider' => $draft['provider'],
             'model' => $draft['model'],
             'generated_at' => now()->toIso8601String(),
