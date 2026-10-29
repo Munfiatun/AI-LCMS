@@ -52,15 +52,21 @@ Anda adalah AI Authoring Assistant untuk guru SMK/SMA. Buat draft soal pilihan g
 
 Aturan wajib:
 1. Buat tepat {$questionCount} soal berdasarkan topik dan instruksi guru.
-2. Setiap soal harus berdiri sendiri dan tidak boleh menulis "menurut materi", "berdasarkan slide", "dokumen di atas", atau frasa sejenis.
-3. Setiap soal memiliki tepat 4 opsi unik dan hanya 1 jawaban benar.
-4. Distraktor harus masuk akal, homogen, dan tidak memberi petunjuk ke jawaban benar.
-5. Hindari "semua jawaban di atas" dan "tidak ada jawaban di atas".
-6. Hindari pertanyaan ambigu atau lebih dari satu jawaban yang dapat dibenarkan.
-7. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar.
-8. points gunakan 10 untuk setiap soal.
-9. topic harus ringkas, maksimal sekitar 100 karakter.
-10. Draft ini akan ditinjau guru sebelum disimpan. Gunakan pengetahuan model secara hati-hati dan jangan mengarang referensi, kutipan, sumber, atau standar yang tidak diberikan guru.
+2. Setiap soal WAJIB berdiri sendiri dan dapat dipahami siswa tanpa melihat teks, slide, dokumen, kode, tabel, gambar, atau konteks lain yang tidak tertulis di dalam question_text.
+3. DILARANG menulis rujukan menggantung seperti "program berikut", "kode berikut", "potongan kode berikut", "tabel berikut", "diagram berikut", "kasus berikut", "berdasarkan kode di atas", "menurut materi", "berdasarkan slide", atau "dokumen di atas" jika objek yang dirujuk tidak langsung disertakan di dalam question_text.
+4. Untuk soal pemrograman yang menanyakan output, error, kondisi, atau alur program: sertakan potongan kode yang LENGKAP dan relevan langsung di question_text. Pertanyaan harus tetap jelas bila dibaca sendirian.
+5. Jika tidak perlu potongan kode, tulis ulang soal menjadi kalimat mandiri. Contoh: jangan menulis "Apa hasil program berikut jika a = 5?" tanpa kode. Lebih baik tulis "Jika a = 5 dan program mengevaluasi kondisi if (a > 3), kondisi tersebut bernilai apa?" atau sertakan kode lengkapnya.
+6. Jika question_text berisi kode, pertahankan line break agar struktur kode mudah dibaca siswa. Jangan menghilangkan bagian kode yang diperlukan untuk menentukan jawaban.
+7. Setiap soal memiliki tepat 4 opsi unik dan hanya 1 jawaban benar.
+8. Opsi harus benar-benar menjawab pertanyaan. Jika soal menanyakan OUTPUT program, opsi harus berupa kemungkinan output, bukan potongan kondisi yang tidak menjawab pertanyaan.
+9. Distraktor harus masuk akal, homogen, dan tidak memberi petunjuk ke jawaban benar.
+10. Hindari "semua jawaban di atas" dan "tidak ada jawaban di atas".
+11. Hindari pertanyaan ambigu atau lebih dari satu jawaban yang dapat dibenarkan.
+12. explanation maksimal 2 kalimat dan menjelaskan alasan jawaban benar berdasarkan informasi yang tersedia pada soal.
+13. points gunakan 10 untuk setiap soal.
+14. topic harus ringkas, maksimal sekitar 100 karakter.
+15. Sebelum mengembalikan JSON, periksa setiap soal dengan pertanyaan: "Apakah siswa dapat menjawab soal ini hanya dari question_text dan opsi yang tersedia?" Jika tidak, lengkapi atau tulis ulang soal tersebut.
+16. Draft ini akan ditinjau guru sebelum disimpan. Gunakan pengetahuan model secara hati-hati dan jangan mengarang referensi, kutipan, sumber, atau standar yang tidak diberikan guru.
 
 {$difficultyRule}
 {$courseContext}
@@ -194,7 +200,7 @@ PROMPT;
     {
         Validator::make(['questions' => $questions], [
             'questions' => ['required', 'array', 'list', 'size:'.$expectedCount],
-            'questions.*.question_text' => ['required', 'string', 'max:500'],
+            'questions.*.question_text' => ['required', 'string', 'max:1200'],
             'questions.*.topic' => ['required', 'string', 'max:150'],
             'questions.*.difficulty' => ['required', 'in:easy,medium,hard'],
             'questions.*.explanation' => ['required', 'string', 'max:1000'],
@@ -208,12 +214,14 @@ PROMPT;
         $seenQuestions = [];
 
         foreach ($questions as $index => $question) {
-            $stem = trim(preg_replace('/\s+/u', ' ', $question['question_text']) ?? $question['question_text']);
-            $stemKey = mb_strtolower($stem);
+            $stem = $this->normalizeQuestionText((string) $question['question_text']);
+            $stemKey = mb_strtolower(preg_replace('/\s+/u', ' ', $stem) ?? $stem);
             if ($stem === '' || isset($seenQuestions[$stemKey])) {
                 throw new RuntimeException('AI menghasilkan pertanyaan kosong atau duplikat.');
             }
             $seenQuestions[$stemKey] = true;
+
+            $this->assertSelfContainedQuestion($stem, $index);
 
             $optionTexts = collect($question['options'])
                 ->map(fn (array $option): string => trim((string) $option['option_text']))
@@ -244,6 +252,40 @@ PROMPT;
         return $normalized;
     }
 
+    private function normalizeQuestionText(string $questionText): string
+    {
+        $normalized = str_replace(["\r\n", "\r"], "\n", trim($questionText));
+        $normalized = preg_replace('/[ \t]+$/mu', '', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\n{3,}/u', "\n\n", $normalized) ?? $normalized;
+
+        return trim($normalized);
+    }
+
+    private function assertSelfContainedQuestion(string $stem, int $index): void
+    {
+        $referencesExternalArtifact = preg_match(
+            '/\b(program|kode|potongan\s+kode|script|algoritma|tabel|diagram|gambar|kasus|pernyataan)\s+berikut\b/ui',
+            $stem
+        ) === 1;
+
+        if (! $referencesExternalArtifact) {
+            return;
+        }
+
+        $hasMultilineArtifact = str_contains($stem, "\n");
+        $hasCodeFence = str_contains($stem, '```');
+        $hasProgrammingSyntax = preg_match(
+            '/(;|\{|\}|\bif\s*\(|\belse\b|\bswitch\s*\(|\bfor\s*\(|\bwhile\s*\(|System\.out|print\s*\(|printf\s*\()/ui',
+            $stem
+        ) === 1;
+
+        if (! $hasMultilineArtifact && ! $hasCodeFence && ! $hasProgrammingSyntax) {
+            throw new RuntimeException(
+                'AI menghasilkan Soal '.($index + 1).' yang merujuk pada program/kode/tabel/objek "berikut" tanpa menyertakan objek tersebut. Silakan generate ulang.'
+            );
+        }
+    }
+
     /**
      * @param  array<int, mixed>  $questions
      * @return list<array<string,mixed>>
@@ -252,7 +294,7 @@ PROMPT;
     {
         Validator::make(['questions' => $questions], [
             'questions' => ['required', 'array', 'list', 'min:1', 'max:'.self::MAX_QUESTIONS],
-            'questions.*.question_text' => ['required', 'string', 'max:500'],
+            'questions.*.question_text' => ['required', 'string', 'max:1200'],
             'questions.*.topic' => ['nullable', 'string', 'max:100'],
             'questions.*.difficulty' => ['required', 'in:easy,medium,hard'],
             'questions.*.explanation' => ['nullable', 'string', 'max:1000'],
@@ -264,13 +306,24 @@ PROMPT;
 
         $seenQuestions = [];
         foreach ($questions as $index => $question) {
-            $questionKey = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $question['question_text']) ?? $question['question_text']));
+            $questionText = $this->normalizeQuestionText((string) $question['question_text']);
+            $questionKey = mb_strtolower(preg_replace('/\s+/u', ' ', $questionText) ?? $questionText);
             if ($questionKey === '' || isset($seenQuestions[$questionKey])) {
                 throw ValidationException::withMessages([
                     "questions.{$index}.question_text" => 'Pertanyaan tidak boleh kosong atau duplikat.',
                 ]);
             }
             $seenQuestions[$questionKey] = true;
+
+            try {
+                $this->assertSelfContainedQuestion($questionText, $index);
+            } catch (RuntimeException $exception) {
+                throw ValidationException::withMessages([
+                    "questions.{$index}.question_text" => $exception->getMessage(),
+                ]);
+            }
+
+            $questions[$index]['question_text'] = $questionText;
 
             $normalizedOptions = collect($question['options'])
                 ->map(fn (string $option): string => mb_strtolower(trim($option)));
