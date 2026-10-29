@@ -67,14 +67,18 @@ class AIQuestionAuthoringDocumentSourceTest extends TestCase
         $otherBank = $this->bank();
         $foreignDocument = $this->document($otherBank, 'rahasia-kursus-lain.docx');
 
-        $this->actingAs($this->instructor)
+        $response = $this->actingAs($this->instructor)
+            ->from(route('instructor.question-banks.ai-authoring.create', $bank))
             ->post(route('instructor.question-banks.ai-authoring.generate', $bank), [
                 'topic' => 'Percabangan Java',
                 'total_questions' => 3,
                 'difficulty' => 'medium',
                 'source_document_id' => $foreignDocument->id,
-            ])
-            ->assertNotFound();
+            ]);
+
+        $response->assertRedirect(route('instructor.question-banks.ai-authoring.create', $bank));
+        $response->assertSessionHasErrors('ai');
+        $response->assertSessionMissing('ai_question_authoring.'.$bank->id);
     }
 
     public function test_teacher_must_choose_only_one_grounding_source(): void
