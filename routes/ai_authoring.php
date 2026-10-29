@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Instructor\AIMaterialAuthoringController;
+use App\Http\Controllers\Instructor\AIQuestionAuthoringController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'role:instructor'])
@@ -14,8 +15,15 @@ Route::middleware(['web', 'auth', 'role:instructor'])
             ->middleware('throttle:5,1');
         Route::get('/sections/{section}/materials/ai-authoring/review', [AIMaterialAuthoringController::class, 'review'])
             ->name('materials.ai-authoring.review');
+        Route::post('/sections/{section}/materials/ai-authoring/revise', [AIMaterialAuthoringController::class, 'revise'])
+            ->name('materials.ai-authoring.revise')
+            ->middleware('throttle:5,1');
         Route::post('/sections/{section}/materials/ai-authoring/store', [AIMaterialAuthoringController::class, 'store'])
             ->name('materials.ai-authoring.store');
         Route::delete('/sections/{section}/materials/ai-authoring', [AIMaterialAuthoringController::class, 'destroy'])
             ->name('materials.ai-authoring.destroy');
+
+        Route::post('/question-banks/{question_bank}/ai-authoring/revise', [AIQuestionAuthoringController::class, 'revise'])
+            ->name('question-banks.ai-authoring.revise')
+            ->middleware('throttle:5,1');
     });
