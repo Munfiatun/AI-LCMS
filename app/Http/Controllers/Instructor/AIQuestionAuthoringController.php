@@ -51,6 +51,7 @@ class AIQuestionAuthoringController extends Controller
             'total_questions' => ['required', 'integer', 'min:'.AIQuestionAuthoringService::MIN_QUESTIONS, 'max:'.AIQuestionAuthoringService::MAX_QUESTIONS],
             'difficulty' => ['required', 'in:easy,medium,hard,mixed'],
             'instructions' => ['nullable', 'string', 'max:2000'],
+            'source_mode' => ['nullable', 'in:prompt,material,document'],
             'source_material_id' => ['nullable', 'integer', 'min:1'],
             'source_document_id' => ['nullable', 'integer', 'min:1'],
             'source_document' => ['nullable', 'file', 'mimes:pdf,docx', 'extensions:pdf,docx', 'max:10240'],
@@ -63,21 +64,45 @@ class AIQuestionAuthoringController extends Controller
             $request->hasFile('source_document'),
         ])->filter()->count();
 
+        $sourceMode = $validated['source_mode'] ?? match (true) {
+            ! empty($validated['source_material_id']) => 'material',
+            ! empty($validated['source_document_id']) || $request->hasFile('source_document') => 'document',
+            default => 'prompt',
+        };
+
         if ($selectedSourceCount > 1) {
             return back()->withInput()->withErrors([
                 'source' => 'Pilih satu sumber saja: materi dalam sistem, dokumen yang sudah diunggah, atau upload PDF/Word baru.',
             ]);
         }
 
+        if ($sourceMode === 'material' && empty($validated['source_material_id'])) {
+            return back()->withInput()->withErrors([
+                'source' => 'Pilih materi yang akan digunakan sebagai sumber AI.',
+            ]);
+        }
+
+        if ($sourceMode === 'document' && empty($validated['source_document_id']) && ! $request->hasFile('source_document')) {
+            return back()->withInput()->withErrors([
+                'source' => 'Pilih dokumen yang sudah diunggah atau upload PDF/DOCX baru.',
+            ]);
+        }
+
+        if ($sourceMode === 'prompt' && $selectedSourceCount > 0) {
+            return back()->withInput()->withErrors([
+                'source' => 'Mode Prompt saja tidak menggunakan materi atau dokumen sumber.',
+            ]);
+        }
+
         try {
             $sourceDocument = null;
-            if ($request->hasFile('source_document')) {
+            if ($sourceMode === 'document' && $request->hasFile('source_document')) {
                 $sourceDocument = $this->documentService->storeQuestionDocument(
                     $questionBank,
                     $request->file('source_document'),
                     $request->user(),
                 );
-            } elseif (! empty($validated['source_document_id'])) {
+            } elseif ($sourceMode === 'document' && ! empty($validated['source_document_id'])) {
                 $sourceDocument = QuestionDocument::where('question_bank_id', $questionBank->id)
                     ->findOrFail((int) $validated['source_document_id']);
             }
@@ -93,6 +118,10 @@ class AIQuestionAuthoringController extends Controller
                 $validated['source_document_id'] = $sourceDocument->id;
                 $validated['source_document_name'] = $sourceDocument->original_name;
                 $validated['source_document_text'] = mb_substr($documentText, 0, 28000);
+            }
+
+            if ($sourceMode !== 'material') {
+                $validated['source_material_id'] = null;
             }
 
             $draft = $this->authoringService->generateDraft(
@@ -117,6 +146,7 @@ class AIQuestionAuthoringController extends Controller
                 'total_questions' => (int) $validated['total_questions'],
                 'difficulty' => $validated['difficulty'],
                 'instructions' => $validated['instructions'] ?? '',
+                'source_mode' => $sourceMode,
                 'source_material_id' => $validated['source_material_id'] ?? null,
                 'source_document_id' => $validated['source_document_id'] ?? null,
             ],
