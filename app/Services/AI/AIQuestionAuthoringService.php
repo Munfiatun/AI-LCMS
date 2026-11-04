@@ -476,15 +476,15 @@ PROMPT;
             $stem
         ) === 1;
 
-        if ($referencesCodeArtifact && ! $hasMultilineArtifact && ! $hasCodeFence) {
-            throw new RuntimeException(
-                'AI menghasilkan Soal '.($index + 1).' dengan program/kode satu baris. Kode harus ditulis sebagai blok multi-baris agar mudah dibaca siswa. Silakan generate ulang.'
-            );
-        }
-
         if (! $hasMultilineArtifact && ! $hasCodeFence && ! $hasProgrammingSyntax) {
             throw new RuntimeException(
                 'AI menghasilkan Soal '.($index + 1).' yang merujuk pada program/kode/tabel/objek "berikut" tanpa menyertakan objek tersebut. Silakan generate ulang.'
+            );
+        }
+
+        if ($referencesCodeArtifact && ! $hasMultilineArtifact && ! $hasCodeFence) {
+            throw new RuntimeException(
+                'AI menghasilkan Soal '.($index + 1).' dengan program/kode satu baris. Kode harus ditulis sebagai blok multi-baris agar mudah dibaca siswa. Silakan generate ulang.'
             );
         }
     }
