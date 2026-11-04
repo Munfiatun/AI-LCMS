@@ -6,6 +6,7 @@ use App\Models\AIProcessingLog;
 use App\Models\AIProcessingResult;
 use App\Services\AI\Contracts\AIProviderInterface;
 use App\Services\AI\Exceptions\AIProviderException;
+use App\Services\AI\Exceptions\LoggedAIProcessingException;
 use App\Services\AI\Providers\GeminiProvider;
 use App\Services\AI\Providers\GroqProvider;
 use App\Services\AI\Providers\MockAIProvider;
@@ -89,6 +90,10 @@ class AIContentService
                 }
 
                 break;
+            } catch (LoggedAIProcessingException $exception) {
+                // Already recorded by processWithProvider; keep the public error safe.
+                // Do not log the same failure again or expose an exception chain.
+                throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
             } catch (Throwable $exception) {
                 // Unknown application/runtime errors must not trigger a paid fallback
                 // because they may represent a deterministic bug rather than provider
@@ -241,7 +246,7 @@ class AIContentService
                     throw $exception;
                 }
 
-                throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
+                throw new LoggedAIProcessingException('Proses AI gagal. Silakan coba kembali.');
             }
         }
 
