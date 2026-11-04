@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AdaptiveRecommendation;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\ExperimentAssignment;
 use App\Models\LearningConcept;
 use App\Models\Role;
 use App\Models\User;
@@ -129,6 +130,73 @@ class StudentAdaptiveRecommendationWorkspaceTest extends TestCase
             ->assertSee('Belum ada rekomendasi adaptif aktif')
             ->assertDontSee('Course Tidak Diikuti')
             ->assertDontSee('fuzzy-v2@2.0.0-experimental');
+    }
+
+    public function test_non_adaptive_research_student_cannot_see_existing_adaptive_recommendations(): void
+    {
+        $course = $this->course('KELAS KONTROL');
+        $this->enroll($this->student, $course);
+        [$source, $target] = $this->conceptPair($course);
+
+        $this->recommendation(
+            $this->student,
+            $course,
+            $source,
+            $target,
+            app(AdaptiveAlgorithmRegistry::class)->baseline()->id,
+            'remediation',
+            'mastery_low',
+            str_repeat('e', 64),
+        );
+
+        ExperimentAssignment::create([
+            'course_id' => $course->id,
+            'student_id' => $this->student->id,
+            'condition' => ExperimentAssignment::CONDITION_NON_ADAPTIVE,
+            'assignment_version' => 'pilot-v1',
+            'assigned_by' => $this->instructor->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->actingAs($this->student)
+            ->get(route('student.adaptive-recommendations.index'))
+            ->assertOk()
+            ->assertSee('Belum ada rekomendasi adaptif aktif')
+            ->assertDontSee('KELAS KONTROL')
+            ->assertDontSee('Pelajari Kembali Konsep');
+    }
+
+    public function test_adaptive_research_student_still_sees_active_recommendations(): void
+    {
+        $course = $this->course('KELAS ADAPTIF');
+        $this->enroll($this->student, $course);
+        [$source, $target] = $this->conceptPair($course);
+
+        $this->recommendation(
+            $this->student,
+            $course,
+            $source,
+            $target,
+            app(AdaptiveAlgorithmRegistry::class)->baseline()->id,
+            'remediation',
+            'mastery_low',
+            str_repeat('f', 64),
+        );
+
+        ExperimentAssignment::create([
+            'course_id' => $course->id,
+            'student_id' => $this->student->id,
+            'condition' => ExperimentAssignment::CONDITION_ADAPTIVE,
+            'assignment_version' => 'pilot-v1',
+            'assigned_by' => $this->instructor->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->actingAs($this->student)
+            ->get(route('student.adaptive-recommendations.index'))
+            ->assertOk()
+            ->assertSee('KELAS ADAPTIF')
+            ->assertSee('Pelajari Kembali Konsep');
     }
 
     public function test_non_student_is_redirected_to_their_own_dashboard(): void
