@@ -6,7 +6,7 @@ Branch review: `adi/r5-regression-review-20261104`
 
 ## Tujuan dan batasan
 
-Dokumentasi audit independen untuk membantu mahasiswa Munfiatun memperbaiki regresi pada R5. Perubahan tidak langsung dilakukan pada `main` atau branch riset mahasiswa. Mahasiswa tetap menjadi pemilik keputusan penerimaan dan merge. Tiga kegagalan berikut **belum** diperbaiki oleh dokumen ini.
+Dokumentasi audit independen untuk membantu mahasiswa Munfiatun memperbaiki regresi pada R5. Perubahan tidak langsung dilakukan pada `main` atau branch riset mahasiswa. Mahasiswa tetap menjadi pemilik keputusan penerimaan dan merge. Dokumen ini mencatat baseline pengujian dan patch kandidat yang ditambahkan setelah audit awal. Patch **belum diverifikasi dengan PHPUnit di mesin dosen**.
 
 ## Bukti pengujian dosen (Mac lokal)
 
@@ -38,4 +38,20 @@ Dokumentasi audit independen untuk membantu mahasiswa Munfiatun memperbaiki regr
 - Selesaikan R5 UX, role/access control, integritas data, dan evaluasi kualitas (ISO/IEC 25010/25019).
 - Siapkan desain, instrumen, dan bukti evaluasi empiris R6, bukan hanya jumlah tes otomatis.
 
-Status: **AUDIT DOCUMENTED — REGRESSION FIX PENDING**.
+## Patch kandidat yang di-push ke branch review (belum diverifikasi)
+
+- `app/Services/AI/AIQuestionAuthoringService.php`: prioritaskan pesan rujukan artefak yang hilang sebelum pesan kode satu baris; pertahankan penolakan kedua kasus.
+- `tests/Feature/AIQuizGenerationTest.php`: validasi ukuran output dan reasoning effort tetap wajib, sambil mengizinkan kontrak `json_schema` strict untuk model Groq yang kompatibel atau `json_object` untuk fallback yang tidak kompatibel.
+- `app/Services/AI/Exceptions/LoggedAIProcessingException.php` dan `app/Services/AI/AIContentService.php`: marker internal untuk error yang sudah dicatat, sehingga boundary luar tidak mencatat error dua kali dan tetap melempar pesan aman tanpa exception chain.
+- `tests/Feature/PhaseZeroSecurityTest.php`: periksa kontrak log yang memang mencakup `provider=mock`.
+
+**Belum diuji:** konektor GitHub hanya mengubah source repository; tidak menjalankan PHPUnit dalam lingkungan Laravel milik dosen. Angka 531 passed/3 failed adalah baseline **sebelum** patch. Jangan laporkan PASS sampai tes lokal dijalankan.
+
+## Tugas verifikasi dosen dan mahasiswa
+
+1. `git fetch origin` dan `git switch --track origin/adi/r5-regression-review-20261104` pada clone yang branch lokalnya belum ada. Hindari perubahan lokal yang belum di-commit.
+2. Jalankan ulang ketiga tes terisolasi, lalu `php artisan test --compact`, `npm run build` dan cek `git status --short`.
+3. Jika PASS, periksa secara manual pesan kualitas soal dan sanitasi error. Jika gagal, kirim log penuh sebelum menyetujui PR.
+4. Mahasiswa mereview diff, memperbarui dokumentasi dan melanjutkan pengujian R3/R4/R5/R6.
+
+Status: **PATCH CANDIDATE PUSHED — TEST VERIFICATION PENDING**.
