@@ -4,6 +4,7 @@ namespace App\Services\Learning\Adaptive;
 
 use App\Models\AdaptiveRecommendation;
 use App\Models\Course;
+use App\Models\ExperimentAssignment;
 use App\Models\LearningConcept;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -23,6 +24,18 @@ class AdaptiveRecommendationService
      */
     public function generateForCourse(User $student, Course $course, array $context = []): Collection
     {
+        // A control-group learner must not receive the adaptive intervention.
+        // Unassigned learners retain the pre-experiment learning workflow.
+        $isControl = ExperimentAssignment::query()
+            ->where('student_id', $student->id)
+            ->where('course_id', $course->id)
+            ->where('condition', ExperimentAssignment::CONDITION_NON_ADAPTIVE)
+            ->exists();
+
+        if ($isControl) {
+            return collect();
+        }
+
         $concepts = LearningConcept::query()
             ->where('course_id', $course->id)
             ->where('is_active', true)
