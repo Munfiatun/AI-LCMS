@@ -423,7 +423,10 @@ class AIQuizGenerationTest extends TestCase
         $this->assertSame('Merkurius', Quiz::sole()->questions()->orderBy('order')->first()->options()->where('is_correct', true)->value('option_text'));
         Http::assertSent(fn ($request): bool => $request['max_completion_tokens'] === 4096
             && $request['reasoning_effort'] === 'low'
-            && $request['response_format']['type'] === 'json_object'
+            && in_array($request['response_format']['type'] ?? null, ['json_schema', 'json_object'], true)
+            && (($request['response_format']['type'] ?? null) === 'json_object'
+                || (($request['response_format']['json_schema']['strict'] ?? false) === true
+                    && ($request['response_format']['json_schema']['name'] ?? null) === 'ai_lcms_structured_response'))
             && ! str_contains($request['messages'][0]['content'], 'source_quote'));
     }
 
