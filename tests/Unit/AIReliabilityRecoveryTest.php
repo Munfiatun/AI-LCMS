@@ -33,6 +33,7 @@ class AIReliabilityRecoveryTest extends TestCase
             'ai.providers.groq.base_url' => 'https://api.groq.com/openai/v1',
             'ai.reliability.max_attempts' => 2,
             'ai.reliability.retry_backoff_ms' => 0,
+            'ai.reliability.fallback_enabled' => false,
         ]);
         Http::preventStrayRequests();
 

@@ -7,7 +7,7 @@ use App\Models\Course;
 use App\Models\ExperimentAssignment;
 use App\Models\LearningConcept;
 use App\Models\User;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -33,7 +33,7 @@ class AdaptiveRecommendationService
             ->exists();
 
         if ($isControl) {
-            return collect();
+            return new Collection;
         }
 
         $concepts = LearningConcept::query()
@@ -85,15 +85,25 @@ class AdaptiveRecommendationService
             }
         }
 
-        $algorithm = $this->registry->findConfigured($decision->algorithmCode);
-
-        if ($algorithm->version !== $decision->algorithmVersion) {
-            throw new InvalidArgumentException('Decision algorithm version does not match the registered version.');
-        }
-
         $fingerprint = $this->fingerprint($student, $course, $sourceConcept, $decision);
 
-        return DB::transaction(function () use ($student, $course, $sourceConcept, $decision, $algorithm, $fingerprint): AdaptiveRecommendation {
+        return DB::transaction(function () use ($student, $course, $sourceConcept, $decision, $fingerprint): AdaptiveRecommendation {
+            $assignment = ExperimentAssignment::query()
+                ->where('student_id', $student->id)
+                ->where('course_id', $course->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($assignment?->condition === ExperimentAssignment::CONDITION_NON_ADAPTIVE) {
+                throw new InvalidArgumentException('Cannot persist adaptive recommendations for a non-adaptive assignment.');
+            }
+
+            $algorithm = $this->registry->findConfigured($decision->algorithmCode);
+
+            if ($algorithm->version !== $decision->algorithmVersion) {
+                throw new InvalidArgumentException('Decision algorithm version does not match the registered version.');
+            }
+
             $existing = AdaptiveRecommendation::query()
                 ->where('decision_fingerprint', $fingerprint)
                 ->first();
