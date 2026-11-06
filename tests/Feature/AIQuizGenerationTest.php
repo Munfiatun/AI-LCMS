@@ -27,7 +27,12 @@ class AIQuizGenerationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['ai.provider' => 'openai', 'ai.providers.openai.api_key' => 'test-key', 'ai.providers.openai.base_url' => 'https://api.openai.com/v1']);
+        config([
+            'ai.provider' => 'openai',
+            'ai.providers.openai.api_key' => 'test-key',
+            'ai.providers.openai.base_url' => 'https://api.openai.com/v1',
+            'ai.reliability.fallback_enabled' => false,
+        ]);
         Http::preventStrayRequests();
     }
 
