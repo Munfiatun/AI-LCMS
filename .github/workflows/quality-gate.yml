@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - research/r5-ui-ux-simplification
   push:
     branches:
       - main
       - phase-4/final-product-readiness
+      - research/r5-ui-ux-simplification
 
 permissions:
   contents: read
@@ -50,6 +52,14 @@ jobs:
 
       - name: Build production frontend
         run: npm run build
+
+      - name: Validate independent fuzzy numeric oracle
+        run: |
+          if [ -f scripts/research/fuzzy_reference_oracle.py ]; then
+            python3 scripts/research/fuzzy_reference_oracle.py
+          else
+            echo "No frozen reference oracle on this branch; skipping."
+          fi
 
       - name: Run backend test suite
         run: php artisan test
