@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AdaptiveRecommendation;
 use App\Models\Course;
+use App\Models\ExperimentAssignment;
 use App\Models\LearnerMastery;
 use App\Models\LearningConcept;
 use App\Models\User;
@@ -77,6 +78,46 @@ class AdaptiveRecommendationPersistenceTest extends TestCase
         $this->assertSame(AdaptiveRecommendation::STATUS_SUPERSEDED, $previous->refresh()->status);
         $this->assertNotNull($previous->refresh()->superseded_at);
         $this->assertDatabaseCount('adaptive_recommendations', 2);
+    }
+
+    public function test_control_group_generation_is_skipped_without_persisting_new_recommendations(): void
+    {
+        [$student, $course, $concept] = $this->context();
+        $this->mastery($student, $concept, 33.33, 3);
+
+        ExperimentAssignment::create([
+            'course_id' => $course->id,
+            'student_id' => $student->id,
+            'condition' => ExperimentAssignment::CONDITION_NON_ADAPTIVE,
+            'assignment_version' => 'pilot-v1',
+            'assigned_by' => $course->instructor_id,
+            'assigned_at' => now(),
+        ]);
+
+        $recommendations = app(AdaptiveRecommendationService::class)->generateForCourse($student, $course);
+
+        $this->assertCount(0, $recommendations);
+        $this->assertDatabaseCount('adaptive_recommendations', 0);
+    }
+
+    public function test_adaptive_group_generation_remains_available(): void
+    {
+        [$student, $course, $concept] = $this->context();
+        $this->mastery($student, $concept, 33.33, 3);
+
+        ExperimentAssignment::create([
+            'course_id' => $course->id,
+            'student_id' => $student->id,
+            'condition' => ExperimentAssignment::CONDITION_ADAPTIVE,
+            'assignment_version' => 'pilot-v1',
+            'assigned_by' => $course->instructor_id,
+            'assigned_at' => now(),
+        ]);
+
+        $recommendations = app(AdaptiveRecommendationService::class)->generateForCourse($student, $course);
+
+        $this->assertCount(1, $recommendations);
+        $this->assertDatabaseCount('adaptive_recommendations', 1);
     }
 
     /** @return array{User, Course, LearningConcept} */

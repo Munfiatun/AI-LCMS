@@ -438,6 +438,7 @@ class PhaseZeroSecurityTest extends TestCase
         $this->assertSame('Proses AI gagal. Silakan coba kembali.', $log->error_message);
         Log::shouldHaveReceived('error')->once()->with('AI provider processing failed', [
             'exception_type' => RuntimeException::class, 'processing_log_id' => $log->id,
+            'provider' => 'mock',
         ]);
     }
 

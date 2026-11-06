@@ -421,10 +421,18 @@ class AIQuizGenerationTest extends TestCase
         $this->assertSame(2, Quiz::sole()->questions()->count());
         $this->assertSame(['Venus', 'Merkurius', 'Bumi', 'Mars'], Quiz::sole()->questions()->orderBy('order')->first()->options()->orderBy('order')->pluck('option_text')->all());
         $this->assertSame('Merkurius', Quiz::sole()->questions()->orderBy('order')->first()->options()->where('is_correct', true)->value('option_text'));
-        Http::assertSent(fn ($request): bool => $request['max_completion_tokens'] === 4096
-            && $request['reasoning_effort'] === 'low'
-            && $request['response_format']['type'] === 'json_object'
-            && ! str_contains($request['messages'][0]['content'], 'source_quote'));
+        Http::assertSent(function ($request): bool {
+            $format = $request['response_format']['type'] ?? null;
+            $formatValid = $format === 'json_object'
+                || ($format === 'json_schema'
+                    && ($request['response_format']['json_schema']['strict'] ?? false) === true
+                    && ($request['response_format']['json_schema']['name'] ?? null) === 'ai_lcms_structured_response');
+
+            return $request['max_completion_tokens'] === 4096
+                && $request['reasoning_effort'] === 'low'
+                && $formatValid
+                && ! str_contains($request['messages'][0]['content'], 'source_quote');
+        });
     }
 
     public function test_groq_truncated_json_shows_quiz_error_without_saving_dummy_questions(): void

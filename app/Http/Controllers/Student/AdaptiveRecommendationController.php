@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdaptiveRecommendation;
+use App\Models\ExperimentAssignment;
 use App\Models\User;
 use App\Services\Learning\Adaptive\AdaptiveLearningPathService;
 use App\Services\Learning\Adaptive\AdaptiveLearningResourceResolver;
@@ -36,6 +37,12 @@ class AdaptiveRecommendationController extends Controller
             ->where('student_id', $student->id)
             ->where('status', AdaptiveRecommendation::STATUS_ACTIVE)
             ->whereIn('course_id', $enrolledCourseIds)
+            // Research controls may use the LMS, but must not see an adaptive treatment.
+            // Keep unassigned legacy learners eligible outside an active experiment.
+            ->whereNotIn('course_id', ExperimentAssignment::query()
+                ->select('course_id')
+                ->where('student_id', $student->id)
+                ->where('condition', ExperimentAssignment::CONDITION_NON_ADAPTIVE))
             ->whereHas('course', fn ($query) => $query->published())
             ->whereHas('algorithmVersion', fn ($query) => $query
                 ->where('is_baseline', true)
