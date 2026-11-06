@@ -45,8 +45,8 @@ RULES = [
     ({"evidence_count": "high", "prerequisite_mastery": "not_mastered"}, "prerequisite_remediation"),
 ]
 for mastery_label in ("low", "medium", "high"):
-    for evidence_label in ("sufficient", "high"):
-        for prerequisite_label in ("partial", "mastered"):
+    for prerequisite_label in ("partial", "mastered"):
+        for evidence_label in ("sufficient", "high"):
             if mastery_label == "low":
                 output = "remediation"
             elif mastery_label == "medium" or prerequisite_label == "partial":
