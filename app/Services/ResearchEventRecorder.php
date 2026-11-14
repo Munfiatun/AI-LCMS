@@ -53,6 +53,8 @@ class ResearchEventRecorder
     ): ResearchEvent {
         $sourceType = class_basename($source);
 
+        // Preserve historical events created before the uniqueness column was
+        // introduced; their assignment snapshots must remain untouched.
         $existing = ResearchEvent::query()
             ->where('student_id', $student->id)
             ->where('course_id', $course->id)
@@ -65,7 +67,33 @@ class ResearchEventRecorder
             return $existing;
         }
 
-        return $this->record($student, $course, $eventType, $source, $metadata, $learningObjectiveId);
+        $identity = [
+            'student_id' => (int) $student->id,
+            'course_id' => (int) $course->id,
+            'event_type' => $eventType,
+            'source_type' => $sourceType,
+            'source_id' => (string) $source->getKey(),
+        ];
+
+        $deduplicationKey = hash('sha256', json_encode($identity, JSON_THROW_ON_ERROR));
+        $assignment = $this->assignmentFor($student, $course);
+        $payload = $this->payload(
+            $student,
+            $course,
+            $eventType,
+            $source,
+            $metadata,
+            $learningObjectiveId,
+            $assignment,
+        );
+
+        // firstOrCreate uses the DB's unique constraint to resolve competing
+        // inserts. Only recordOnce() populates the key; ordinary record()
+        // events (e.g. material_opened) are intentionally repeatable.
+        return ResearchEvent::query()->firstOrCreate(
+            ['deduplication_key' => $deduplicationKey],
+            $payload,
+        );
     }
 
     private function assignmentFor(User $student, Course $course): ?ExperimentAssignment
