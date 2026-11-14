@@ -1,5 +1,7 @@
 # AI-LCMS
 
+**Laporan Kemajuan Mingguan:** [Lihat PROGRESS.md](PROGRESS.md)
+
 AI-LCMS adalah Learning Content Management System berbasis Laravel untuk pengelolaan kursus, materi, Slidebook berbantuan AI, bank soal, kuis, progres belajar, dan analitik pembelajaran. Sistem memiliki tiga role utama: **Admin**, **Instructor/Guru**, dan **Student/Siswa**.
 
 ## Fitur Utama
