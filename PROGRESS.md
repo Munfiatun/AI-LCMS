@@ -20,7 +20,7 @@
 - **Fitur utama yang sudah tersedia pada pengembangan:** pengelolaan kursus, materi, Slidebook AI, bank soal dan kuis, progres belajar, dashboard, pencatatan peristiwa penelitian, pembaruan *mastery*, serta mesin rekomendasi Rule-Based v1 dan Fuzzy Mamdani v2. Klaim ini berarti fitur/implementasi dan tes yang terkait sudah ada, **bukan** bukti efektivitas pembelajaran lapangan.
 - **Fitur/pekerjaan yang masih dikerjakan:** validasi pedagogis *mastery* dan rekomendasi oleh pakar, kelayakan parameter aturan/fuzzy, pemetaan item–konsep–materi, pengendalian kontaminasi kelompok eksperimen, serta persiapan instrumen dan protokol R6.
 - **Kendala utama:** belum tersedia hasil *expert judgement*, *gold standard*, dan uji coba siswa/eksperimen nyata. Pengujian konkurensi database produksi juga belum diverifikasi. **Tidak ada bug produksi baru yang dinyatakan terkonfirmasi hanya berdasarkan audit ini.**
-- **PR laporan aktif:** [Draft PR pelaporan mingguan](https://github.com/Munfiatun/AI-LCMS/pulls) (tautan PR spesifik diperbarui sesudah PR dibuat).
+- **PR laporan aktif:** [Draft PR #28 — laporan kemajuan mingguan](https://github.com/Munfiatun/AI-LCMS/pull/28).
 - **PR teknis yang sudah di-merge:** [#25 revisi dosen](https://github.com/Munfiatun/AI-LCMS/pull/25), [#26 isolasi assignment](https://github.com/Munfiatun/AI-LCMS/pull/26), [#27 validasi numerik](https://github.com/Munfiatun/AI-LCMS/pull/27).
 - **Rujukan versi teknis terakhir yang terverifikasi:** branch `research/r5-ui-ux-simplification`, merge commit [`ad0d130`](https://github.com/Munfiatun/AI-LCMS/commit/ad0d130fb247a29722efec8d85b5fccc1b80af07). **Belum di-merge ke `main`.**
 - **Bukti CI terakhir:** [Quality Gate GitHub Actions 6 November 2026](https://github.com/Munfiatun/AI-LCMS/actions/runs/42249592998): 559 tes PASS, 3.730 assertions, frontend build PASS, dan oracle numerik Fuzzy PASS. Ini adalah hasil untuk **commit PR #27 sebelum merge**, bukan klaim CI baru pasca-merge atau per 13 November.
@@ -34,7 +34,7 @@
 **Tanggal pembaruan:** 2026-11-15 (**terlambat dari Jumat, 2026-11-13**)  
 **Branch:** `docs/progress-weekly-20261115` (laporan); `research/r5-ui-ux-simplification` (implementasi R5)  
 **Commit terakhir kode R5 yang terverifikasi:** [`ad0d130`](https://github.com/Munfiatun/AI-LCMS/commit/ad0d130fb247a29722efec8d85b5fccc1b80af07) (6 November 2026)  
-**Pull Request:** [PR pelaporan](https://github.com/Munfiatun/AI-LCMS/pulls) (nomor PR diperbarui setelah dibuat); PR teknis #25–27 sudah *merged*
+**Pull Request:** [Draft PR #28 — laporan kemajuan](https://github.com/Munfiatun/AI-LCMS/pull/28); PR teknis #25–27 sudah *merged*
 
 #### 1. Target minggu ini
 
