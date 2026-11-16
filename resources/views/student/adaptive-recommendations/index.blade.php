@@ -12,7 +12,11 @@
             <div class="max-w-3xl">
                 <p class="text-sm font-semibold text-cyan-300">Belajar sesuai kebutuhanmu</p>
                 <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Rekomendasi Belajar untuk {{ $student->name }}</h1>
-                <p class="mt-3 max-w-2xl text-base leading-7 text-slate-400">Fokus pada satu langkah yang disarankan sekarang. Setelah materi atau uji pemahaman selesai, sistem akan menyesuaikan langkah berikutnya secara otomatis.</p>
+                @if($rows->isEmpty())
+                    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-400">Lanjutkan pembelajaran melalui materi dan asesmen yang tersedia di kursusmu.</p>
+                @else
+                    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-400">Fokus pada satu langkah yang disarankan sekarang. Setelah materi atau uji pemahaman selesai, sistem akan menyesuaikan langkah berikutnya secara otomatis.</p>
+                @endif
             </div>
             <a href="{{ route('student.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700">Kembali ke Beranda</a>
         </div>
@@ -21,7 +25,7 @@
     @if($rows->isEmpty())
         <section class="rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 px-6 py-12 text-center">
             <h2 class="text-lg font-bold text-white">Belum ada rekomendasi adaptif aktif</h2>
-            <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">Selesaikan asesmen awal atau aktivitas belajar yang tersedia. Rekomendasi berikutnya akan muncul setelah sistem memiliki cukup informasi tentang progres belajarmu.</p>
+            <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">Buka kursus atau kerjakan asesmen yang tersedia untuk melanjutkan belajarmu. Tidak semua aktivitas membutuhkan rekomendasi adaptif.</p>
             <a href="{{ route('student.quizzes.index') }}" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-500">Lihat Kuis & Asesmen</a>
         </section>
     @else
