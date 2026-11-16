@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdaptiveRecommendation;
 use App\Models\Course;
 use App\Models\ExperimentAssignment;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,11 @@ class ResearchExperimentController extends Controller
         ]);
 
         DB::transaction(function () use ($course, $validated, $request): void {
+            // The student row exists even for a first-time assignment. Lock it
+            // before inspecting the assignment so concurrent first-writes and
+            // recommendation persistence use the same serialization point.
+            User::query()->whereKey($validated['student_id'])->lockForUpdate()->firstOrFail();
+
             $assignment = ExperimentAssignment::query()->lockForUpdate()->firstOrNew([
                 'course_id' => $course->id,
                 'student_id' => $validated['student_id'],
