@@ -162,6 +162,8 @@ class StudentAdaptiveRecommendationWorkspaceTest extends TestCase
             ->get(route('student.adaptive-recommendations.index'))
             ->assertOk()
             ->assertSee('Belum ada rekomendasi adaptif aktif')
+            ->assertSee('Tidak semua aktivitas membutuhkan rekomendasi adaptif.')
+            ->assertDontSee('Rekomendasi berikutnya akan muncul')
             ->assertDontSee('KELAS KONTROL')
             ->assertDontSee('Pelajari Kembali Konsep');
     }
