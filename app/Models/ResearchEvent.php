@@ -19,6 +19,7 @@ class ResearchEvent extends Model
 
     protected $fillable = [
         'event_id',
+        'deduplication_key',
         'student_id',
         'course_id',
         'learning_objective_id',
