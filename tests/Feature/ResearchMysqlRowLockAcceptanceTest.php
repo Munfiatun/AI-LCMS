@@ -11,6 +11,7 @@ use App\Services\Learning\Adaptive\AdaptiveDecision;
 use App\Services\Learning\Adaptive\AdaptiveRecommendationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -49,6 +50,30 @@ class ResearchMysqlRowLockAcceptanceTest extends TestCase
         }
 
         parent::tearDown();
+    }
+
+    public function test_deferred_foreign_keys_and_research_event_deduplication_schema_exist(): void
+    {
+        $relations = [
+            ['quiz_questions', 'question_id'],
+            ['quiz_attempt_questions', 'question_id'],
+            ['quiz_attempt_options', 'option_id'],
+            ['quiz_answers', 'question_id'],
+            ['quiz_answers', 'selected_option_id'],
+        ];
+
+        foreach ($relations as [$table, $column]) {
+            $keys = Schema::getForeignKeys($table);
+
+            $this->assertTrue(
+                collect($keys)->contains(
+                    fn (array $key): bool => in_array($column, $key['columns'] ?? [], true)
+                ),
+                "Missing foreign key for {$table}.{$column} on MySQL."
+            );
+        }
+
+        $this->assertTrue(Schema::hasColumn('research_events', 'deduplication_key'));
     }
 
     public function test_first_recommendation_write_waits_for_existing_student_lock(): void
