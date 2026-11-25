@@ -4,6 +4,16 @@
 
 > **Catatan arsip:** laporan pertama ini disusun **Minggu, 15 November 2026** untuk merangkum periode yang berakhir **Jumat, 13 November 2026**, sehingga **melewati tenggat Jumat malam** yang ditetapkan panduan. Bukti kode/CI terakhir yang dapat diverifikasi untuk penelitian R5 berasal dari **6 November 2026**; tidak diklaim sebagai aktivitas baru pada 9–13 November.
 
+## Addendum finalisasi kandidat R5 — 25 November 2026
+
+- **Kandidat PR #33:** commit `e81f4ef556254b616954e8d4658a4a43180444ab`, telah ditandai **READY FOR DOSEN REVIEW** dan reviewer `@adixblack` diminta melalui GitHub. **Belum merged** ke R5 maupun `main`.
+- **CI gabungan pada head kandidat:** [Quality Gate #45547243158](https://github.com/Munfiatun/AI-LCMS/actions/runs/45547243158) PASS **571 tes / 3.794 assertions**, dengan **3 tes khusus MySQL di-skip** saat backend SQLite; frontend build dan fuzzy oracle PASS.
+- **Uji MySQL 8.4 CI terpisah:** [R5 MySQL Concurrency Acceptance #45547243037](https://github.com/Munfiatun/AI-LCMS/actions/runs/45547243037) PASS **3 tes / 14 assertions**; migrasi seluruh schema pada database sementara PASS, lima FK ditunda sampai referensinya ada, kolom dedup tersedia, dan lock dua koneksi diuji.
+- **Temuan penting:** migrasi kuis historis sebelumnya gagal pada MySQL karena mereferensikan tabel `questions` sebelum dibuat. Patch lintas database telah dikirim pada PR #33, perlu review perubahan migrasi lama serta uji data historis pada staging sebelum merge.
+- **Batas status:** MySQL CI sementara **tidak setara** dengan backup/restore pada staging sesungguhnya maupun konkurensi multi-proses; penilaian ahli, E2E browser/aksesibilitas, dan freeze R6 **belum disahkan**. Jangan klaim efektivitas pembelajaran dari CI.
+
+---
+
 ## Identitas Proyek
 
 | Keterangan | Isi |
