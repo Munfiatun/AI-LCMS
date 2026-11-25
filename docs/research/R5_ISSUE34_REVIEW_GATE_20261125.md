@@ -86,3 +86,15 @@ Tes yang perlu dijalankan ulang pada SHA final: **php artisan test --compact**, 
 Tiga agenda keputusan dosen: **(1)** terima strategi satu PR #33 untuk R5? **(2)** apakah panel ahli dan instrumen/hasilnya memadai sebelum pilot? **(3)** apakah desain R6 dapat diajukan setelah izin dan freeze?
 
 **Kontribusi:** audit regresi awal serta Issue #34 berasal dari dosen; penyiapan kandidat PR dan berkas tindak lanjut berada di repository mahasiswa. Dokumen ini bukan pengesahan dosen. Jangan menaruh nama siswa, token, kredensial, atau dump database pada Issue/PR.
+
+## F. Addendum QA teknis — 25 November 2026 (kandidat R5 final untuk review)
+
+Setelah gate awal di atas disusun, pengujian **MySQL 8.4 disposable CI** mengungkap ketergantungan migrasi kuis historis terhadap tabel `questions`/`question_options` yang belum dibuat. Ini tidak terdeteksi di SQLite dan menyebabkan kegagalan migrasi MySQL; **sudah dibuat kandidat perbaikan** pada PR #33, termasuk penambahan FK tertunda dan pengujian dua koneksi MySQL.
+
+- **R5 code candidate PR #33**: head `e81f4ef556254b616954e8d4658a4a43180444ab`, **belum di-merge**.
+- [**Quality Gate #45547243158**](https://github.com/Munfiatun/AI-LCMS/actions/runs/45547243158) **PASS**, `571 passed / 3.794 assertions`, plus `3 skipped` (khusus MySQL), frontend build dan oracle Fuzzy PASS.
+- [**MySQL Concurrency Acceptance #45547243037**](https://github.com/Munfiatun/AI-LCMS/actions/runs/45547243037) **PASS**, `3 passed / 14 assertions`; migrasi penuh pada DB sementara PASS. Tes memeriksa 5 FK, kolom dedup, lock saat dua koneksi berbeda mengakses baris siswa, dan penolakan persistensi setelah kondisi kontrol commit.
+- **Batas bukti**: MySQL berjalan di GitHub Actions pada database yang dibuang otomatis, dengan dua koneksi dalam satu proses pengujian; belum membuktikan konkurensi multi-proses aplikasi, deployment staging sebenarnya, preservasi event historis setelah migrasi dari basis data berisi data, atau backup/restore. PostgreSQL belum diuji. **Jangan menyamakan PASS MySQL CI dengan validasi staging penuh.**
+- **Pemeriksaan reviewer wajib**: perubahan migrasi historis 2026-09-17 (SQLite tetap memakai FK lama), penambahan 2026-11-25 untuk MySQL/PostgreSQL, arah rollback yang hanya menghapus FK `r5_`, perilaku data legacy, serta kebijakan larangan kontaminasi treatment.
+
+**Keputusan gate R5:** kandidat kode **READY FOR REVIEW**, bukan `R5 APPROVED`; validasi pakar, E2E browser manual, izin/etik dan pembekuan versi R6 masih terbuka. Dokumentasi lama tentang SHA `7746a649` tetap sebagai bukti historis CI tanggal 16 November, bukan head terbaru.
