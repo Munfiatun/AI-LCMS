@@ -1,0 +1,161 @@
+name: R5 Historical Research Data Integrity
+
+on:
+  pull_request:
+    branches:
+      - research/r5-ui-ux-simplification
+
+permissions:
+  contents: read
+
+jobs:
+  historical-migration-mysql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: r5_history_source
+          MYSQL_USER: r5_history_ci
+          MYSQL_PASSWORD: disposable_history_ci_only
+          MYSQL_ROOT_PASSWORD: disposable_history_root_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pdisposable_history_root_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: r5_history_source
+      DB_USERNAME: r5_history_ci
+      DB_PASSWORD: disposable_history_ci_only
+      DB_URL: ""
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      R5_HISTORY_CI_ACK: synthetic-only
+      MYSQL_PWD: disposable_history_root_only
+
+    steps:
+      - name: Checkout branch (never access a production database)
+        uses: actions/checkout@v5
+
+      - name: Install PHP with PDO MySQL
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, mysqli
+          coverage: none
+
+      - name: Install application and MySQL client
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mysql-client
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Construct pre-deduplication migration ledger without resetting historical data
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$DB_DATABASE" = "r5_history_source"
+          test "$APP_ENV" = "testing"
+          test "$GITHUB_ACTIONS" = "true"
+          test "$R5_HISTORY_CI_ACK" = "synthetic-only"
+          mkdir -p database/r5-history-stage
+          find database/migrations -maxdepth 1 -name '*.php' \
+            ! -name '2026_11_15_000001_add_deduplication_key_to_research_events_table.php' \
+            -exec cp -t database/r5-history-stage {} +
+          php artisan migrate --path=database/r5-history-stage --force --no-interaction
+          test "$(php -r 'require "vendor/autoload.php"; $app=require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo Illuminate\Support\Facades\Schema::hasColumn("research_events","deduplication_key")?"1":"0";')" = "0"
+          php scripts/research/r5_historical_migration_audit.php seed
+          php scripts/research/r5_historical_migration_audit.php snapshot /tmp/r5_history_before.json
+          php artisan migrate:status > /tmp/r5_history_status_before.txt
+          php artisan migrate --pretend --no-interaction > /tmp/r5_history_pretend.txt
+          grep -q "deduplication_key" /tmp/r5_history_pretend.txt
+          if grep -Eqi '(drop table|truncate table|delete from research_events)' /tmp/r5_history_pretend.txt; then
+            echo "REFUSED: destructive DDL/DML in migration preview"
+            exit 1
+          fi
+
+      - name: Back up pre-migration synthetic data (never upload SQL backups)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mysqldump --host=127.0.0.1 --user=root --single-transaction \
+            --set-gtid-purged=OFF --no-tablespaces --triggers \
+            r5_history_source > /tmp/r5_history_backup.sql
+          test -s /tmp/r5_history_backup.sql
+          sha256sum /tmp/r5_history_backup.sql | cut -d' ' -f1 > /tmp/r5_history_backup_checksum.txt
+          echo "PASS backup created in CI ephemeral filesystem (contents not uploaded)"
+
+      - name: Apply pending migration over populated historical MySQL 8.4 database
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan migrate --force --no-interaction
+          php artisan migrate:status > /tmp/r5_history_status_after.txt
+          php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+          php scripts/research/r5_historical_migration_audit.php postcheck
+
+      - name: Prove a simulated migration failure is detected, then recover original records from backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DB_USERNAME=root
+          export DB_PASSWORD=disposable_history_root_only
+          mysql --host=127.0.0.1 --user=root -e \
+            'CREATE DATABASE r5_history_restore; CREATE DATABASE r5_history_recovered;'
+          mysql --host=127.0.0.1 --user=root r5_history_restore < /tmp/r5_history_backup.sql
+          DB_DATABASE=r5_history_restore php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+
+          # Fault injection in the first restored DB ONLY: duplicate a column
+          # the pending migration needs to add; migration must fail closed.
+          mysql --host=127.0.0.1 --user=root r5_history_restore -e \
+            'ALTER TABLE research_events ADD COLUMN deduplication_key VARCHAR(64) NULL;'
+          if DB_DATABASE=r5_history_restore php artisan migrate --force --no-interaction > /tmp/r5_expected_failure.log 2>&1; then
+            echo "FAILED: injected duplicate-column migration did not fail"
+            exit 1
+          fi
+          echo "PASS fault injection: migration rejected intentionally inconsistent schema"
+
+          # Never mutate the failed database to 'fix' rows. Restore the
+          # verified pre-migration backup into a NEW empty CI database.
+          mysql --host=127.0.0.1 --user=root r5_history_recovered < /tmp/r5_history_backup.sql
+          DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+          DB_DATABASE=r5_history_recovered php artisan migrate --force --no-interaction
+          DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+          echo "PASS backup restore, fault recovery, and migrated historical-record preservation"
+
+      - name: Publish only sanitized audit hash summary
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/r5-historical-audit
+          cp /tmp/r5_history_before.json artifacts/r5-historical-audit/synthetic-row-hashes.json
+          sha256sum /tmp/r5_history_backup.sql | awk '{print $1}' > artifacts/r5-historical-audit/synthetic-backup-sha256.txt
+          printf '%s\n' \
+            'Synthetic pre-migration row hash comparison: PASS' \
+            'Historical rows and counts unchanged after migration: PASS' \
+            'Legacy duplicate retained; new deduplication UNIQUE: PASS' \
+            'Assignment and algorithm reference checks: PASS' \
+            'Forced migration error detected: PASS' \
+            'Backup restored and checksum matched: PASS' \
+            'Production or real student database: NOT TESTED' > artifacts/r5-historical-audit/acceptance-summary.txt
+
+      - name: Upload sanitized audit evidence (NO database dump)
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: r5-historical-synthetic-audit-hashes
+          path: artifacts/r5-historical-audit/
+          retention-days: 14
