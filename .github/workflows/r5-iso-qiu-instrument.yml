@@ -1,0 +1,35 @@
+name: R5 ISO Quality-in-Use Instrument Validation
+
+on:
+  pull_request:
+    branches:
+      - research/r5-ui-ux-simplification
+  push:
+    branches:
+      - research/r5-ui-ux-simplification
+
+permissions:
+  contents: read
+
+jobs:
+  instrument-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Validate ISO quality-in-use report aggregation
+        run: python3 -m unittest discover -s scripts/research -p test_iso_quality_in_use_report.py -v
+
+      - name: Validate CLI rejects an unfilled template
+        run: |
+          if python3 scripts/research/iso_quality_in_use_report.py docs/research/ISO_QIU_TASK_OBSERVATIONS_TEMPLATE.csv; then
+            echo "FAIL: an empty observation template must never produce a research result."
+            exit 1
+          fi
