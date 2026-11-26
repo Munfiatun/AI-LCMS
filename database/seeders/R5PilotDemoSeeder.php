@@ -37,6 +37,7 @@ class R5PilotDemoSeeder extends Seeder
         }
 
         $course = Course::query()
+            ->with('instructor.role')
             ->where('slug', 'lms-feature-showcase')
             ->where('status', Course::STATUS_PUBLISHED)
             ->first();
@@ -56,6 +57,7 @@ class R5PilotDemoSeeder extends Seeder
             ->where('title', 'Web Fundamentals Quiz')
             ->where('status', 'published')
             ->firstOrFail();
+        $quiz->load('questions');
 
         $studentRole = Role::query()->where('name', Role::ROLE_STUDENT)->firstOrFail();
 
@@ -138,6 +140,8 @@ class R5PilotDemoSeeder extends Seeder
                 'password' => Hash::make((string) config('auth.demo_user_password')),
             ],
         );
+
+        $student->load('role');
 
         if (! $student->isStudent() || ! $student->is_active) {
             throw new RuntimeException("The reserved demo email {$email} belongs to a non-student or inactive account.");
