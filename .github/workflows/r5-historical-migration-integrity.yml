@@ -125,7 +125,11 @@ jobs:
             echo "FAILED: injected duplicate-column migration did not fail"
             exit 1
           fi
-          echo "PASS fault injection: migration rejected intentionally inconsistent schema"
+          if ! grep -Eqi 'duplicate column|1060' /tmp/r5_expected_failure.log; then
+            echo "FAILED: expected duplicate-column failure was not confirmed"
+            exit 1
+          fi
+          echo "PASS fault injection: exact duplicate-column migration error detected"
 
           # Never mutate the failed database to 'fix' rows. Restore the
           # verified pre-migration backup into a NEW empty CI database.
@@ -133,7 +137,15 @@ jobs:
           DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
           DB_DATABASE=r5_history_recovered php artisan migrate --force --no-interaction
           DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
-          echo "PASS backup restore, fault recovery, and migrated historical-record preservation"
+
+          # Rollback is tested ONLY on a disposable restored historical DB
+          # before any new event has a non-NULL dedup key. Never roll back
+          # the research production database or a live populated deployment.
+          DB_DATABASE=r5_history_recovered php artisan migrate:rollback --step=1 --force --no-interaction
+          DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+          DB_DATABASE=r5_history_recovered php artisan migrate --force --no-interaction
+          DB_DATABASE=r5_history_recovered php scripts/research/r5_historical_migration_audit.php verify /tmp/r5_history_before.json
+          echo "PASS backup restore, injected failure recovery, and disposable legacy-only rollback/re-migration"
 
       - name: Publish only sanitized audit hash summary
         if: success()
@@ -150,6 +162,7 @@ jobs:
             'Assignment and algorithm reference checks: PASS' \
             'Forced migration error detected: PASS' \
             'Backup restored and checksum matched: PASS' \
+            'Legacy-only rollback and re-migration on disposable clone: PASS' \
             'Production or real student database: NOT TESTED' > artifacts/r5-historical-audit/acceptance-summary.txt
 
       - name: Upload sanitized audit evidence (NO database dump)
