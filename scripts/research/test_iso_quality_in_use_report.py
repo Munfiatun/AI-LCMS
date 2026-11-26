@@ -41,9 +41,9 @@ def observation(**overrides):
 class ISOQualityInUseReportTest(unittest.TestCase):
     def test_maps_metrics_to_distinct_2011_and_2023_models(self):
         rows = [
-            observation(),
+            observation(participant_id="P_G01"),
             observation(
-                participant_id="S01", role="student", condition="non_adaptive",
+                participant_id="P_S01", role="student", condition="non_adaptive",
                 task_id="S01", context_id="PHONE", completed="0",
                 time_seconds="120", errors="2", assistance_count="1",
                 satisfaction_1to5="2", accessibility_1to5="2",
@@ -58,8 +58,8 @@ class ISOQualityInUseReportTest(unittest.TestCase):
         self.assertEqual(report["iso_25019_2023"]["beneficialness"]["accessibility"]["median_rating_1to5"], 3.5)
         self.assertEqual(report["iso_25019_2023"]["freedom_from_risk"]["low"], 1)
         self.assertEqual(report["by_role"]["student"]["successful_tasks"], 0)
-        self.assertNotIn("S01", json.dumps(report))
-        self.assertNotIn("G01", json.dumps(report))
+        self.assertNotIn("P_S01", json.dumps(report))
+        self.assertNotIn("P_G01", json.dumps(report))
 
     def test_calculates_only_prespecified_context_coverage(self):
         rows = [observation()]
