@@ -53,6 +53,26 @@ def check_no_horizontal_overflow(page, label: str) -> None:
     )
 
 
+def complete_demo_quiz(page, label: str) -> None:
+    """Follow the real browser quiz start/submit/result flow with synthetic data."""
+    card = page.locator("article").filter(
+        has=page.get_by_role("heading", name="Web Fundamentals Quiz")
+    )
+    assert card.count() == 1, f"{label}: expected one published demo quiz"
+    card.get_by_role("link", name="Kerjakan Kuis").click()
+    page.get_by_role("heading", name="Web Fundamentals Quiz").wait_for(timeout=15000)
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="Mulai Ujian Sekarang").click()
+    page.wait_for_url(re.compile(r"/student/quizzes/[0-9]+/attempt/[0-9]+$"), timeout=20000)
+    assert page.locator("#examForm input[type=radio]").count() >= 6, (
+        f"{label}: attempt must render real answer choices"
+    )
+    page.get_by_role("button", name="Kumpulkan Sekarang").click()
+    page.wait_for_url(re.compile(r"/student/quizzes/[0-9]+/attempt/[0-9]+/result$"), timeout=20000)
+    assert "Review Jawaban" in page.locator("main").inner_text()
+    print(f"{label}: quiz start → submit → result PASS")
+
+
 def browser_acceptance() -> None:
     if len(PASSWORD) < 12:
         raise RuntimeError("Demo password not supplied or too short; stop before starting the pilot browser test.")
@@ -80,6 +100,8 @@ def browser_acceptance() -> None:
             page.wait_for_load_state("domcontentloaded")
             assert "Web Request Lifecycle" in page.locator("main").inner_text()
             assert_page(page, "/student/quizzes", "Web Fundamentals Quiz")
+            complete_demo_quiz(page, "adaptive")
+            assert_page(page, "/student/adaptive-recommendations", "Alur HTTP Request dan Response")
             page.screenshot(path=str(ARTIFACTS / "adaptive-desktop.png"), full_page=True)
 
             # The non-adaptive demo learner keeps the same LMS material and quiz,
@@ -88,6 +110,7 @@ def browser_acceptance() -> None:
             contexts.append(control)
             assert_page(page, "/student/courses", "LMS Feature Showcase")
             assert_page(page, "/student/quizzes", "Web Fundamentals Quiz")
+            complete_demo_quiz(page, "non-adaptive")
             assert_page(page, "/student/adaptive-recommendations", "Belum ada rekomendasi adaptif aktif")
             assert "Web Request Lifecycle" not in page.locator("main").inner_text(), (
                 "Control learner must not see adaptive material recommendation."
