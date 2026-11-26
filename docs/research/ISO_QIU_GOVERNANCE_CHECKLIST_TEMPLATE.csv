@@ -1,0 +1,8 @@
+check_id,dimension,description,owner_role,status,evidence_location_private,reviewed_on
+G01,consent,Persetujuan etika dan partisipasi sesuai konteks,reviewer,NOT VERIFIED,,
+G02,privacy,Pisahkan identitas pengguna dari CSV pseudonim,reviewer,NOT VERIFIED,,
+G03,permissions,Pastikan role serta URL kontrol tidak membocorkan intervensi,reviewer,NOT VERIFIED,,
+G04,environment,DB uji hanya data sintetis dan tidak terkait produksi,operator,NOT VERIFIED,,
+G05,versioning,Catat SHA branch dan versi instrumen tiap sesi,operator,NOT VERIFIED,,
+G06,risk,Buat prosedur melaporkan dan menangani insiden privasi atau kesalahan nilai,reviewer,NOT VERIFIED,,
+G07,acceptance,Kesepakatan kriteria penerimaan sebelum pengambilan data,reviewer,NOT VERIFIED,,
