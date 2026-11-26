@@ -1,0 +1,104 @@
+name: R5 Real Browser Readiness
+
+on:
+  pull_request:
+    branches:
+      - research/r5-ui-ux-simplification
+  push:
+    branches:
+      - research/r5-ui-ux-simplification
+
+permissions:
+  contents: read
+
+jobs:
+  browser-demo-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: sqlite
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      AI_PROVIDER: mock
+      DEMO_USER_PASSWORD: r5-browser-only-ephemeral-2026
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP and SQLite
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+          npm run build
+
+      - name: Prepare disposable SQLite demo database
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          echo "DB_DATABASE=$GITHUB_WORKSPACE/database/r5-browser-smoke.sqlite" >> "$GITHUB_ENV"
+          touch database/r5-browser-smoke.sqlite
+
+      - name: Seed realistic role-specific demo and verify readiness
+        run: |
+          php artisan migrate:fresh --force
+          php artisan db:seed --force
+          php artisan demo:check --json
+          php artisan route:list --name=student.adaptive-recommendations
+
+      - name: Install headless Chromium
+        run: |
+          python3 -m pip install playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+
+      - name: Start Laravel demo server
+        run: |
+          nohup php artisan serve --host=127.0.0.1 --port=8000 > /tmp/r5-browser-app.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/up > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/r5-browser-app.log
+          exit 1
+
+      - name: Validate full role journeys in Chromium
+        run: python3 scripts/research/r5_browser_acceptance.py
+
+      - name: Export sanitized demo screenshots
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: r5-browser-synthetic-screenshots
+          path: artifacts/r5-browser/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Show Laravel server log on failure
+        if: failure()
+        run: |
+          tail -n 90 /tmp/r5-browser-app.log || true
+          tail -n 90 storage/logs/laravel.log || true
