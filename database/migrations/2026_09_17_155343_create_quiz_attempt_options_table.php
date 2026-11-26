@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('quiz_attempt_options', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attempt_question_id')->constrained('quiz_attempt_questions')->cascadeOnDelete();
-            $table->foreignId('option_id')->constrained('question_options')->cascadeOnDelete();
+            $table->foreignId('option_id');
+            if (Schema::getConnection()->getDriverName() === 'sqlite') {
+                $table->foreign('option_id')->references('id')->on('question_options')->cascadeOnDelete();
+            }
             $table->unsignedInteger('order');
             $table->timestamps();
 

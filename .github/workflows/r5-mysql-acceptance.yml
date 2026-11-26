@@ -1,0 +1,68 @@
+name: R5 MySQL Concurrency Acceptance
+
+on:
+  pull_request:
+    branches:
+      - research/r5-ui-ux-simplification
+
+permissions:
+  contents: read
+
+jobs:
+  mysql-row-lock-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: r5_ci
+          MYSQL_USER: r5_ci
+          MYSQL_PASSWORD: ci_disposable_only
+          MYSQL_ROOT_PASSWORD: ci_root_disposable_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_disposable_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: r5_ci
+      DB_USERNAME: r5_ci
+      DB_PASSWORD: ci_disposable_only
+      DB_URL: ""
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP with MySQL PDO
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, mysqli
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare disposable CI application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Migrate disposable MySQL schema
+        run: php artisan migrate:fresh --force
+
+      - name: Run two-connection row lock acceptance
+        run: php artisan test --filter=ResearchMysqlRowLockAcceptanceTest

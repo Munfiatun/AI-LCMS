@@ -88,6 +88,11 @@ class AdaptiveRecommendationService
         $fingerprint = $this->fingerprint($student, $course, $sourceConcept, $decision);
 
         return DB::transaction(function () use ($student, $course, $sourceConcept, $decision, $fingerprint): AdaptiveRecommendation {
+            // Match the lock order in ResearchExperimentController. Locking an
+            // existing student row also covers the gap before an experiment
+            // assignment has ever been created for this student and course.
+            User::query()->whereKey($student->id)->lockForUpdate()->firstOrFail();
+
             $assignment = ExperimentAssignment::query()
                 ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
