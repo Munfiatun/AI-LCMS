@@ -138,6 +138,41 @@ Semua akun menggunakan nilai `DEMO_USER_PASSWORD` yang Anda tentukan sendiri. Ja
 
 `DatabaseSeeder` hanya menjalankan data demo pada environment `local`/`testing`. Seeder demo eksplisit seperti `CourseSeeder`, `DemoCourseSeeder`, `LmsDemoSeeder`, dan `WebLearningDummySeeder` juga memiliki guard environment sehingga tidak menulis data demo ketika aplikasi berjalan sebagai `production`.
 
+## R5 — Paket Demo Siap Uji *Quality in Use* (2011 dan 2023)
+
+Untuk melakukan pengujian pengalaman pengguna, gunakan **branch penelitian R5**, **bukan \`main\`**. Data yang disediakan di bawah hanya **sintetis** untuk memastikan fitur berfungsi sebelum peserta nyata dilibatkan.
+
+**Instalasi baru di Mac/komputer penguji:**
+
+1. Checkout \`research/r5-ui-ux-simplification\` dan ikuti **Setup Lokal** di atas (PHP 8.4+, Node 22, Composer).
+2. Gunakan **database SQLite baru yang kosong khusus demo**, bukan database berisi catatan siswa. Pada \`.env\` set \`APP_ENV=local\`, \`DB_CONNECTION=sqlite\`, \`DB_DATABASE=/path/absolut/ke/database/r5-demo.sqlite\`, \`DEMO_USER_PASSWORD\` dengan password demo buatan sendiri, dan \`AI_PROVIDER=mock\`. Buat file SQLite kosong dengan \`touch\` pada lokasi tersebut.
+3. Jalankan:
+
+\`\`\`bash
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan demo:check --json
+npm ci
+npm run build
+php artisan serve
+\`\`\`
+
+4. Kunjungi \`http://127.0.0.1:8000/login\`, lalu gunakan salah satu akun berikut dan password yang kamu set pada \`DEMO_USER_PASSWORD\`:
+
+| Peran uji | Akun demo | Kondisi |
+| --- | --- | --- |
+| Guru | \`instructor@example.com\` | Membuat/meninjau kursus, materi, kuis, diagnostik dan mastery |
+| Siswa adaptif | \`adaptive-demo@example.com\` | Terdaftar pada **LMS Feature Showcase**, mendapat rekomendasi yang mengarah ke materi |
+| Siswa kontrol | \`control-demo@example.com\` | Terdaftar pada kursus **yang sama**, tidak melihat intervensi adaptif |
+| Siswa biasa | \`student@example.com\` | Golden demo lama dan histori pembelajaran |
+
+**Sebelum uji pengguna:** pastikan akun guru dan dua akun siswa dapat login; materi Slidebook terbit dan Quiz Web Fundamentals tampil; siswa adaptif melihat rekomendasi *Alur HTTP Request dan Response*; siswa kontrol tetap bisa belajar tetapi halaman rekomendasinya kosong. Login, klik jalur belajar, uji akses role serta viewport ponsel sudah diverifikasi otomatis oleh [R5 Real Browser Readiness](https://github.com/Munfiatun/AI-LCMS/actions/workflows/r5-browser-readiness.yml).
+
+**Keamanan:** \`R5PilotDemoSeeder\` dan akun demo hanya berjalan di \`local/testing\` dengan \`DEMO_USER_PASSWORD\`; tidak aktif pada \`production\`. Mastery yang ditanam pada akun demo adalah **nilai ilustrasi**, bukan hasil asesmen riil. Jangan menjalankan \`migrate:fresh\`, \`db:wipe\` atau \`db:seed\` ulang pada database pengujian yang sudah berisi catatan hasil pengguna. Untuk reset demo, gunakan database **terpisah yang sengaja dikosongkan**.
+
+Protokol observasi ISO ada di \`docs/research/R5_ISO_QUALITY_IN_USE_2011_2023_PILOT_PROTOCOL_20261126.md\`. Evaluasi *quality in use* membandingkan **ISO/IEC 25010:2011** dengan **ISO/IEC 25019:2023**. Pengumpulan dan analisis hasil responden merupakan tahap yang terpisah dari kesiapan software; seluruh pengukuran awal harus merekam SHA aplikasi dan konteks pengujian.
+
 ## Quality Gate
 
 Sebelum merge atau deployment, jalankan gate lengkap:
