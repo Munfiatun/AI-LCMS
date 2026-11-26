@@ -14,6 +14,22 @@
 
 ---
 
+## Update R5 — 26 November 2026: Integrasi teknis dan persiapan ISO quality-in-use
+
+**Status:** **Kode R5 dan instrumen uji ISO telah di-merge ke branch penelitian**, belum rilis ke \`main\`, belum ada hasil data responden atau validasi ilmiah.
+
+- **Merge PR #33** pada branch \`research/r5-ui-ux-simplification\`: commit \`242750ffbeb3ede637116dfb383cf7e9c960b558\`, integrasi R5, perbaikan FK lintas DB, dan pengujian lock MySQL. PR sumber #29/#30/#32 ditutup tanpa merge ulang karena seluruh patch sudah tercakup.
+- **Merge PR #35**: commit \`aab4fe160b4a51f094d1493d217507cbf88869f2\`, dokumen audit R5, instrumen validasi ahli, dan draft R6.
+- **Merge PR #36**: commit \`8d99545be7039e97cc3778b356276efe4f5f1281\`, protokol evaluasi *quality-in-use* 2011 dan 2023, tiga template CSV pseudonim, alat rekap deskriptif, dan CI instrument.
+- **Standar yang benar:** ISO/IEC **25010:2011** (5 quality-in-use characteristics) dibandingkan dengan ISO/IEC **25019:2023** (3 quality-in-use characteristics). ISO/IEC **25010:2023** adalah model **product quality** dan bukan standar *quality-in-use* 2023.
+- **Bukti sebelum merge PR #36** (26 November): [Quality Gate](https://github.com/Munfiatun/AI-LCMS/actions/runs/45737346355) **PASS 571 tests / 3.794 assertions** (3 MySQL-only skipped), [MySQL 8.4 concurrency](https://github.com/Munfiatun/AI-LCMS/actions/runs/45737346335) **PASS 3 tests / 14 assertions**, [ISO instrument validation](https://github.com/Munfiatun/AI-LCMS/actions/runs/45737347058) **PASS 5 unit tests**. Hasil tersebut merupakan verifikasi perangkat lunak, bukan hasil pengamatan pengguna.
+- **Batas penerimaan:** tidak ada *quality-in-use result*, penyebaran instrumen kepada responden, atau sertifikasi ISO yang diklaim. Uji staging dengan migrasi data historis, aksesibilitas browser manual, panel ahli, izin peserta, dan freeze R6 belum disahkan.
+- **Lingkup merge:** hanya branch penelitian R5 menerima kode/instrumen. PR laporan ini tetap hanya \`PROGRESS.md\` dan \`README.md\` menuju \`main\`; tidak membawa kode riset ke \`main\`.
+
+**Langkah uji coba:** gunakan akun demo, isi CSV observasi pseudonim dengan hasil pengamatan nyata, tetapkan matriks konteks dan kriteria penerimaan sebelum studi, jalankan \`python3 scripts/research/iso_quality_in_use_report.py <observations.csv> --contexts <contexts.csv> --output <aggregated.json>\` di komputer/staging yang diotorisasi. Jangan upload data individu ke GitHub.
+
+---
+
 ## Identitas Proyek
 
 | Keterangan | Isi |
@@ -23,7 +39,7 @@
 | Repository GitHub | https://github.com/Munfiatun/AI-LCMS |
 | Branch yang direview | `docs/progress-weekly-20261115` (**laporan/README**); `research/r5-ui-ux-simplification` (**kode penelitian terbaru**) |
 | Status umum proyek | **Dalam proses** — implementasi dan regresi teknis telah tersedia; validasi akademik dan R6 belum final |
-| Terakhir diperbarui | **2026-11-25** (pembaruan retrospektif, target 20 Nov terlewat) |
+| Terakhir diperbarui | **2026-11-26** (integrasi R5 dan instrumen ISO) |
 
 ## Ringkasan Kemajuan Saat Ini
 
