@@ -28,7 +28,7 @@ final class MetamorphicPropertyExperimentTest extends TestCase
     private int $errors=0;
     private array $counts=[];
 
-    private function json(mixed $value): string
+    private function encodeObservation(mixed $value): string
     {
         return json_encode($value, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION);
     }
@@ -41,7 +41,7 @@ final class MetamorphicPropertyExperimentTest extends TestCase
     private function check(string $suite,string $id,string $alg,string $property,?bool $pass,array $actual,array $expected=[],string $scope='baseline'): void
     {
         $status=$pass===null?'not_applicable':($pass?'pass':'fail');
-        $this->write($this->checks,[$scope,$suite,$id,$alg,$property,$status,$this->json($expected),$this->json($actual)]);
+        $this->write($this->checks,[$scope,$suite,$id,$alg,$property,$status,$this->encodeObservation($expected),$this->encodeObservation($actual)]);
         $this->counts[$status]=($this->counts[$status]??0)+1;
     }
 
@@ -58,7 +58,7 @@ final class MetamorphicPropertyExperimentTest extends TestCase
         $original=config('adaptive.algorithms');
         $selector=$alg==='fuzzy-v2'?'adaptive.comparison_algorithm':'adaptive.baseline_algorithm';
         [$class,$version]=self::ALGS[$alg];$code=$alg;
-        $configHash=hash('sha256',$this->json($original[$alg]['configuration']));
+        $configHash=hash('sha256',$this->encodeObservation($original[$alg]['configuration']));
         $called=0;$snapshot=null;$error='';
         try {
             if ($variant!==null) {
@@ -67,7 +67,7 @@ final class MetamorphicPropertyExperimentTest extends TestCase
                 data_set($def['configuration'],$variant['path'],$variant['value']);
                 $code=$variant['id'];$version='phase4-1.0.0-'.$code;
                 $def['name']='Research '.$code;$def['version']=$version;$def['status']='experimental';$def['is_baseline']=false;
-                $configHash=hash('sha256',$this->json($def['configuration']));
+                $configHash=hash('sha256',$this->encodeObservation($def['configuration']));
                 config(['adaptive.algorithms'=>$original+[$code=>$def],$selector=>$code]);
             }
             $fixture=ExperimentFixture::build($p,$teacher,$student);
@@ -106,8 +106,8 @@ final class MetamorphicPropertyExperimentTest extends TestCase
             DB::rollBack($level);
         }
         $this->write($this->raw,[$stage,$p['case_id'],$p['dataset'],$alg,$code,$version,
-            $variant['id']??'baseline',hash('sha256',$this->json([$p,$missing])),$configHash,$called,
-            $snapshot===null?'error':'success',$error,$this->json($p),(int)$missing,$this->json($snapshot)]);
+            $variant['id']??'baseline',hash('sha256',$this->encodeObservation([$p,$missing])),$configHash,$called,
+            $snapshot===null?'error':'success',$error,$this->encodeObservation($p),(int)$missing,$this->encodeObservation($snapshot)]);
         return $snapshot;
     }
 
@@ -258,7 +258,7 @@ final class MetamorphicPropertyExperimentTest extends TestCase
         $this->assertSame('rule-based-v1',config('adaptive.baseline_algorithm'));
         $this->assertSame('fuzzy-v2',config('adaptive.comparison_algorithm'));
         $this->assertSame(10702,$this->calls);
-        fwrite(STDOUT,'PHASE5_EXECUTION '.$this->json(['engine_calls'=>$this->calls,'execution_errors'=>$this->errors,'check_counts'=>$this->counts]).PHP_EOL);
+        fwrite(STDOUT,'PHASE5_EXECUTION '.$this->encodeObservation(['engine_calls'=>$this->calls,'execution_errors'=>$this->errors,'check_counts'=>$this->counts]).PHP_EOL);
         // Do not assert that all scientific properties pass: retain negative observations.
         $this->assertSame(0,$this->errors,'Engine/instrument errors; inspect raw outputs.');
     }
