@@ -1,0 +1,15 @@
+# Phase 6 — Performance benchmarking addendum v1.0
+Design recorded before measurement. Source archived Phase 5 commit 4b7f964e194ac5939e8ab9a6e531ffec186539ac. D4 1000 fixed profiles; compare same production engines and frozen configs, SQLite memory only. No merge or production changes.
+ 
+## Measurement design
+Run 13 paired rounds sequentially on one runner/device: 3 host warmup rounds, then 10 measured rounds. Alternate first engine continuously (each engine first in 5 measured rounds). One fresh PHP/PHPUnit process per algorithm/batch for independent peak allocator usage. As fresh processes do not inherit PHP warmup, explicitly prewarm each process on the same first 20 D4 cases before its full 1000-case batch. Prewarm and host-warmup rows preserved but excluded from measured statistics. 26 processes, 26,520 planned calls (20,000 measured, 6,000 host warmup, 520 per-process prewarm). Same fixture construction and DB rollback for every call. Resolve engine before timing. hrtime(true) wraps only actual decide(), including its registry and database queries, excludes setup, transaction rollback, serialization and export. No parallel benchmark jobs. Every output compared to archived Phase 2 replay, not accuracy. Preserve error and mismatch records and batch logs. No discard of outliers.
+ 
+## Metrics
+Raw latency ns; mean, median, sample SD, IQR, p95 (linear interpolation), min/max in ms; successful engine-only throughput = successful calls / sum successful call durations. Not request throughput or total batch wall throughput. Per-batch summaries and pooled descriptive results; batch medians retained, repeated profiles not independent participants. PHP peak allocated/used bytes over entire isolated process (includes framework, fixture, setup, CSV); not process RSS and not algorithm-only memory. Record loop wall time separately. No inferential significance claimed from pooled repeated timings. Capture actual OS, CPU, PHP/Laravel/SQLite versions, opcache/JIT, hashes, process policy and logs.
+ 
+## Execution and interpretation
+GitHub hosted CI is preliminary smoke/reproducibility evidence only. Final performance timing on a stable device, ideally fresh isolated clone with dependencies locked, no other workloads, power connected, fixed PHP version/settings, record hardware and load. Run from root after composer install, local disposable .env and app key, config clear, clean git checkout:
+```sh
+python3 scripts/research/ai_computational/run_phase6.py --environment controlled-local --output "$(mktemp -d)"
+```
+Local label is operator-supplied, not proof of controlled conditions. Workflow uses shared-ci and explicitly rejects controlled-local label on Actions. Outputs benchmark_results.csv, benchmark_batch_metrics.csv, batch_manifests.json, environment.json, phase6_manifest.json and per-batch raw CSV/logs. Gate requires complete calls, no errors and archived output match. Preserve failures rather than changing engines. Timing cannot establish pedagogical validity or production scalability.

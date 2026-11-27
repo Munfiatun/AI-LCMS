@@ -1,0 +1,50 @@
+name: AI Computational Evaluation Phase 6
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - 'tests/Research/AIComputational/PerformanceBenchmarkTest.php'
+      - 'scripts/research/ai_computational/run_phase6.py'
+      - '.github/workflows/ai-computational-phase6.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      AI_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+      - name: Prepare isolated app
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+          python3 scripts/research/ai_computational/generate_dataset.py --check
+      - name: Run sequential preliminary benchmark
+        run: python3 scripts/research/ai_computational/run_phase6.py --environment shared-ci --output "$RUNNER_TEMP/phase6"
+      - name: Preserve raw timings, manifests and all logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase6-${{ github.sha }}
+          path: ${{ runner.temp }}/phase6/
+          if-no-files-found: warn
+          retention-days: 90
