@@ -1,0 +1,72 @@
+name: Archive verified Phase 3 evidence (run 45928359249)
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - '.github/workflows/archive-ai-phase3-45928359249.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - name: Download exact Phase 3 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-computational-phase3-50bfd25f88cddc32ba51aa7e5c948cba8f4b7d82
+          run-id: 45928359249
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-phase3/phase3
+      - name: Download exact Phase 2 replay artifact from same run
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-computational-phase2-50bfd25f88cddc32ba51aa7e5c948cba8f4b7d82
+          run-id: 45928359249
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-phase3/phase2_replay
+      - name: Verify original bytes against independently audited SHA-256 values
+        working-directory: ${{ runner.temp }}/verified-phase3
+        run: |
+          sha256sum --check <<'HASHES'
+          1459fe78acc1bfd37e2ec41af32291aaf4e95fbac8eac93f3772a91e2ae5d5a2  phase3/additional_actual.csv
+          1e8c846b3b22d7953cebf9754d6e113b9f7f8b227b733970713861eac91c2332  phase3/additional_inputs.csv
+          305af728d0e4953d8f74292ea2f9e001b56c3caf41aed1d262010a477d708027  phase3/boundary_results.csv
+          f3203aad4859b2098f3cbc6fa481de94ba2828f1b0e8f58d3e561523ab32c74f  phase3/numerical_results.csv
+          f3507e0c19c25c86dcdd1abe67a54b8a7de23ef8c85ddd93793cf4fc22c4fe03  phase3/phase3_manifest.json
+          f2176359a9872d229d31bece46fc03481b9a16123858bc3d80f0af34758f1cc7  phase2_replay/comparative_results.csv
+          e76a24d945594949e25e6e9c0d8dea2f308054d8eae6de7570fd6a6fd02ad35b  phase2_replay/run_manifest.json
+          HASHES
+      - name: Archive exact verified files on experiment branch only
+        env:
+          ARCHIVE_ROOT: research/ai_computational/results/phase3/run-45928359249
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/research/ai-computational-evaluation
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test ! -e "$ARCHIVE_ROOT"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$ARCHIVE_ROOT/phase3" "$ARCHIVE_ROOT/phase2_replay"
+          cp "$RUNNER_TEMP/verified-phase3/phase3/additional_actual.csv" "$ARCHIVE_ROOT/phase3/additional_actual.csv"
+          cp "$RUNNER_TEMP/verified-phase3/phase3/additional_inputs.csv" "$ARCHIVE_ROOT/phase3/additional_inputs.csv"
+          cp "$RUNNER_TEMP/verified-phase3/phase3/boundary_results.csv" "$ARCHIVE_ROOT/phase3/boundary_results.csv"
+          cp "$RUNNER_TEMP/verified-phase3/phase3/numerical_results.csv" "$ARCHIVE_ROOT/phase3/numerical_results.csv"
+          cp "$RUNNER_TEMP/verified-phase3/phase3/phase3_manifest.json" "$ARCHIVE_ROOT/phase3/phase3_manifest.json"
+          cp "$RUNNER_TEMP/verified-phase3/phase2_replay/comparative_results.csv" "$ARCHIVE_ROOT/phase2_replay/comparative_results.csv"
+          cp "$RUNNER_TEMP/verified-phase3/phase2_replay/run_manifest.json" "$ARCHIVE_ROOT/phase2_replay/run_manifest.json"
+          git add -f -- "$ARCHIVE_ROOT/phase3/" "$ARCHIVE_ROOT/phase2_replay/"
+          test "$(git diff --cached --name-only | wc -l)" -eq 7
+          git diff --cached --name-only | while IFS= read -r path; do
+            case "$path" in "$ARCHIVE_ROOT/"*) ;; *) exit 1 ;; esac
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "research(ai): archive exact verified Phase 3 and replay evidence"
+          git push origin HEAD:refs/heads/research/ai-computational-evaluation
+          git rev-parse HEAD
