@@ -1,0 +1,7 @@
+dataset_grid.csv: 336 rows; fnv1a32=e2c5d123
+dataset_boundary.csv: 128 rows; fnv1a32=8819365a
+dataset_scenario.csv: 16 rows; fnv1a32=3d6598a7
+dataset_random.csv: 1000 rows; fnv1a32=7c001f75
+dataset_reference.csv: 8 rows; fnv1a32=89873603
+Synthetic inputs only; no algorithm executions or participant data.
+Two fresh generations and frozen inputs byte-identical
