@@ -1,0 +1,80 @@
+name: AI Computational Evaluation Phase 7
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - 'scripts/research/ai_computational/analyze_phase7.py'
+      - '.github/workflows/ai-computational-phase7.yml'
+      - 'research/ai_computational/requirements-phase7.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analysis:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned analysis dependencies
+        run: python -m pip install -r research/ai_computational/requirements-phase7.txt
+      - name: Recalculate all statistics and render publication figures
+        run: python scripts/research/ai_computational/analyze_phase7.py --output "$RUNNER_TEMP/phase7"
+      - name: Preserve analysis outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase7-${{ github.sha }}
+          path: ${{ runner.temp }}/phase7/
+          retention-days: 90
+          if-no-files-found: error
+  archive:
+    needs: analysis
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ai-computational-phase7-${{ github.sha }}
+          path: ${{ runner.temp }}/phase7
+      - name: Verify and commit generated analysis only
+        env:
+          ARCHIVE_ROOT: research/ai_computational/results/phase7/run-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/research/ai-computational-evaluation
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test ! -e "$ARCHIVE_ROOT"
+          test -z "$(git status --porcelain)"
+          python - <<'PY'
+          import os, pathlib, json, hashlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"phase7"
+          m=json.loads((p/"summary_metrics.json").read_text())
+          assert m["analysis_commit"]==os.environ["GITHUB_SHA"]
+          assert set(m["output_sha256"])=={str(x.relative_to(p)) for x in p.rglob("*") if x.is_file() and x.name!="summary_metrics.json"}
+          for name,h in m["output_sha256"].items(): assert hashlib.sha256((p/name).read_bytes()).hexdigest()==h,name
+          PY
+          mkdir -p "$ARCHIVE_ROOT"
+          cp -a "$RUNNER_TEMP/phase7/." "$ARCHIVE_ROOT/"
+          git add -f -- "$ARCHIVE_ROOT/"
+          git diff --cached --name-only | while IFS= read -r p; do
+            case "$p" in "$ARCHIVE_ROOT/"*) ;; *) exit 1 ;; esac
+            cmp "$p" <(git show ":$p")
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "research(ai): archive verified Phase 7 statistics and publication figures"
+          git push origin HEAD:refs/heads/research/ai-computational-evaluation
+          git rev-parse HEAD
