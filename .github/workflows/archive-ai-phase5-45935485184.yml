@@ -1,0 +1,63 @@
+name: Archive verified Phase 5 evidence (run 45935485184)
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - '.github/workflows/archive-ai-phase5-45935485184.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - name: Download exact Phase 5 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-computational-phase5-5e6f30abf9f5dfd40d8fd8f973896da2fa46c27f
+          run-id: 45935485184
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-phase5
+      - name: Verify original bytes against independently audited SHA-256 values
+        working-directory: ${{ runner.temp }}/verified-phase5
+        run: |
+          sha256sum --check <<'HASHES'
+          a48946fd2cc7b8f6852672adc1fc2f697db2ffb281061c419fe048c848b20ea7  engine_observations.csv
+          0e14f115da324931d889c4dd7974830c79ba7edd3471f71e0477a9bc777a471d  generator_check.txt
+          f05865ce3f045744c1ba817a24816cdcd99d9310b035256dabe7c93c793ba3d9  metamorphic_results.csv
+          bfd0ab0471afd65f802b61bbe7b9393464cf91827c738c041a8740c789b0c759  negative_results.csv
+          452aca1c68ce2ea6b4beec39f202c8031064b4c60ebb4645d47ce3518a437b4b  phase5_manifest.json
+          2731ef0ce1d3fcc0b5355a2d6e73573b13840677878a1e8e50c845ce0fc982c4  phase5_metrics.csv
+          HASHES
+      - name: Archive original files on experiment branch only
+        env:
+          ARCHIVE_ROOT: research/ai_computational/results/phase5/run-45935485184
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/research/ai-computational-evaluation
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test ! -e "$ARCHIVE_ROOT"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$ARCHIVE_ROOT"
+          cp "$RUNNER_TEMP/verified-phase5/engine_observations.csv" "$ARCHIVE_ROOT/engine_observations.csv"
+          cp "$RUNNER_TEMP/verified-phase5/generator_check.txt" "$ARCHIVE_ROOT/generator_check.txt"
+          cp "$RUNNER_TEMP/verified-phase5/metamorphic_results.csv" "$ARCHIVE_ROOT/metamorphic_results.csv"
+          cp "$RUNNER_TEMP/verified-phase5/negative_results.csv" "$ARCHIVE_ROOT/negative_results.csv"
+          cp "$RUNNER_TEMP/verified-phase5/phase5_manifest.json" "$ARCHIVE_ROOT/phase5_manifest.json"
+          cp "$RUNNER_TEMP/verified-phase5/phase5_metrics.csv" "$ARCHIVE_ROOT/phase5_metrics.csv"
+          git add -f -- "$ARCHIVE_ROOT/"
+          test "$(git diff --cached --name-only | wc -l)" -eq 6
+          git diff --cached --name-only | while IFS= read -r path; do
+            case "$path" in "$ARCHIVE_ROOT/"*) ;; *) exit 1 ;; esac
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "research(ai): archive exact verified Phase 5 experimental evidence"
+          git push origin HEAD:refs/heads/research/ai-computational-evaluation
+          git rev-parse HEAD
