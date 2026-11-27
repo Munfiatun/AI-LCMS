@@ -1,0 +1,73 @@
+name: AI Computational Evaluation Phase 5
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - 'tests/Research/AIComputational/MetamorphicPropertyExperimentTest.php'
+      - 'scripts/research/ai_computational/analyze_phase5.py'
+      - '.github/workflows/ai-computational-phase5.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metamorphic-properties:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      AI_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify frozen production and prior evidence
+        run: |
+          git diff --exit-code 8d99545be7039e97cc3778b356276efe4f5f1281 HEAD -- app config database routes resources bootstrap composer.json composer.lock package.json package-lock.json phpunit.xml tests/Feature tests/Unit tests/TestCase.php scripts/research/fuzzy_reference_oracle.py
+          git diff --exit-code b8509615f2365e071e1779c168d343a570067f09 HEAD -- research/ai_computational/datasets research/ai_computational/results research/ai_computational/config tests/Research/AIComputational/Support
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+      - name: Install locked dependencies and prepare isolated app
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+          mkdir -p "$RUNNER_TEMP/phase5"
+          echo "AI_PHASE5_OUTPUT=$RUNNER_TEMP/phase5" >> "$GITHUB_ENV"
+      - name: Verify repeated seeded dataset generation
+        run: |
+          set -o pipefail
+          python3 scripts/research/ai_computational/generate_dataset.py --check > "$AI_PHASE5_OUTPUT/generator_check.tmp"
+          python3 scripts/research/ai_computational/generate_dataset.py --output "$RUNNER_TEMP/phase5-data-a"
+          python3 scripts/research/ai_computational/generate_dataset.py --output "$RUNNER_TEMP/phase5-data-b"
+          diff -r "$RUNNER_TEMP/phase5-data-a" "$RUNNER_TEMP/phase5-data-b"
+          diff -r "$RUNNER_TEMP/phase5-data-a" research/ai_computational/datasets
+          echo "Two fresh generations and frozen inputs byte-identical" >> "$AI_PHASE5_OUTPUT/generator_check.tmp"
+          mv "$AI_PHASE5_OUTPUT/generator_check.tmp" "$AI_PHASE5_OUTPUT/generator_check.txt"
+      - name: Execute real engines and retain all property outcomes
+        run: vendor/bin/phpunit -c phpunit.ai-computational.xml tests/Research/AIComputational/MetamorphicPropertyExperimentTest.php
+      - name: Audit and summarize observations
+        if: always()
+        run: |
+          if [ -f "$AI_PHASE5_OUTPUT/engine_observations.csv" ]; then
+            python3 scripts/research/ai_computational/analyze_phase5.py --output "$AI_PHASE5_OUTPUT" --commit "$GITHUB_SHA"
+          else
+            exit 1
+          fi
+      - name: Preserve raw results, negative observations and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase5-${{ github.sha }}
+          path: ${{ runner.temp }}/phase5/
+          if-no-files-found: warn
+          retention-days: 90
