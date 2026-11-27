@@ -1,0 +1,8 @@
+dataset,profiles,mean_absolute_error,max_absolute_error,centroid_pass,selected_pass,fired_count_pass,coverage_nonzero,rule_spec_pass,fuzzy_target_action_pass
+ALL,1542,0.0,0.0,1542,1542,1542,1542,1542,1542
+D1,336,0.0,0.0,336,336,336,336,336,336
+D2,128,0.0,0.0,128,128,128,128,128,128
+D3,16,0.0,0.0,16,16,16,16,16,16
+D4,1000,0.0,0.0,1000,1000,1000,1000,1000,1000
+D5,8,0.0,0.0,8,8,8,8,8,8
+B3,54,0.0,0.0,54,54,54,54,54,54

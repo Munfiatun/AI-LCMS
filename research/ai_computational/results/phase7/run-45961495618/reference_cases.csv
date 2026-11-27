@@ -1,0 +1,9 @@
+case_id,dataset,reference_centroid,actual_centroid,absolute_error,reference_selected,actual_selected,reference_fired_count,actual_fired_count,actual_fired_rule_ids,centroid_pass,selected_pass,fired_count_pass,coverage_nonzero,engine_success
+N01,D5,45.0000,45.0000,0.00000000,remediation,remediation,1,1,6,1,1,1,1,1
+N02,D5,50.8528,50.8528,0.00000000,remediation,remediation,2,2,6|10,1,1,1,1,1
+N03,D5,60.0000,60.0000,0.00000000,reinforcement,reinforcement,1,1,10,1,1,1,1,1
+N04,D5,77.3333,77.3333,0.00000000,next_concept,next_concept,1,1,14,1,1,1,1,1
+N05,D5,8.1111,8.1111,0.00000000,additional_diagnostic,additional_diagnostic,1,1,1,1,1,1,1,1
+N06,D5,77.2222,77.2222,0.00000000,next_concept,next_concept,1,1,14,1,1,1,1,1
+N07,D5,93.4444,93.4444,0.00000000,enrichment,enrichment,1,1,15,1,1,1,1,1
+N08,D5,27.3333,27.3333,0.00000000,prerequisite_remediation,prerequisite_remediation,1,1,2,1,1,1,1,1
