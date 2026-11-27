@@ -1,0 +1,11 @@
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.28
+Configuration: /home/runner/work/AI-LCMS/AI-LCMS/phpunit.ai-computational.xml
+
+PHASE6_BATCH {"stage":"measured","batch":1,"position":2,"algorithm":"rule-based-v1","pid":3119,"php_version":"8.4.28","laravel_version":"13.31.0","sqlite_version":"3.45.1","php_sapi":"cli","opcache_cli":"0","jit":"1235","xdebug_loaded":false,"memory_limit":"-1","memory_before_loop_allocated_bytes":52953088,"peak_php_allocated_bytes":52953088,"peak_php_used_bytes":52030416,"loop_wall_ns":4198233446,"counts":{"calls":1020,"success":1020,"errors":0,"mismatches":0,"rows":1020},"csv_sha256":"627e61d2944e863bf651f53936455f1e3d03e88330f9cd589c9374f3033a6fe1"}
+.                                                                   1 / 1 (100%)
+
+Time: 00:04.457, Memory: 52.50 MB
+
+[30;42mOK (1 test, 20 assertions)[0m

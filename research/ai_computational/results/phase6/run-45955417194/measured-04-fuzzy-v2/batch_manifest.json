@@ -1,0 +1,27 @@
+{
+    "stage": "measured",
+    "batch": 4,
+    "position": 2,
+    "algorithm": "fuzzy-v2",
+    "pid": 3149,
+    "php_version": "8.4.28",
+    "laravel_version": "13.31.0",
+    "sqlite_version": "3.45.1",
+    "php_sapi": "cli",
+    "opcache_cli": "0",
+    "jit": "1235",
+    "xdebug_loaded": false,
+    "memory_limit": "-1",
+    "memory_before_loop_allocated_bytes": 52953088,
+    "peak_php_allocated_bytes": 52953088,
+    "peak_php_used_bytes": 52123520,
+    "loop_wall_ns": 4601794493,
+    "counts": {
+        "calls": 1020,
+        "success": 1020,
+        "errors": 0,
+        "mismatches": 0,
+        "rows": 1020
+    },
+    "csv_sha256": "f4bed6ae7d4c695f56c505cc23e06b3dc3867acf757752743e08df2c18f228a5"
+}
