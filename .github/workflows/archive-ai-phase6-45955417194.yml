@@ -1,0 +1,62 @@
+name: Archive verified Phase 6 evidence (run 45955417194)
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - '.github/workflows/archive-ai-phase6-45955417194.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - name: Download exact Phase 6 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-computational-phase6-eeca629f7b8b8e901b837b681452c0ba8447df1e
+          run-id: 45955417194
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-phase6
+      - name: Verify every original file against independently audited checksum set
+        working-directory: ${{ runner.temp }}/verified-phase6
+        run: |
+          set -euo pipefail
+          test "$(find . -type f | wc -l)" -eq 83
+          find . -type f -printf '%P\n' | LC_ALL=C sort | while IFS= read -r p; do sha256sum -- "$p"; done > "$RUNNER_TEMP/phase6-checksums.txt"
+          echo "0d0fbf6e930c0a9f26d2fea4d31bc2290bc761e435e6d953016c8ec3a9731346  $RUNNER_TEMP/phase6-checksums.txt" | sha256sum --check
+          sha256sum --check "$RUNNER_TEMP/phase6-checksums.txt"
+      - name: Archive exact original files on experiment branch only
+        env:
+          ARCHIVE_ROOT: research/ai_computational/results/phase6/run-45955417194
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/research/ai-computational-evaluation
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test ! -e "$ARCHIVE_ROOT"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$ARCHIVE_ROOT"
+          cp -a "$RUNNER_TEMP/verified-phase6/." "$ARCHIVE_ROOT/"
+          (cd "$ARCHIVE_ROOT" && sha256sum --check "$RUNNER_TEMP/phase6-checksums.txt")
+          git add -f -- "$ARCHIVE_ROOT/"
+          test "$(git diff --cached --name-only | wc -l)" -eq 83
+          git diff --cached --name-only | while IFS= read -r p; do
+            case "$p" in "$ARCHIVE_ROOT/"*) ;; *) exit 1 ;; esac
+          done
+          # Check staged bytes as well (including any Git attributes/line-ending normalization).
+          while IFS= read -r line; do
+            h="${line%%  *}"
+            p="${line#*  }"
+            test "$(git show ":$ARCHIVE_ROOT/$p" | sha256sum | cut -d' ' -f1)" = "$h"
+          done < "$RUNNER_TEMP/phase6-checksums.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "research(ai): archive exact Phase 6 preliminary benchmark evidence"
+          git push origin HEAD:refs/heads/research/ai-computational-evaluation
+          git rev-parse HEAD
