@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "experiment_commit": "50bfd25f88cddc32ba51aa7e5c948cba8f4b7d82",
+  "prior_phase2_run": 45927771715,
+  "prior_phase2_artifact": 15167511175,
+  "prior_phase2_aggregate_reproduced": true,
+  "replay_csv_hash_valid": true,
+  "profiles": 1542,
+  "phase2_replayed_profiles": 1480,
+  "additional_profiles": 62,
+  "reference_cases": 8,
+  "isolated_boundary_cases": 54,
+  "centroid_tolerance": 0.00015,
+  "mean_absolute_centroid_error": 0.0,
+  "max_absolute_centroid_error": 0.0,
+  "centroid_error_n": 1542,
+  "distinct_fired_rule_ids": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15"
+  ],
+  "totals": {
+    "profiles": 1542,
+    "rule_spec_pass": 1542,
+    "centroid_pass": 1542,
+    "selected_pass": 1542,
+    "fired_count_pass": 1542,
+    "coverage_nonzero": 1542,
+    "fuzzy_target_action_pass": 1542,
+    "engine_calls_success": 3084
+  },
+  "by_dataset": {
+    "D1": {
+      "profiles": 336,
+      "rule_spec_pass": 336,
+      "centroid_pass": 336,
+      "selected_pass": 336,
+      "fired_count_pass": 336,
+      "coverage_nonzero": 336,
+      "fuzzy_target_action_pass": 336,
+      "engine_calls_success": 672
+    },
+    "D2": {
+      "profiles": 128,
+      "rule_spec_pass": 128,
+      "centroid_pass": 128,
+      "selected_pass": 128,
+      "fired_count_pass": 128,
+      "coverage_nonzero": 128,
+      "fuzzy_target_action_pass": 128,
+      "engine_calls_success": 256
+    },
+    "D3": {
+      "profiles": 16,
+      "rule_spec_pass": 16,
+      "centroid_pass": 16,
+      "selected_pass": 16,
+      "fired_count_pass": 16,
+      "coverage_nonzero": 16,
+      "fuzzy_target_action_pass": 16,
+      "engine_calls_success": 32
+    },
+    "D4": {
+      "profiles": 1000,
+      "rule_spec_pass": 1000,
+      "centroid_pass": 1000,
+      "selected_pass": 1000,
+      "fired_count_pass": 1000,
+      "coverage_nonzero": 1000,
+      "fuzzy_target_action_pass": 1000,
+      "engine_calls_success": 2000
+    },
+    "D5": {
+      "profiles": 8,
+      "rule_spec_pass": 8,
+      "centroid_pass": 8,
+      "selected_pass": 8,
+      "fired_count_pass": 8,
+      "coverage_nonzero": 8,
+      "fuzzy_target_action_pass": 8,
+      "engine_calls_success": 16
+    },
+    "B3": {
+      "profiles": 54,
+      "rule_spec_pass": 54,
+      "centroid_pass": 54,
+      "selected_pass": 54,
+      "fired_count_pass": 54,
+      "coverage_nonzero": 54,
+      "fuzzy_target_action_pass": 54,
+      "engine_calls_success": 108
+    }
+  },
+  "gate_pass": true,
+  "human_participants": 0,
+  "claim_limit": "Specification and numerical consistency, not pedagogical validity or accuracy.",
+  "sha256": {
+    "additional_inputs.csv": "1e8c846b3b22d7953cebf9754d6e113b9f7f8b227b733970713861eac91c2332",
+    "additional_actual.csv": "1459fe78acc1bfd37e2ec41af32291aaf4e95fbac8eac93f3772a91e2ae5d5a2",
+    "numerical_results.csv": "f3203aad4859b2098f3cbc6fa481de94ba2828f1b0e8f58d3e561523ab32c74f",
+    "boundary_results.csv": "305af728d0e4953d8f74292ea2f9e001b56c3caf41aed1d262010a477d708027"
+  }
+}
