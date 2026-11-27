@@ -1,0 +1,86 @@
+name: AI Computational Evaluation Phase 4
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - 'research/ai_computational/config/phase4_variants.json'
+      - 'tests/Research/AIComputational/SensitivityRobustnessExperimentTest.php'
+      - 'scripts/research/ai_computational/analyze_phase4.py'
+      - '.github/workflows/ai-computational-phase4.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  experiment:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [rb-sensitivity, fz-mastery, fz-prerequisite, fz-evidence, rb-robustness, fz-robustness]
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      AI_PROVIDER: mock
+      AI_PHASE4_SHARD: ${{ matrix.shard }}
+      AI_PHASE4_OUTPUT: ${{ runner.temp }}/phase4
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify frozen production and prior research artifacts
+        run: |
+          git diff --exit-code 8d99545be7039e97cc3778b356276efe4f5f1281 HEAD -- app config database routes resources bootstrap composer.json composer.lock package.json package-lock.json phpunit.xml tests/Feature tests/Unit tests/TestCase.php scripts/research/fuzzy_reference_oracle.py
+          git diff --exit-code f6cd99d8c5f198e6b56ad408c5996ee9e97623e0 HEAD -- research/ai_computational/datasets research/ai_computational/results/phase3 tests/Research/AIComputational/Support
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare isolated app and validate input
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+          python3 scripts/research/ai_computational/generate_dataset.py --check
+          mkdir -p "$AI_PHASE4_OUTPUT"
+      - name: Execute actual engine shard
+        run: vendor/bin/phpunit -c phpunit.ai-computational.xml tests/Research/AIComputational/SensitivityRobustnessExperimentTest.php
+      - name: Preserve raw shard evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-${{ matrix.shard }}
+          path: ${{ runner.temp }}/phase4/
+          if-no-files-found: warn
+          retention-days: 90
+  aggregate:
+    needs: experiment
+    if: always() && github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: phase4-*
+          path: ${{ runner.temp }}/phase4-shards
+      - name: Validate and aggregate actual outputs
+        run: python3 scripts/research/ai_computational/analyze_phase4.py --input "$RUNNER_TEMP/phase4-shards" --output "$RUNNER_TEMP/phase4-results" --commit "$GITHUB_SHA"
+      - name: Preserve consolidated results and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase4-${{ github.sha }}
+          path: ${{ runner.temp }}/phase4-results/
+          if-no-files-found: warn
+          retention-days: 90
