@@ -1,0 +1,84 @@
+name: AI Computational Evaluation Phase 2
+on:
+  push:
+    branches:
+      - research/ai-computational-evaluation
+    paths:
+      - 'tests/Research/AIComputational/**'
+      - 'research/ai_computational/**'
+      - 'scripts/research/ai_computational/**'
+      - 'phpunit.ai-computational.xml'
+      - '.github/workflows/ai-computational-evaluation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression-and-comparison:
+    if: github.ref == 'refs/heads/research/ai-computational-evaluation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      AI_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify frozen production baseline
+        run: |
+          git diff --exit-code 8d99545be7039e97cc3778b356276efe4f5f1281 HEAD -- app config database routes resources bootstrap composer.json composer.lock package.json package-lock.json phpunit.xml tests/Feature tests/Unit tests/TestCase.php scripts/research/fuzzy_reference_oracle.py
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install locked dependencies
+        run: |
+          composer validate --strict --no-check-publish
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+          npm run build
+      - name: Prepare isolated app
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+      - name: Verify synthetic input files
+        run: python3 scripts/research/ai_computational/generate_dataset.py --check
+      - name: Verify historical numerical reference
+        run: python3 scripts/research/fuzzy_reference_oracle.py
+      - name: Baseline regression (unchanged default suite)
+        run: php artisan test
+      - name: Execute all paired profiles with actual PHP engines
+        env:
+          AI_COMPUTATIONAL_COMMIT: ${{ github.sha }}
+          AI_COMPUTATIONAL_OUTPUT: ${{ runner.temp }}/ai-computational-results
+        run: |
+          mkdir -p "$AI_COMPUTATIONAL_OUTPUT"
+          vendor/bin/phpunit -c phpunit.ai-computational.xml
+      - name: Publish aggregate execution manifest
+        if: always()
+        run: |
+          file="$RUNNER_TEMP/ai-computational-results/run_manifest.json"
+          if [ -f "$file" ]; then
+            cat "$file"
+          fi
+      - name: Preserve raw CSV and manifest (including failed rows)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase2-${{ github.sha }}
+          path: ${{ runner.temp }}/ai-computational-results/
+          if-no-files-found: warn
+          retention-days: 90
