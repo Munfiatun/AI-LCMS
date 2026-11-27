@@ -1,0 +1,9 @@
+case_id,mastery_score,evidence_count,prerequisite_mastery,reference_centroid,reference_selected_output
+N01,20.00,3,100.00,45.0000,remediation
+N02,40.00,3,100.00,50.8528,remediation
+N03,60.00,3,100.00,60.0000,reinforcement
+N04,80.00,3,100.00,77.3333,next_concept
+N05,90.00,1,100.00,8.1111,additional_diagnostic
+N06,90.00,4,100.00,77.2222,next_concept
+N07,90.00,5,100.00,93.4444,enrichment
+N08,90.00,3,30.00,27.3333,prerequisite_remediation

@@ -1,0 +1,17 @@
+case_id,dataset,seed,mastery_score,evidence_count,prereq1_state,prereq1_mastery,prereq1_evidence,prereq2_state,prereq2_mastery,prereq2_evidence,next_context,scenario
+S01,D3,,0.00,0,absent,,,absent,,,ready,zero_evidence
+S02,D3,,39.99,2,absent,,,absent,,,ready,low_below
+S03,D3,,40.00,2,absent,,,absent,,,ready,low_above
+S04,D3,,79.99,2,absent,,,absent,,,ready,high_below
+S05,D3,,80.00,2,absent,,,absent,,,ready,high_above
+S06,D3,,90.00,1,absent,,,absent,,,ready,low_evidence
+S07,D3,,90.00,2,missing,,,absent,,,ready,missing_prerequisite
+S08,D3,,90.00,2,observed,69.99,3,absent,,,ready,prerequisite_below
+S09,D3,,90.00,2,observed,70.00,3,absent,,,ready,prerequisite_above
+S10,D3,,90.00,3,observed,30.00,3,absent,,,ready,weak_prerequisite
+S11,D3,,90.00,5,observed,100.00,3,absent,,,ready,high_mastery_evidence
+S12,D3,,60.00,3,observed,40.00,3,observed,85.00,3,ready,multiple_prerequisites
+S13,D3,,90.00,3,absent,,,absent,,,none,no_next_concept
+S14,D3,,90.00,3,absent,,,absent,,,dual_blocked,next_with_two_prerequisites
+S15,D3,,60.00,3,observed,65.00,3,absent,,,ready,prerequisite_overlap
+S16,D3,,40.00,3,observed,100.00,3,absent,,,ready,mastery_overlap
