@@ -1,0 +1,89 @@
+{
+  "source_run": "https://github.com/Munfiatun/AI-LCMS/actions/runs/45927771715",
+  "source_job": 140273068258,
+  "artifact_id": 15167511175,
+  "artifact_digest": "sha256:fe4ede2b21a7f31cf1b01fd174c89c81fec7820b47b216b7f11a66764d15b04f",
+  "manifest": {
+    "schema_version": 1,
+    "run_kind": "synthetic_comparative_engine_execution",
+    "baseline_commit": "8d99545be7039e97cc3778b356276efe4f5f1281",
+    "experiment_commit": "34f93cace63148dfd66f8123662fc7f7b9cb37ee",
+    "run_utc": "2026-11-27T02:21:25+00:00",
+    "php_version": "8.4.28",
+    "laravel_version": "13.31.0",
+    "os": "Linux",
+    "database": "sqlite :memory:",
+    "sqlite_version": "3.45.1",
+    "input_sha256": {
+      "dataset_grid.csv": "59c05e07d618b7b7e571e4f6560e5462053a71d0ea295c09945a561831e2b0c7",
+      "dataset_boundary.csv": "d02b4b2a9c65930e0cb40afbc52d374bc7ffbb47cf0aad7ada6e92da519a8d73",
+      "dataset_scenario.csv": "0b637d13f5f6dd20a8282554ee288ef919409f4ac154f21e6a901aa3c6c5a3bd",
+      "dataset_random.csv": "4aa742f75ef5ee764d53f782fb83b35f0775e882beb8dda860f142b2c29a79b5"
+    },
+    "algorithm_config_sha256": {
+      "rule-based-v1": "855088ad65592d218a7262f1af39d4b36f767421cbfc75760b121853206f11a1",
+      "fuzzy-v2": "116e87deaf051787abbee3f3705c079deb2e90161ea1cfe9a55025b34140601c"
+    },
+    "adaptive_file_sha256": "663eedb83b52dce63c709d28dc2325d1ca52635daa4cb1ca6c219d3b7d0885a4",
+    "engine_sha256": {
+      "rule-based-v1": "169189e4513fdf15ad0b518bdcdf30fdec560f1a6aeedaec1a33d18c1b777587",
+      "fuzzy-v2": "85cab5547bd8f3c216d6be2cad6ed14faccb0e0698aab88de67612fd93a11c63"
+    },
+    "results_sha256": "705f7e8bb00acfe65cb27538075d3aadde9962c585062f4ac5e799800820b7cb",
+    "profiles": 1480,
+    "planned_rows": 2960,
+    "recorded_rows": 2960,
+    "actual_engine_calls": 2960,
+    "success": 2960,
+    "failures": 0,
+    "complete_pairs": 1480,
+    "same_action": 927,
+    "same_target": 1085,
+    "same_both": 778,
+    "by_dataset": {
+      "D1": {
+        "profiles": 336,
+        "engine_calls": 672,
+        "success": 672,
+        "failures": 0,
+        "complete_pairs": 336,
+        "same_action": 258,
+        "same_target": 276,
+        "same_both": 258
+      },
+      "D2": {
+        "profiles": 128,
+        "engine_calls": 256,
+        "success": 256,
+        "failures": 0,
+        "complete_pairs": 128,
+        "same_action": 56,
+        "same_target": 68,
+        "same_both": 56
+      },
+      "D3": {
+        "profiles": 16,
+        "engine_calls": 32,
+        "success": 32,
+        "failures": 0,
+        "complete_pairs": 16,
+        "same_action": 8,
+        "same_target": 11,
+        "same_both": 8
+      },
+      "D4": {
+        "profiles": 1000,
+        "engine_calls": 2000,
+        "success": 2000,
+        "failures": 0,
+        "complete_pairs": 1000,
+        "same_action": 605,
+        "same_target": 730,
+        "same_both": 456
+      }
+    },
+    "human_participants": 0,
+    "timing_note": "Single-call end-to-end diagnostic timing, not a controlled benchmark.",
+    "claim_limit": "Agreement is not accuracy; no pedagogical or learning-effectiveness evidence."
+  }
+}

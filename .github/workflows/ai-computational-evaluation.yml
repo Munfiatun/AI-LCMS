@@ -1,4 +1,4 @@
-name: AI Computational Evaluation Phase 2
+name: AI Computational Evaluation Phase 2 and 3
 on:
   push:
     branches:
@@ -80,5 +80,23 @@ jobs:
         with:
           name: ai-computational-phase2-${{ github.sha }}
           path: ${{ runner.temp }}/ai-computational-results/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Generate Phase 3 additional reference and isolated boundaries
+        run: python3 scripts/research/ai_computational/verify_numerical_boundary.py generate --output "$RUNNER_TEMP/ai-phase3"
+      - name: Execute Phase 3 extra cases with actual engines
+        env:
+          AI_PHASE3_OUTPUT: ${{ runner.temp }}/ai-phase3
+        run: vendor/bin/phpunit -c phpunit.ai-computational.xml tests/Research/AIComputational/NumericalBoundaryExperimentTest.php
+      - name: Verify numerical and boundary evidence against frozen specification
+        run: |
+          python3 scripts/research/ai_computational/verify_numerical_boundary.py verify --output "$RUNNER_TEMP/ai-phase3" --phase2 "$RUNNER_TEMP/ai-computational-results" --commit "$GITHUB_SHA"
+      - name: Preserve Phase 3 raw observations and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-computational-phase3-${{ github.sha }}
+          path: ${{ runner.temp }}/ai-phase3/
           if-no-files-found: warn
           retention-days: 90
