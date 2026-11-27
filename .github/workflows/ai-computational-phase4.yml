@@ -27,7 +27,6 @@ jobs:
       DB_URL: ''
       AI_PROVIDER: mock
       AI_PHASE4_SHARD: ${{ matrix.shard }}
-      AI_PHASE4_OUTPUT: ${{ runner.temp }}/phase4
     steps:
       - uses: actions/checkout@v5
         with:
@@ -50,7 +49,8 @@ jobs:
           php artisan key:generate
           php artisan config:clear
           python3 scripts/research/ai_computational/generate_dataset.py --check
-          mkdir -p "$AI_PHASE4_OUTPUT"
+          mkdir -p "$RUNNER_TEMP/phase4"
+          echo "AI_PHASE4_OUTPUT=$RUNNER_TEMP/phase4" >> "$GITHUB_ENV"
       - name: Execute actual engine shard
         run: vendor/bin/phpunit -c phpunit.ai-computational.xml tests/Research/AIComputational/SensitivityRobustnessExperimentTest.php
       - name: Preserve raw shard evidence

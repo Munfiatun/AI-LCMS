@@ -87,8 +87,8 @@ def main():
                     assert r["status"]=="not_applicable" and not r["new_value"] and r["engine_called"]=="0"
                 else:
                     new=min(100,max(0,float(val)+delta)) if "mastery" in field else max(0,int(val)+delta)
-                    assert float(r["new_value"])==new
-                    if new==float(val):
+                    assert abs(float(r["new_value"])-new)<1e-9
+                    if abs(new-float(val))<1e-9:
                         assert r["status"]=="clipped_no_change" and r["engine_called"]=="0"
                     else:
                         assert r["status"] in ("success","failed")
